@@ -1,0 +1,504 @@
+"""Flask Web Server for Verified-Policy Wallet Agent.
+
+Integrates:
+- Live Exchange Perception (Coinbase WebSocket & Scenario Emitter)
+- User Wallet System (Persistent JSON DB, Balances & USER vs AGENT Transactions)
+- Formal Policy Discovery, Z3 Proofs & Guard Gating
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from fractions import Fraction
+import json
+import os
+import sys
+import time
+from typing import Any, Generator
+
+from flask import Flask, Response, jsonify, render_template, request
+
+# Ensure workspace root is in path
+WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if WORKSPACE_ROOT not in sys.path:
+    sys.path.insert(0, WORKSPACE_ROOT)
+
+from agent import autonomous_agent, task_manager
+from exchange import exchange_service
+from policy import (
+    DOMAIN,
+    NeedsHumanReview,
+    Policy,
+    Rejected,
+    VerifiedPolicy,
+    compile_policy,
+    constraint_names,
+    verify_policy,
+)
+from policy.hashing import policy_hash
+from policy.onchain import params as onchain_params
+from policy.readback import readback
+from policy.readers.llm_client import EnvLLMClient
+from policy.readers.llm_reader import LLMReader
+from policy.readers.mock import MockLLMClient
+from policy.readers.rule_reader import RuleReader
+from policy.typecheck import resolve, typecheck
+from user import user_db
+
+# Policy engine runtime cache
+POLICY_ENGINE_STATE = {
+    "status": "RUNNING",
+    "active_policy": None,
+    "active_verified_result": None,
+    "last_trade_check": None,
+}
+
+rule_reader = RuleReader()
+env_llm_client = EnvLLMClient()
+mock_llm_client = MockLLMClient()
+
+
+def get_llm_reader() -> tuple[LLMReader, bool]:
+    """Return an active LLMReader and boolean indicating whether it is live."""
+    if env_llm_client.api_key and env_llm_client.provider != "mock":
+        return LLMReader(env_llm_client), True
+    return LLMReader(mock_llm_client), False
+
+
+def set_default_policy(prompt: str = "Buy ETH when gas is under 20 gwei, and never let my balance drop below 500 dollars.") -> VerifiedPolicy:
+    """Initialize the engine with a default verified policy."""
+    reader_b, is_live = get_llm_reader()
+    if not is_live:
+        parsed_a = rule_reader.read(prompt)
+        mock_llm_client.set_default_responses([parsed_a.to_json(), parsed_a.to_json()])
+
+    result = verify_policy(prompt, rule_reader, reader_b, lambda q, opts: opts[0].id)
+    if isinstance(result, VerifiedPolicy):
+        POLICY_ENGINE_STATE["active_policy"] = result.policy
+        POLICY_ENGINE_STATE["active_verified_result"] = result
+        if not task_manager.get_current_task():
+            task_manager.register_task(
+                prompt=prompt,
+                policy_hash=result.hash,
+                canonical_readback=result.readback,
+                triggers=[{"field": "gas", "op": "lte", "val": 20.0}],
+                invariants=[{"field": "balance", "op": "sub", "val": 500.0}],
+                trade_amount_usd=200.0,
+            )
+        return result
+    raise RuntimeError(f"Default policy failed verification: {result}")
+
+
+def create_app() -> Flask:
+    template_dir = os.path.join(os.path.dirname(__file__), "templates")
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+
+    app = Flask(
+        __name__,
+        template_folder=template_dir,
+        static_folder=static_dir,
+    )
+
+    # Start always-running autonomous agent daemon
+    autonomous_agent.start()
+
+    @app.route("/")
+    def index():
+        user_state = user_db.get_state()
+        market_state = exchange_service.get_market_state()
+        vp = POLICY_ENGINE_STATE["active_verified_result"]
+        agent_status = autonomous_agent.get_status()
+        return render_template(
+            "index.html",
+            user=user_state,
+            market=market_state,
+            active_result=vp,
+            agent=agent_status,
+        )
+
+    # ---------------------------------------------------------
+    # Market & Exchange Feeds
+    # ---------------------------------------------------------
+
+    @app.route("/api/market/live", methods=["GET"])
+    def get_live_market():
+        return jsonify({
+            "market": exchange_service.get_market_state(),
+            "history": exchange_service.get_chart_history(),
+        })
+
+    @app.route("/api/market/scenario", methods=["POST"])
+    def post_market_scenario():
+        data = request.get_json() or {}
+        scenario = data.get("scenario", "REAL_MARKET")
+        res = exchange_service.set_scenario(scenario)
+        return jsonify(res)
+
+    @app.route("/api/market/stream")
+    def stream_market_ticks():
+        """Server-Sent Events (SSE) streaming live ticks to the frontend chart."""
+        def event_stream() -> Generator[str, None, None]:
+            while True:
+                time.sleep(1.0)
+                m = exchange_service.get_market_state()
+                payload = json.dumps({
+                    "time": datetime.now(timezone.utc).strftime("%H:%M:%S"),
+                    "price": m["eth_price_usd"],
+                    "gas_gwei": m["gas_gwei"],
+                    "l1_base_fee": m.get("l1_base_fee", 1.0),
+                    "l1_priority_fee": m.get("l1_priority_fee", 1.5),
+                    "l1_block": m.get("l1_block", 0),
+                    "is_live_rpc": m.get("is_live_rpc", True),
+                    "scenario": m["scenario"],
+                    "is_connected": m["is_connected"],
+                })
+                yield f"data: {payload}\n\n"
+
+        return Response(event_stream(), mimetype="text/event-stream")
+
+    # ---------------------------------------------------------
+    # User Wallet & Transaction Ledger
+    # ---------------------------------------------------------
+
+    @app.route("/api/user/wallet", methods=["GET", "POST"])
+    def api_user_wallet():
+        if request.method == "POST":
+            data = request.get_json() or {}
+            eth = data.get("ETH")
+            usdc = data.get("USDC")
+            weth = data.get("WETH")
+            updated = user_db.update_balances(eth=eth, usdc=usdc, weth=weth)
+
+            # Record manual user balance edit transaction
+            if data.get("log_transaction", True):
+                user_db.add_transaction(
+                    actor="USER",
+                    action="DEPOSIT" if (usdc and float(usdc) > 0) else "WITHDRAW",
+                    details=f"Manual Balance Adjustment: {updated.balances.ETH} ETH, ${updated.balances.USDC:,.2f} USDC",
+                    amount=float(usdc) if usdc else float(eth or 0),
+                    token="USDC" if usdc else "ETH",
+                    status="CONFIRMED",
+                    reason="User-initiated balance modification",
+                )
+            return jsonify(updated.to_dict())
+
+        return jsonify(user_db.get_state().to_dict())
+
+    @app.route("/api/user/transactions", methods=["GET", "POST"])
+    def api_user_transactions():
+        if request.method == "POST":
+            data = request.get_json() or {}
+            tx = user_db.add_transaction(
+                actor=data.get("actor", "USER"),
+                action=data.get("action", "TRANSFER"),
+                details=data.get("details", "Manual Transaction"),
+                amount=float(data.get("amount", 0.0)),
+                token=data.get("token", "ETH"),
+                status=data.get("status", "CONFIRMED"),
+                price_usd=data.get("price_usd"),
+                reason=data.get("reason"),
+            )
+            return jsonify(tx.to_dict()), 201
+
+        state = user_db.get_state()
+        return jsonify([t.to_dict() for t in state.transactions])
+
+    @app.route("/api/user/reset", methods=["POST"])
+    def api_user_reset():
+        state = user_db.reset_db()
+        autonomous_agent.reset()
+        return jsonify({
+            "message": "Simulation wallet database and all agent tasks successfully reset.",
+            "wallet": state.to_dict(),
+        })
+
+    @app.route("/api/user/transaction/<tx_id>/reasoning", methods=["GET"])
+    def get_transaction_reasoning(tx_id: str):
+        tx = user_db.get_transaction(tx_id)
+        if not tx:
+            return jsonify({"error": "Transaction not found"}), 404
+        return jsonify({
+            "tx_id": tx.id,
+            "tx_hash": tx.tx_hash,
+            "actor": tx.actor,
+            "action": tx.action,
+            "status": tx.status,
+            "details": tx.details,
+            "amount": tx.amount,
+            "token": tx.token,
+            "price_usd": tx.price_usd,
+            "reason": tx.reason,
+            "reasoning_report": tx.reasoning_report,
+        })
+
+    @app.route("/api/reasoning/history", methods=["GET", "POST"])
+    def api_reasoning_history():
+        from reasoning import rag_retriever
+        if request.method == "POST":
+            data = request.get_json() or []
+            rag_retriever.save_regimes(data)
+            return jsonify({"success": True, "count": len(data)})
+        regimes = [r.to_dict() for r in rag_retriever.get_all_regimes()]
+        return jsonify(regimes)
+
+    # ---------------------------------------------------------
+    # Autonomous Agent Runtime & Task Management
+    # ---------------------------------------------------------
+
+    @app.route("/api/agent/status", methods=["GET"])
+    def get_agent_status():
+        return jsonify(autonomous_agent.get_status())
+
+    @app.route("/api/agent/task", methods=["GET", "POST", "DELETE"])
+    def api_agent_task():
+        if request.method == "POST":
+            data = request.get_json() or {}
+            prompt = data.get("prompt", "Buy ETH when gas is under 20 gwei, and never let my balance drop below 500 dollars.")
+            vp = POLICY_ENGINE_STATE["active_verified_result"]
+
+            triggers = []
+            invariants = []
+            if vp and vp.policy:
+                for trig in vp.policy.triggers:
+                    val = float(trig.rhs.value) if hasattr(trig.rhs, "value") else 20.0
+                    triggers.append({"field": trig.lhs.name if hasattr(trig.lhs, "name") else "gas", "op": trig.op, "val": val})
+                for inv in vp.policy.invariants:
+                    val = float(inv.rhs.value) if hasattr(inv.rhs, "value") else 500.0
+                    invariants.append({"field": "balance", "op": inv.op, "val": val})
+            else:
+                triggers = [{"field": "gas", "op": "lte", "val": 20.0}]
+                invariants = [{"field": "balance", "op": "sub", "val": 500.0}]
+
+            trade_amount = float(data.get("trade_amount_usd", 200.0))
+            task = task_manager.register_task(
+                prompt=prompt,
+                policy_hash=vp.hash if vp else "a5af28f7b03c1b086112ebd4b7fab5707ae78b7e7bce7b2265866894a163e3d8",
+                canonical_readback=vp.readback if vp else "Buy only when gas is at most 20 gwei. Keep the balance after each trade at least $500.",
+                triggers=triggers,
+                invariants=invariants,
+                trade_amount_usd=trade_amount,
+            )
+            autonomous_agent.add_thought("TASK", f"User deployed new task {task.id}: '{task.prompt}' (Trade: ${trade_amount:.2f} USDC)")
+            return jsonify(task.to_dict()), 201
+
+        elif request.method == "DELETE":
+            current = task_manager.get_current_task()
+            if current:
+                task_manager.delete_task(current.id)
+                autonomous_agent.add_thought("TASK", f"Task {current.id} dismissed and deleted by user.")
+                return jsonify({"success": True, "message": f"Task {current.id} deleted."})
+            return jsonify({"success": False, "message": "No task found to delete."}), 404
+
+        current = task_manager.get_current_task()
+        return jsonify(current.to_dict() if current else None)
+
+    @app.route("/api/agent/task/stop", methods=["POST"])
+    def post_agent_task_stop():
+        current = task_manager.get_current_task()
+        if current and current.status == "RUNNING":
+            task_manager.stop_task(current.id, reason="Manually stopped by user from dashboard.")
+            autonomous_agent.add_thought("TASK", f"Task {current.id} stopped by user.")
+            return jsonify({"success": True, "task": current.to_dict()})
+        return jsonify({"success": False, "message": "No running task to stop."}), 400
+
+    @app.route("/api/agent/task/rerun", methods=["POST"])
+    def post_agent_task_rerun():
+        current = task_manager.get_current_task()
+        if current:
+            updated = task_manager.rerun_task(current.id)
+            autonomous_agent.add_thought("TASK", f"Task {current.id} re-activated by user. Status is now RUNNING.")
+            return jsonify({"success": True, "task": updated.to_dict() if updated else None})
+        return jsonify({"success": False, "message": "No task found to rerun."}), 400
+
+    @app.route("/api/agent/pause", methods=["POST"])
+    def post_agent_pause():
+        autonomous_agent.pause()
+        return jsonify({"status": "PAUSED", "is_paused": True})
+
+    @app.route("/api/agent/resume", methods=["POST"])
+    def post_agent_resume():
+        autonomous_agent.resume()
+        return jsonify({"status": autonomous_agent.state, "is_paused": False})
+
+    # ---------------------------------------------------------
+    # Policy Discovery & Intent Gating
+    # ---------------------------------------------------------
+
+    @app.route("/api/verify", methods=["POST"])
+    def api_verify_policy():
+        data = request.get_json() or {}
+        text = data.get("prompt", "").strip()
+        chosen_option = data.get("clarification_option")
+
+        if not text:
+            return jsonify({"error": "Prompt cannot be empty"}), 400
+
+        try:
+            tentative_a = rule_reader.read(text)
+            issues = typecheck(tentative_a)
+            mismatch = next((iss for iss in issues if iss.kind == "SORT_MISMATCH"), None)
+            if mismatch and not chosen_option:
+                return jsonify({
+                    "needs_clarification": True,
+                    "question": mismatch.message,
+                    "options": [{"id": opt.id, "description": opt.description} for opt in mismatch.clarification_options],
+                })
+        except Exception:
+            pass
+
+        def ask_user_cb(question: str, options: list[Any]) -> str:
+            if chosen_option:
+                match = next((o.id for o in options if o.id == chosen_option), None)
+                if match:
+                    return match
+            return options[0].id
+
+        reader_b, is_live = get_llm_reader()
+        if not is_live:
+            try:
+                parsed_a = rule_reader.read(text)
+                if chosen_option and parsed_a:
+                    parsed_a = resolve(parsed_a, chosen_option)
+                if parsed_a:
+                    mock_llm_client.set_default_responses([parsed_a.to_json(), parsed_a.to_json()])
+            except Exception:
+                pass
+
+        try:
+            result = verify_policy(text, rule_reader, reader_b, ask_user_cb)
+        except Exception as e:
+            return jsonify({
+                "status": "REJECTED",
+                "message": f"Verification error: {e}",
+                "reasons": [str(e)],
+            }), 200
+
+        if isinstance(result, VerifiedPolicy):
+            POLICY_ENGINE_STATE["active_policy"] = result.policy
+            POLICY_ENGINE_STATE["active_verified_result"] = result
+            return jsonify({
+                "status": "VERIFIED",
+                "readback": result.readback,
+                "hash": result.hash,
+                "attempts": result.attempts,
+                "independence": result.independence,
+                "onchain": result.onchain,
+                "constraints": constraint_names(result.policy),
+                "ignored_clauses": list(getattr(result, "ignored_clauses", [])),
+            })
+        elif isinstance(result, Rejected):
+            return jsonify({
+                "status": "REJECTED",
+                "message": getattr(result, "message", "Policy could not be verified"),
+                "reasons": list(result.reasons),
+            })
+        elif isinstance(result, NeedsHumanReview):
+            return jsonify({
+                "status": "NEEDS_HUMAN_REVIEW",
+                "message": getattr(result, "message", "Policy requires human review"),
+            })
+
+        return jsonify({"error": "Unknown verification result"}), 500
+
+    @app.route("/api/validate_intent", methods=["POST"])
+    def api_validate_intent():
+        """Simulate intent validation against current active policy guards, live balance, and live gas."""
+        data = request.get_json() or {}
+        trade_usd = float(data.get("trade_usd", 200.0))
+        execute_trade = bool(data.get("execute", False))
+
+        market = exchange_service.get_market_state()
+        gas_gwei = float(data.get("gas_gwei", market["gas_gwei"]))
+        eth_price = market["eth_price_usd"]
+
+        vp = POLICY_ENGINE_STATE["active_verified_result"]
+        if not vp:
+            return jsonify({"allowed": False, "blocked_by": ["No active verified policy deployed!"]})
+
+        blocked_by: list[str] = []
+        policy = vp.policy
+
+        # Check triggers
+        for trig in policy.triggers:
+            if trig.lhs.name == "gas":
+                val_rhs = trig.rhs
+                if hasattr(val_rhs, "coercion_id") and val_rhs.coercion_id == "pct_below_avg24h":
+                    limit = market["avg24h_gwei"] * 0.95
+                    if gas_gwei > limit:
+                        blocked_by.append(f"Trigger condition failed: Gas ({gas_gwei} gwei) is not below 5% of 24h avg ({limit:.2f} gwei)")
+                elif hasattr(val_rhs, "value"):
+                    limit = float(val_rhs.value)
+                    if gas_gwei > limit:
+                        blocked_by.append(f"Trigger condition failed: Gas ({gas_gwei} gwei) exceeds maximum allowed ({limit} gwei)")
+
+        # Check invariants against real user database balance
+        user_state = user_db.get_state()
+        curr_usdc = user_state.balances.USDC
+        balance_after = curr_usdc - trade_usd
+
+        for inv in policy.invariants:
+            if hasattr(inv.lhs, "op") and inv.lhs.op == "sub":
+                floor_usd = float(inv.rhs.value)
+                if balance_after < floor_usd:
+                    blocked_by.append(
+                        f"Invariant violated: Balance after trade (${balance_after:.2f}) falls below required floor (${floor_usd:.2f})"
+                    )
+
+            if hasattr(inv.lhs, "name") and inv.lhs.name == "trade":
+                max_trade = float(inv.rhs.value)
+                if trade_usd > max_trade:
+                    blocked_by.append(
+                        f"Invariant violated: Proposed trade (${trade_usd:.2f}) exceeds per-transaction cap (${max_trade:.2f})"
+                    )
+
+        allowed = len(blocked_by) == 0
+
+        # If executed, apply state change and record transaction with AGENT actor
+        if execute_trade:
+            eth_purchased = round(trade_usd / eth_price, 5) if eth_price > 0 else 0.0
+            if allowed:
+                # Deduct USDC, add ETH
+                new_usdc = balance_after
+                new_eth = user_state.balances.ETH + eth_purchased
+                user_db.update_balances(eth=new_eth, usdc=new_usdc)
+                tx = user_db.add_transaction(
+                    actor="AGENT",
+                    action="SWAP",
+                    details=f"Autonomous Guarded Swap: Sold ${trade_usd:.2f} USDC for +{eth_purchased:.5f} ETH @ ${eth_price:,.2f}",
+                    amount=eth_purchased,
+                    token="ETH",
+                    status="CONFIRMED",
+                    price_usd=eth_price,
+                    reason=f"Passed all guards (Gas {gas_gwei} gwei <= policy limit, balance floor preserved)",
+                )
+            else:
+                # Record blocked transaction attempt
+                tx = user_db.add_transaction(
+                    actor="AGENT",
+                    action="SWAP",
+                    details=f"Blocked Swap Attempt: Attempted to trade ${trade_usd:.2f} USDC for ETH",
+                    amount=0.0,
+                    token="ETH",
+                    status="BLOCKED_BY_GUARD",
+                    price_usd=eth_price,
+                    reason="; ".join(blocked_by),
+                )
+
+        res = {
+            "allowed": allowed,
+            "blocked_by": blocked_by,
+            "trade_usd": trade_usd,
+            "gas_gwei": gas_gwei,
+            "balance_after_usd": balance_after,
+            "active_policy_hash": vp.hash,
+            "executed": execute_trade,
+            "wallet": user_db.get_state().to_dict(),
+        }
+        POLICY_ENGINE_STATE["last_trade_check"] = res
+        return jsonify(res)
+
+    return app
+
+
+def run_server(host: str = "127.0.0.1", port: int = 5000, debug: bool = False) -> None:
+    app = create_app()
+    app.run(host=host, port=port, debug=debug)

@@ -1,0 +1,47 @@
+digraph UserPackage {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10];
+    edge [fontname="Helvetica", fontsize=9];
+
+    subgraph cluster_models {
+        label="Data Models (user/models.py)";
+        style=dashed;
+        color="#2563eb";
+        fillcolor="#f8fafc";
+
+        UserState [label="UserState\n- wallet_address\n- network (Base Sepolia)\n- balances: WalletBalances\n- transactions: List[TransactionRecord]", fillcolor="#eff6ff", color="#3b82f6"];
+        WalletBalances [label="WalletBalances\n- ETH: float\n- USDC: float\n- WETH: float", fillcolor="#eff6ff", color="#3b82f6"];
+        TransactionRecord [label="TransactionRecord\n- id, timestamp\n- actor: USER | AGENT\n- action: DEPOSIT | SWAP | ...\n- status: CONFIRMED | BLOCKED\n- tx_hash: Base Sepolia hash", fillcolor="#eff6ff", color="#3b82f6"];
+
+        UserState -> WalletBalances;
+        UserState -> TransactionRecord;
+    }
+
+    subgraph cluster_db {
+        label="Database Operations (user/db.py)";
+        style=dashed;
+        color="#16a34a";
+        fillcolor="#f8fafc";
+
+        UserDatabase [label="UserDatabase (Singleton)\n- Thread Lock\n- Default Seeding (1.5 ETH, $1500 USDC)\n- Auto-Persistence", fillcolor="#f0fdf4", color="#22c55e"];
+        JSONFile [label="JSON Persistence\nuser/data/wallet_db.json", shape=cylinder, fillcolor="#fef9c3", color="#eab308"];
+
+        UserDatabase -> JSONFile [label="read / write lock"];
+    }
+
+    subgraph cluster_consumers {
+        label="Consumers";
+        style=dashed;
+        color="#7e22ce";
+        fillcolor="#f8fafc";
+
+        FlaskServer [label="Flask Web API\n(/api/user/wallet, /api/user/reset)", fillcolor="#faf5ff", color="#a855f7"];
+        GuardEngine [label="Guard Gate\n(Verifies Balances against Min Floors)", fillcolor="#faf5ff", color="#a855f7"];
+        AgentReasoning [label="Agent Reasoning\n(Proposes Autonomous Trades)", fillcolor="#faf5ff", color="#a855f7"];
+    }
+
+    FlaskServer -> UserDatabase [label="edit balances / reset"];
+    GuardEngine -> UserDatabase [label="checks balance invariants"];
+    AgentReasoning -> UserDatabase [label="records AGENT txs"];
+    UserDatabase -> UserState;
+}

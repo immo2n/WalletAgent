@@ -1,0 +1,46 @@
+digraph ExchangePackage {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10];
+    edge [fontname="Helvetica", fontsize=9];
+
+    subgraph cluster_external {
+        label="External Market Providers";
+        style=dashed;
+        color="#2563eb";
+        fillcolor="#f8fafc";
+
+        CoinbaseWS [label="Coinbase Exchange WS\nwss://ws-feed.exchange.coinbase.com\n(ETH-USD Ticker)", fillcolor="#eff6ff", color="#3b82f6", shape=ellipse];
+        GasOracle [label="Base Sepolia Gas Oracle\n(18 - 22 gwei 24h baseline)", fillcolor="#eff6ff", color="#3b82f6", shape=ellipse];
+    }
+
+    subgraph cluster_exchange {
+        label="Exchange Package (exchange/)";
+        style=dashed;
+        color="#16a34a";
+        fillcolor="#f8fafc";
+
+        WSClient [label="CoinbaseWebSocketClient\n(exchange/client.py)\n- Background Thread\n- Auto-Reconnect\n- Tick Buffer (120 pts)", fillcolor="#f0fdf4", color="#22c55e"];
+        Emitter [label="MarketScenarioEmitter\n(exchange/emitter.py)\n- REAL_MARKET\n- GAS_DIP (< 20 gwei)\n- ETH_DIP (-3.5%)\n- HIGH_GAS (> 35 gwei)", fillcolor="#fef9c3", color="#eab308"];
+        Service [label="ExchangeService (Singleton)\n(exchange/service.py)\n- Unified MarketState\n- Real-Time Tick Dispatcher", fillcolor="#dcfce7", color="#16a34a"];
+
+        WSClient -> Service [label="raw ticks"];
+        Emitter -> Service [label="scenario modifiers"];
+    }
+
+    subgraph cluster_consumers {
+        label="System Consumers";
+        style=dashed;
+        color="#7e22ce";
+        fillcolor="#f8fafc";
+
+        FlaskServer [label="Flask Server\n(/api/market/live, /api/market/stream)", fillcolor="#faf5ff", color="#a855f7"];
+        ChartUI [label="Real-Time Chart.js\n(Live Web Ticker)", fillcolor="#faf5ff", color="#a855f7"];
+        PolicyEngine [label="Policy Guard Engine\n(Evaluates Triggers & Floors)", fillcolor="#faf5ff", color="#a855f7"];
+    }
+
+    CoinbaseWS -> WSClient [label="sub-second ticks"];
+    GasOracle -> Emitter [label="gas baseline"];
+    Service -> FlaskServer [label="snapshot & SSE stream"];
+    FlaskServer -> ChartUI [label="render ticks"];
+    Service -> PolicyEngine [label="trusted state (gas, price)"];
+}

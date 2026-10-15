@@ -1,0 +1,113 @@
+[
+  {
+    "regime_id": "REGIME-001",
+    "name": "Post-Dip Mean Reversion (Low Gas)",
+    "description": "Ethereum gas dropped under 20 gwei following minor retracement. Historically, low-gas periods after minor selloffs yield positive 24-48h rebounds.",
+    "conditions": {
+      "eth_price_min": 2100.0,
+      "eth_price_max": 2500.0,
+      "gas_gwei_max": 20.0,
+      "market_trend": "DIP_REBOUND",
+      "volatility": "LOW"
+    },
+    "historical_metrics": {
+      "win_rate": 0.85,
+      "expected_return_24h_pct": 5.2,
+      "risk_level": "LOW",
+      "risk_score": 2.0,
+      "max_drawdown_pct": 1.5,
+      "sample_size_trades": 142
+    },
+    "strategy_recommendation": "ACCUMULATE",
+    "profitability_assessment": "High probability accumulation zone. Low gas minimizes execution overhead while mean reversion supports positive expected value."
+  },
+  {
+    "regime_id": "REGIME-002",
+    "name": "Weekend Consolidation (Ultra-Low Gas)",
+    "description": "Weekend liquidity drain with ultra-low base fee (<= 15 gwei) and flat volatility. Low slippage, optimal accumulation window.",
+    "conditions": {
+      "eth_price_min": 2000.0,
+      "eth_price_max": 2600.0,
+      "gas_gwei_max": 15.0,
+      "market_trend": "RANGE_BOUND",
+      "volatility": "LOW"
+    },
+    "historical_metrics": {
+      "win_rate": 0.78,
+      "expected_return_24h_pct": 2.8,
+      "risk_level": "LOW",
+      "risk_score": 2.5,
+      "max_drawdown_pct": 2.0,
+      "sample_size_trades": 96
+    },
+    "strategy_recommendation": "ACCUMULATE",
+    "profitability_assessment": "Stable range accumulation. Low transaction fees ensure minimal drag on capital."
+  },
+  {
+    "regime_id": "REGIME-003",
+    "name": "Overextended Bull Run (High Volatility)",
+    "description": "Rapid multi-day price surge with elevated RSI. Historically high probability of sharp mean reversion pullbacks and high slippage.",
+    "conditions": {
+      "eth_price_min": 2800.0,
+      "eth_price_max": 3500.0,
+      "gas_gwei_max": 40.0,
+      "market_trend": "OVEREXTENDED_BULL",
+      "volatility": "HIGH"
+    },
+    "historical_metrics": {
+      "win_rate": 0.42,
+      "expected_return_24h_pct": -3.4,
+      "risk_level": "HIGH",
+      "risk_score": 8.2,
+      "max_drawdown_pct": 7.5,
+      "sample_size_trades": 88
+    },
+    "strategy_recommendation": "CAUTION_WAIT",
+    "profitability_assessment": "Unfavorable risk-reward. Buying into overextended tops historically incurs immediate drawdowns."
+  },
+  {
+    "regime_id": "REGIME-004",
+    "name": "Gas Spike Congestion Panic",
+    "description": "Severe network congestion resulting in gas spikes (> 35 gwei) and erratic liquidations. High slippage and negative expected value.",
+    "conditions": {
+      "eth_price_min": 1800.0,
+      "eth_price_max": 3200.0,
+      "gas_gwei_min": 35.0,
+      "gas_gwei_max": 150.0,
+      "market_trend": "CONGESTION_PANIC",
+      "volatility": "HIGH"
+    },
+    "historical_metrics": {
+      "win_rate": 0.31,
+      "expected_return_24h_pct": -4.8,
+      "risk_level": "HIGH",
+      "risk_score": 9.0,
+      "max_drawdown_pct": 9.2,
+      "sample_size_trades": 64
+    },
+    "strategy_recommendation": "HALT_TRADING",
+    "profitability_assessment": "Hazardous execution environment. Gas overhead consumes potential gains and slippage risks are extreme."
+  },
+  {
+    "regime_id": "REGIME-005",
+    "name": "Liquidation Cascade Capitulation",
+    "description": "Heavy market sell-off with high volume. Knife-catching risk unless strict balance floors and dip stabilization are verified.",
+    "conditions": {
+      "eth_price_min": 1500.0,
+      "eth_price_max": 2300.0,
+      "gas_gwei_max": 30.0,
+      "market_trend": "CAPITULATION",
+      "volatility": "MEDIUM"
+    },
+    "historical_metrics": {
+      "win_rate": 0.54,
+      "expected_return_24h_pct": -1.2,
+      "risk_level": "MEDIUM",
+      "risk_score": 5.8,
+      "max_drawdown_pct": 5.5,
+      "sample_size_trades": 115
+    },
+    "strategy_recommendation": "STRICT_GUARD_ONLY",
+    "profitability_assessment": "Moderate risk. Highly contingent on strict Z3 balance floor invariants to prevent excessive drawdown."
+  }
+]
