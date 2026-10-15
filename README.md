@@ -38,6 +38,30 @@ WalletAgent is a mathematically verified autonomous trading agent and wallet pol
 
 ## 🏗️ Architecture
 
+```mermaid
+flowchart TB
+    Prompt["User Prompt"]
+    ChannelA["Channel A (spaCy)<br/>Deterministic Parser"]
+    ChannelB["Channel B (LLM)<br/>Groq / Gemini / etc."]
+    Verifier["Z3 Equivalence Verifier<br/>Proves AST_A &lt;=&gt; AST_B"]
+    Deployed["Verified Policy Deployed"]
+    Feeds["Market Feeds: WS &amp; RPC<br/>Live Gas &amp; ETH Price Stream"]
+    Gates["Reasoning &amp; Safety Gates<br/>1. RAG Historical Regime Match<br/>2. Dry-Run Risk Assessment<br/>3. Formal Z3 Invariant Gate"]
+    Daemon["Autonomous Daemon Loop"]
+    Execution["Base Sepolia Execution"]
+
+    Prompt --> ChannelA
+    Prompt --> ChannelB
+    ChannelA --> Verifier
+    ChannelB --> Verifier
+    Verifier -->|SAT / Equivalent| Deployed
+    Deployed --> Feeds
+    Deployed --> Gates
+    Feeds --> Daemon
+    Daemon -->|Trigger Satisfied?| Execution
+    Gates --> Execution
+```
+
 WalletAgent is a single Python process with a Flask dashboard, background market-feed
 workers, and one autonomous agent worker. The dashboard and agent share singleton
 services for the exchange, policy state, task registry, reasoning engine, and wallet
