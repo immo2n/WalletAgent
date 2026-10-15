@@ -162,7 +162,11 @@ def create_app() -> Flask:
     # ---------------------------------------------------------
 
     @app.route("/api/user/wallet", methods=["GET", "POST"])
+    @app.route("/api/wallet/balances", methods=["GET"])
     def api_user_wallet():
+        if request.path.endswith("/balances"):
+            return jsonify(user_db.get_state().balances.to_dict())
+
         if request.method == "POST":
             data = request.get_json() or {}
             eth = data.get("ETH")
@@ -186,6 +190,7 @@ def create_app() -> Flask:
         return jsonify(user_db.get_state().to_dict())
 
     @app.route("/api/user/transactions", methods=["GET", "POST"])
+    @app.route("/api/wallet/transactions", methods=["GET", "POST"])
     def api_user_transactions():
         if request.method == "POST":
             data = request.get_json() or {}
