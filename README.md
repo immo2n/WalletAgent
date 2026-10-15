@@ -38,33 +38,28 @@ WalletAgent is a mathematically verified autonomous trading agent and wallet pol
 
 ## 🏗️ Architecture
 
-```
-                                  User Prompt
-                                       │
-                    ┌──────────────────┴──────────────────┐
-                    ▼                                     ▼
-        ┌───────────────────────┐             ┌───────────────────────┐
-        │   Channel A (spaCy)   │             │   Channel B (LLM)     │
-        │ Deterministic Parser  │             │  Groq / Gemini / etc. │
-        └───────────┬───────────┘             └───────────┬───────────┘
-                    │                                     │
-                    └──────────────────┬──────────────────┘
-                                       ▼
-                       ┌───────────────────────────────┐
-                       │   Z3 Equivalence Verifier     │
-                       │  (Proves AST_A <=> AST_B)     │
-                       └───────────────┬───────────────┘
-                                       │ SAT / Equivalent
-                                       ▼
-                         Verified Policy Deployed
-                                       │
-   ┌───────────────────────────────────┴───────────────────────────────────┐
-   ▼                                                                       ▼
-[Market Feeds: WS & RPC]                                     [Reasoning & Safety Gates]
-Live Gas & ETH Price Stream                                  1. RAG Historical Regime Match
-         │                                                   2. Dry-Run Risk Assessment
-         ▼                                                   3. Formal Z3 Invariant Gate
-[Autonomous Daemon Loop] ────── Trigger Satisfied? ────────> 4. Base Sepolia Execution
+```mermaid
+flowchart TB
+    Prompt["User Prompt"]
+    ChannelA["Channel A (spaCy)<br/>Deterministic Parser"]
+    ChannelB["Channel B (LLM)<br/>Groq / Gemini / etc."]
+    Verifier["Z3 Equivalence Verifier<br/>Proves AST_A &lt;=&gt; AST_B"]
+    Deployed["Verified Policy Deployed"]
+    Feeds["Market Feeds: WS &amp; RPC<br/>Live Gas &amp; ETH Price Stream"]
+    Gates["Reasoning &amp; Safety Gates<br/>1. RAG Historical Regime Match<br/>2. Dry-Run Risk Assessment<br/>3. Formal Z3 Invariant Gate"]
+    Daemon["Autonomous Daemon Loop"]
+    Execution["Base Sepolia Execution"]
+
+    Prompt --> ChannelA
+    Prompt --> ChannelB
+    ChannelA --> Verifier
+    ChannelB --> Verifier
+    Verifier -->|SAT / Equivalent| Deployed
+    Deployed --> Feeds
+    Deployed --> Gates
+    Feeds --> Daemon
+    Daemon -->|Trigger Satisfied?| Execution
+    Gates --> Execution
 ```
 
 WalletAgent is a single Python process with a Flask dashboard, background market-feed
