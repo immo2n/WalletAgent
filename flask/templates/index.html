@@ -2,146 +2,361 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Autonomous Wallet Agent — Live Market & Verified Policy Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>WalletAgent — Trust Wallet Verified Autonomous Agent</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
   <style>
     :root {
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --card-border: #e2e8f0;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --accent-blue: #2563eb;
-      --accent-green: #16a34a;
-      --accent-amber: #b45309;
-      --accent-purple: #7e22ce;
-      --accent-red: #dc2626;
+      /* Trust Wallet Clean White Mode Visual Identity */
+      --tw-bg: #f8fafc;
+      --tw-surface: #ffffff;
+      --tw-card: #ffffff;
+      --tw-card-hover: #f1f5f9;
+      --tw-border: #e2e8f0;
+      --tw-border-subtle: #f1f5f9;
+      --tw-border-glow: rgba(0, 82, 254, 0.2);
+
+      /* Trust Wallet Official Colors */
+      --tw-blue: #0052FE;
+      --tw-blue-dark: #0045d8;
+      --tw-blue-light: #eff6ff;
+      --tw-blue-glow: rgba(0, 82, 254, 0.12);
+      
+      --tw-green: #10b981;
+      --tw-green-bg: #ecfdf5;
+      --tw-green-border: #a7f3d0;
+      --tw-green-text: #047857;
+
+      --tw-red: #ef4444;
+      --tw-red-bg: #fef2f2;
+      --tw-red-border: #fecaca;
+      --tw-red-text: #b91c1c;
+
+      --tw-amber: #f59e0b;
+      --tw-amber-bg: #fffbeb;
+      --tw-amber-border: #fde68a;
+      --tw-amber-text: #b45309;
+
+      --tw-purple: #7c3aed;
+      --tw-purple-bg: #f5f3ff;
+      --tw-purple-border: #ddd6fe;
+      --tw-purple-text: #6d28d9;
+
+      /* Typography */
+      --tw-text: #0f172a;
+      --tw-text-muted: #64748b;
+      --tw-text-dim: #94a3b8;
+      --tw-radius: 16px;
+      --tw-radius-sm: 10px;
+      --tw-radius-pill: 9999px;
+      --tw-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+      --tw-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
     }
+
     * { box-sizing: border-box; }
+
     body {
-      background-color: var(--bg);
-      color: var(--text-main);
+      background-color: var(--tw-bg);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 82, 254, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 90% 20%, rgba(16, 185, 129, 0.03) 0%, transparent 40%);
+      background-attachment: fixed;
+      color: var(--tw-text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      padding-bottom: 60px;
+      padding-bottom: 90px; /* Space for mobile bottom bar */
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
-    .white-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+    /* Scrollbar cleanup (no ugly browser lines cutting through buttons) */
+    .scenario-scroll-wrap,
+    .prompt-scroll-wrap,
+    .clean-scroll {
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+      padding-bottom: 2px;
     }
+    .scenario-scroll-wrap::-webkit-scrollbar,
+    .prompt-scroll-wrap::-webkit-scrollbar,
+    .clean-scroll::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    /* White Cards */
+    .white-card, .tw-card {
+      background: var(--tw-card);
+      border: 1px solid var(--tw-border);
+      border-radius: var(--tw-radius);
+      box-shadow: var(--tw-shadow);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .white-card:hover, .tw-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: var(--tw-shadow-md);
+    }
+
+    /* Top Navigation Bar */
     .navbar {
-      background-color: #ffffff;
-      border-bottom: 1px solid #e2e8f0;
+      background: #ffffff !important;
+      border-bottom: 1px solid var(--tw-border);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+      z-index: 1020;
     }
     .navbar-brand {
-      font-weight: 700;
-      letter-spacing: 0.3px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
       color: #0f172a !important;
       display: flex;
       align-items: center;
       gap: 10px;
+      font-size: 1.12rem;
     }
+    .tw-shield-icon {
+      filter: drop-shadow(0 2px 6px rgba(0, 82, 254, 0.35));
+      transition: transform 0.2s ease;
+    }
+
+    /* Status Dot */
     .pulse-dot {
-      width: 9px;
-      height: 9px;
-      background-color: var(--accent-green);
+      width: 8px;
+      height: 8px;
+      background-color: var(--tw-green);
       border-radius: 50%;
-      animation: pulse 2s infinite;
+      animation: pulseTw 2s infinite;
       display: inline-block;
     }
-    @keyframes pulse {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
-      70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+    @keyframes pulseTw {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
-    .badge-soft-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-weight: 600; }
-    .badge-soft-green { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-weight: 600; }
-    .badge-soft-purple { background: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; font-weight: 600; }
-    .badge-soft-amber { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; font-weight: 600; }
-    .badge-soft-red { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-weight: 600; }
 
-    /* Custom Modern Tab Navigation */
+    /* Trust Badges */
+    .badge-soft-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-weight: 600; }
+    .badge-soft-green { background: var(--tw-green-bg); color: var(--tw-green-text); border: 1px solid var(--tw-green-border); font-weight: 600; }
+    .badge-soft-purple { background: var(--tw-purple-bg); color: var(--tw-purple-text); border: 1px solid var(--tw-purple-border); font-weight: 600; }
+    .badge-soft-amber { background: var(--tw-amber-bg); color: var(--tw-amber-text); border: 1px solid var(--tw-amber-border); font-weight: 600; }
+    .badge-soft-red { background: var(--tw-red-bg); color: var(--tw-red-text); border: 1px solid var(--tw-red-border); font-weight: 600; }
+    .badge-soft-secondary { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: 600; }
+
+    /* Trust Wallet Clean White Hero Card */
+    .tw-hero-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: 20px;
+      padding: 22px 20px;
+      box-shadow: 0 4px 16px -2px rgba(0, 82, 254, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Trust Wallet Circular Action Buttons */
+    .tw-action-circle-btn {
+      background: transparent;
+      border: none;
+      color: var(--tw-text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      padding: 2px;
+    }
+    .tw-action-circle-btn:hover .tw-action-icon {
+      background: var(--tw-blue);
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 82, 254, 0.3);
+    }
+    .tw-action-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      color: var(--tw-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.2s ease;
+    }
+    .tw-action-circle-btn span {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    /* Token Badge Avatars */
+    .tw-token-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.05rem;
+      flex-shrink: 0;
+    }
+    .tw-token-eth {
+      background: linear-gradient(135deg, #627eea 0%, #3b5998 100%);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(98, 126, 234, 0.25);
+    }
+    .tw-token-usdc {
+      background: linear-gradient(135deg, #2775ca 0%, #174b88 100%);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(39, 117, 202, 0.25);
+    }
+
+    /* Desktop Navigation Tabs */
     .custom-tabs {
-      background: #ffffff;
-      padding: 6px;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
+      background: #f1f5f9;
+      padding: 5px;
+      border-radius: var(--tw-radius);
+      border: 1px solid var(--tw-border);
       display: inline-flex;
       gap: 6px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     }
     .custom-tabs .nav-link {
       color: #64748b;
       font-weight: 600;
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       padding: 8px 16px;
-      border-radius: 8px;
+      border-radius: 12px;
       border: 1px solid transparent;
       transition: all 0.15s ease;
       display: flex;
       align-items: center;
       gap: 8px;
+      background: transparent;
     }
     .custom-tabs .nav-link:hover {
       color: #0f172a;
-      background: #f8fafc;
+      background: rgba(255, 255, 255, 0.7);
     }
     .custom-tabs .nav-link.active {
-      color: #2563eb;
-      background: #eff6ff;
-      border-color: #bfdbfe;
-      box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
+      color: #ffffff !important;
+      background: var(--tw-blue);
+      border-color: var(--tw-blue);
+      box-shadow: 0 2px 8px rgba(0, 82, 254, 0.28);
     }
 
+    /* Mobile Fixed Bottom Navigation Bar (White Mode) */
+    .tw-mobile-bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: #ffffff;
+      border-top: 1px solid var(--tw-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 1040;
+      padding-bottom: env(safe-area-inset-bottom, 4px);
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+    }
+    .tw-bottom-nav-btn {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 4px 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.15s ease, transform 0.15s ease;
+      position: relative;
+      flex: 1;
+      height: 100%;
+    }
+    .tw-bottom-nav-btn i {
+      font-size: 1.15rem;
+      transition: transform 0.15s ease;
+    }
+    .tw-bottom-nav-btn.active {
+      color: var(--tw-blue);
+    }
+    .tw-bottom-nav-btn.active i {
+      transform: translateY(-2px);
+      color: var(--tw-blue);
+    }
+    .tw-nav-badge {
+      position: absolute;
+      top: 5px;
+      right: calc(50% - 17px);
+      background: var(--tw-red);
+      color: #ffffff;
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 9999px;
+      line-height: 1.2;
+      border: 1px solid #ffffff;
+    }
+
+    /* Hash Box & Token Badges */
+    .hash-box {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: #f8fafc;
+      color: #334155;
+      padding: 6px 12px;
+      border-radius: var(--tw-radius-sm);
+      border: 1px solid #cbd5e1;
+      word-break: break-all;
+    }
     .actor-badge-user {
       background: #eff6ff;
       color: #1d4ed8;
       border: 1px solid #bfdbfe;
       font-weight: 700;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       padding: 3px 8px;
       border-radius: 6px;
     }
     .actor-badge-agent {
-      background: #faf5ff;
-      color: #6b21a8;
-      border: 1px solid #d8b4fe;
+      background: var(--tw-purple-bg);
+      color: var(--tw-purple-text);
+      border: 1px solid var(--tw-purple-border);
       font-weight: 700;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       padding: 3px 8px;
       border-radius: 6px;
     }
 
-    .hash-box {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      font-weight: 600;
-      background: #f1f5f9;
-      color: #0f172a;
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      word-break: break-all;
-    }
+    /* Rule Pills */
     .rule-pill-trigger {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 600;
       padding: 5px 10px;
-      border-radius: 6px;
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      color: #92400e;
+      border-radius: 8px;
+      background: var(--tw-amber-bg);
+      border: 1px solid var(--tw-amber-border);
+      color: var(--tw-amber-text);
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -149,84 +364,94 @@
     }
     .rule-pill-invariant {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 600;
       padding: 5px 10px;
-      border-radius: 6px;
+      border-radius: 8px;
       background: #eff6ff;
       border: 1px solid #bfdbfe;
-      color: #1e40af;
+      color: #1d4ed8;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       margin: 3px;
     }
+
+    /* Prompt Pills */
     .prompt-pill {
       cursor: pointer;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 500;
-      padding: 5px 10px;
-      border-radius: 14px;
-      background: #ffffff;
+      padding: 6px 12px;
+      border-radius: var(--tw-radius-pill);
+      background: #f8fafc;
       border: 1px solid #cbd5e1;
       color: #334155;
       transition: all 0.15s ease;
       white-space: nowrap;
     }
     .prompt-pill:hover {
-      background: #eff6ff;
-      color: #1d4ed8;
-      border-color: #3b82f6;
+      background: var(--tw-blue);
+      color: #ffffff;
+      border-color: var(--tw-blue);
     }
+
+    /* Scenario Buttons */
     .scenario-btn {
-      font-size: 0.8rem;
+      font-size: 0.76rem;
       font-weight: 600;
       padding: 6px 12px;
-      border-radius: 8px;
+      border-radius: var(--tw-radius-pill);
       border: 1px solid #cbd5e1;
       background: #ffffff;
-      color: #334155;
+      color: #475569;
       transition: all 0.15s ease;
+      white-space: nowrap;
     }
     .scenario-btn.active, .scenario-btn:hover {
-      background: #2563eb;
+      background: var(--tw-blue);
       color: #ffffff;
-      border-color: #1d4ed8;
+      border-color: var(--tw-blue);
     }
     .scenario-btn-warning.active, .scenario-btn-warning:hover {
-      background: #d97706;
+      background: var(--tw-amber);
       color: #ffffff;
-      border-color: #b45309;
+      border-color: var(--tw-amber);
     }
     .scenario-btn-danger.active, .scenario-btn-danger:hover {
-      background: #dc2626;
+      background: var(--tw-red);
       color: #ffffff;
-      border-color: #b91c1c;
+      border-color: var(--tw-red);
     }
-    .white-input {
+
+    /* Inputs */
+    .white-input, .tw-input {
       background: #ffffff !important;
       color: #0f172a !important;
       border: 1px solid #cbd5e1 !important;
-      border-radius: 8px;
+      border-radius: 10px;
     }
-    .white-input:focus {
-      border-color: #2563eb !important;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+    .white-input:focus, .tw-input:focus {
+      border-color: var(--tw-blue) !important;
+      box-shadow: 0 0 0 3px rgba(0, 82, 254, 0.15) !important;
+      background: #ffffff !important;
     }
+
+    /* Ambiguity Box */
     .ambiguity-container {
       background: #fffbeb;
-      border: 1px solid #fcd34d;
-      border-radius: 10px;
-      padding: 16px;
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      padding: 14px;
     }
     .ambiguity-btn {
       background: #ffffff;
-      border: 1px solid #f59e0b;
-      color: #451a03;
-      font-size: 0.88rem;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+      font-size: 0.84rem;
       font-weight: 500;
       padding: 10px 14px;
-      border-radius: 8px;
+      border-radius: 10px;
       text-align: left;
       width: 100%;
       transition: all 0.15s ease;
@@ -234,214 +459,417 @@
     }
     .ambiguity-btn:hover {
       background: #fef3c7;
-      color: #000000;
+      color: #78350f;
     }
-    .table-custom { font-size: 0.86rem; }
+
+    /* Tables */
+    .table-custom {
+      font-size: 0.84rem;
+      color: #1e293b;
+      --bs-table-bg: transparent;
+    }
     .table-custom th {
-      color: #64748b;
+      color: #475569;
       font-weight: 600;
       text-transform: uppercase;
       font-size: 0.72rem;
-      border-bottom: 2px solid #e2e8f0;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--tw-border);
       background: #f8fafc;
+      padding: 12px 14px;
     }
     .table-custom td {
       vertical-align: middle;
       border-bottom: 1px solid #f1f5f9;
+      padding: 12px 14px;
+      color: #334155;
     }
 
-    /* Agent Thought Terminal Stream */
+    /* Agent Thought Terminal (Crisp White Console) */
     .thought-terminal {
-      background: #0f172a;
-      color: #f8fafc;
+      background: #f8fafc;
+      color: #0f172a;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      border-radius: 10px;
+      font-size: 0.78rem;
+      border-radius: 12px;
       padding: 14px;
-      height: 280px;
+      height: 300px;
       overflow-y: auto;
-      border: 1px solid #334155;
+      border: 1px solid #cbd5e1;
     }
     .thought-entry {
-      margin-bottom: 6px;
+      margin-bottom: 5px;
       line-height: 1.45;
     }
     .thought-time { color: #64748b; }
-    .thought-type-MONITOR { color: #38bdf8; font-weight: 600; }
-    .thought-type-TRIGGER { color: #f59e0b; font-weight: 600; }
-    .thought-type-RAG { color: #06b6d4; font-weight: 700; }
-    .thought-type-INTENT { color: #818cf8; font-weight: 700; }
-    .thought-type-DRY_RUN { color: #eab308; font-weight: 700; }
-    .thought-type-RISK_ABORT { color: #f87171; font-weight: 700; }
-    .thought-type-GATE { color: #c084fc; font-weight: 700; }
-    .thought-type-GATE_BLOCKED { color: #f87171; font-weight: 700; }
-    .thought-type-GUARD { color: #a855f7; font-weight: 600; }
-    .thought-type-EXECUTE { color: #4ade80; font-weight: 700; }
-    .thought-type-BLOCKED { color: #f87171; font-weight: 700; }
-    .thought-type-TASK { color: #fbbf24; font-weight: 600; }
-    .thought-type-INFO { color: #94a3b8; }
+    .thought-type-MONITOR { color: #0284c7; font-weight: 600; }
+    .thought-type-TRIGGER { color: #d97706; font-weight: 600; }
+    .thought-type-RAG { color: #0891b2; font-weight: 700; }
+    .thought-type-INTENT { color: #4f46e5; font-weight: 700; }
+    .thought-type-DRY_RUN { color: #b45309; font-weight: 700; }
+    .thought-type-RISK_ABORT { color: #dc2626; font-weight: 700; }
+    .thought-type-GATE { color: #7c3aed; font-weight: 700; }
+    .thought-type-GATE_BLOCKED { color: #dc2626; font-weight: 700; }
+    .thought-type-GUARD { color: #6d28d9; font-weight: 600; }
+    .thought-type-EXECUTE { color: #059669; font-weight: 700; }
+    .thought-type-BLOCKED { color: #dc2626; font-weight: 700; }
+    .thought-type-TASK { color: #d97706; font-weight: 600; }
+    .thought-type-INFO { color: #64748b; }
+
+    /* Modals (Clean White Mode) */
+    .modal-content {
+      background: #ffffff !important;
+      color: #0f172a;
+      border: 1px solid var(--tw-border) !important;
+      border-radius: 20px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
+    }
+    .modal-header {
+      border-bottom: 1px solid #f1f5f9 !important;
+    }
+    .modal-footer {
+      border-top: 1px solid #f1f5f9 !important;
+      background: #f8fafc !important;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: var(--tw-blue) !important;
+      border: 1px solid var(--tw-blue) !important;
+      box-shadow: 0 2px 8px rgba(0, 82, 254, 0.25);
+      border-radius: var(--tw-radius-pill);
+      color: #ffffff !important;
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background: var(--tw-blue-dark) !important;
+    }
+    .btn-success {
+      background: var(--tw-green) !important;
+      border: 1px solid var(--tw-green) !important;
+      border-radius: var(--tw-radius-pill);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+      font-weight: 600;
+    }
+    .btn-outline-primary {
+      border-color: #93c5fd !important;
+      color: var(--tw-blue) !important;
+      background: #eff6ff;
+      border-radius: var(--tw-radius-pill);
+    }
+    .btn-outline-primary:hover {
+      background: var(--tw-blue) !important;
+      color: #ffffff !important;
+    }
+    .btn-outline-danger {
+      border-color: #fca5a5 !important;
+      color: var(--tw-red) !important;
+      background: #fef2f2;
+      border-radius: var(--tw-radius-pill);
+    }
+    .btn-outline-danger:hover {
+      background: var(--tw-red) !important;
+      color: #ffffff !important;
+    }
+
+    /* Alerts */
+    .alert-info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+    }
+    .alert-success {
+      background: var(--tw-green-bg);
+      border: 1px solid var(--tw-green-border);
+      color: var(--tw-green-text);
+    }
+    .alert-warning {
+      background: var(--tw-amber-bg);
+      border: 1px solid var(--tw-amber-border);
+      color: var(--tw-amber-text);
+    }
+    .alert-danger {
+      background: var(--tw-red-bg);
+      border: 1px solid var(--tw-red-border);
+      color: var(--tw-red-text);
+    }
+
+    .text-dark { color: #0f172a !important; }
+    .text-muted { color: var(--tw-text-muted) !important; }
+    .border { border-color: var(--tw-border) !important; }
+
+    /* Custom Mobile Responsiveness & Bottom Sheet */
+    @media (max-width: 768px) {
+      .navbar {
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+      }
+      .tw-hero-card {
+        padding: 16px 14px;
+      }
+      .white-card, .tw-card {
+        padding: 14px !important;
+        border-radius: 14px;
+      }
+      .thought-terminal {
+        height: 220px;
+        font-size: 0.74rem;
+      }
+      /* Modal Mobile Bottom-Sheet */
+      .modal-dialog {
+        margin: 0;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-width: 100% !important;
+      }
+      .modal-content {
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        border-top-left-radius: 20px !important;
+        border-top-right-radius: 20px !important;
+        max-height: 85vh;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation -->
-  <nav class="navbar navbar-expand-lg py-3 mb-3 sticky-top">
-    <div class="container-fluid px-4">
-      <a class="navbar-brand" href="#">
-        <i class="fa-solid fa-shield-halved text-primary"></i>
-        <span>WALLET AGENT</span>
-        <span class="badge badge-soft-blue ms-2 fs-6">Verified Policy Engine</span>
+  <!-- Top Navigation (Trust Wallet Brand Bar) -->
+  <nav class="navbar navbar-expand-lg py-2 mb-3 sticky-top">
+    <div class="container-fluid px-3 px-md-4">
+      <a class="navbar-brand m-0" href="#">
+        <!-- Trust Wallet Beveled Shield SVG -->
+        <svg width="26" height="30" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="tw-shield-icon me-1">
+          <defs>
+            <linearGradient id="twGrad" x1="0" y1="0" x2="32" y2="36" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#0500FF"/>
+              <stop offset="100%" stop-color="#00D2FF"/>
+            </linearGradient>
+          </defs>
+          <path d="M16 0L0 5.6V16.8C0 26.4 6.8 33.6 16 36C25.2 33.6 32 26.4 32 16.8V5.6L16 0Z" fill="url(#twGrad)"/>
+          <path d="M16 4.2L28 8.4V16.8C28 24.5 22.8 30.6 16 32.8C9.2 30.6 4 24.5 4 16.8V8.4L16 4.2Z" fill="#ffffff"/>
+          <path d="M16 7L24.5 10V16.8C24.5 22.8 20.8 27.6 16 29.5C11.2 27.6 7.5 22.8 7.5 16.8V10L16 7Z" fill="url(#twGrad)"/>
+        </svg>
+        <span class="fw-bold tracking-tight">WALLET AGENT</span>
+        <span class="badge badge-soft-blue ms-1 d-none d-sm-inline" style="font-size: 0.68rem; letter-spacing: 0.4px;">Z3 VERIFIED</span>
       </a>
-      <div class="d-flex align-items-center gap-3">
-        <!-- Live Agent Loop Status Badge -->
-        <span class="d-flex align-items-center gap-2 small fw-medium" id="agentStateHeader">
-          <span class="pulse-dot" id="agentStateDot"></span> <span class="text-muted">Agent:</span> <b class="text-success" id="agentStateText">{{ agent.state }}</b>
+
+      <!-- Right Header Actions -->
+      <div class="d-flex align-items-center gap-2 gap-md-3">
+        <!-- Live Agent Daemon Status Dot -->
+        <div class="d-none d-md-flex align-items-center gap-2 small" id="agentStateHeader">
+          <span class="pulse-dot" id="agentStateDot"></span>
+          <span class="text-muted" style="font-size: 0.78rem;">Agent:</span>
+          <b class="text-success" id="agentStateText" style="font-size: 0.8rem;">{{ agent.state }}</b>
+        </div>
+
+        <!-- Coinbase WS Status -->
+        <div class="d-none d-lg-flex align-items-center gap-2 small">
+          <span class="text-muted" style="font-size: 0.78rem;">WS:</span>
+          <b class="text-primary" id="wsLabel" style="font-size: 0.8rem;">Live</b>
+        </div>
+
+        <!-- Network Pill -->
+        <span class="badge badge-soft-purple py-1 px-2 py-md-2 px-md-3 small d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill);">
+          <i class="fa-brands fa-ethereum text-purple"></i>
+          <span class="d-none d-sm-inline">Base Sepolia</span>
+          <span class="font-monospace text-muted" style="font-size: 0.7rem;">(84532)</span>
         </span>
-        <span class="d-flex align-items-center gap-2 small fw-medium">
-          <span class="text-muted">Coinbase WS:</span> <b class="text-primary" id="wsLabel">Live</b>
-        </span>
-        <span class="badge badge-soft-purple small py-2 px-3">
-          <i class="fa-brands fa-ethereum me-1"></i> Base Sepolia (84532)
-        </span>
-        <div class="hash-box py-1 px-3 small">
-          <i class="fa-solid fa-wallet text-primary me-1"></i>
+
+        <!-- Wallet Address Box -->
+        <div class="hash-box py-1 px-2 px-md-3 small d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill); cursor: pointer;" onclick="copyWalletAddress()" title="Click to copy address">
+          <i class="fa-solid fa-wallet text-primary"></i>
           <span id="walletAddress">{{ user.wallet_address[:6] }}...{{ user.wallet_address[-4:] }}</span>
         </div>
+
+        <!-- Universal Reset Button (Mobile & Desktop with clear label) -->
+        <button type="button" class="btn btn-danger btn-sm fw-bold d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill); font-size: 0.76rem; padding: 4px 10px;" onclick="confirmResetSimulation()" title="Reset simulation data">
+          <i class="fa-solid fa-arrow-rotate-left"></i>
+          <span>Reset</span>
+        </button>
       </div>
     </div>
   </nav>
 
-  <div class="container-fluid px-4">
+  <div class="container-fluid px-3 px-md-4">
 
-    <!-- KPI Summary Ribbon (Always Visible at Top) -->
-    <div class="row g-3 mb-4">
-      <!-- Live ETH Price -->
-      <div class="col-md-3">
-        <div class="white-card p-3">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="text-muted small text-uppercase fw-semibold">Live ETH / USD</span>
-            <span class="badge badge-soft-blue" id="priceBadge"><i class="fa-solid fa-bolt me-1"></i>Live WS</span>
-          </div>
-          <div class="d-flex align-items-baseline gap-2">
-            <span class="fs-4 fw-bold text-dark" id="livePriceDisplay">${{ "{:,.2f}".format(market.eth_price_usd) }}</span>
-            <span class="text-muted small">24h Vol: ${{ "{:,.0f}".format(market.volume_24h) }}</span>
-          </div>
-          <div class="small text-muted mt-1 text-truncate" id="scenarioIndicator">
-            <i class="fa-solid fa-circle-info text-primary me-1"></i> {{ market.scenario_description }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Live Gas Feed -->
-      <div class="col-md-3">
-        <div class="white-card p-3">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="text-muted small text-uppercase fw-semibold">Ethereum L1 Gas</span>
-            <span class="badge badge-soft-blue" id="gasSourceBadge"><i class="fa-solid fa-cube me-1"></i>Live L1 RPC</span>
-          </div>
-          <div class="d-flex align-items-baseline gap-2">
-            <span class="fs-4 fw-bold" id="liveGasDisplay" style="color: #b45309;">{{ market.gas_gwei }} <small class="fs-6 text-muted">gwei</small></span>
-            <span class="text-muted small" id="l1BlockDisplay" style="font-size: 0.74rem;">{{ 'Block #' + market.l1_block|string if market.l1_block else 'Live Feed' }}</span>
-          </div>
-          <div class="small text-muted mt-1 text-truncate" id="l1FeeBreakdown">
-            Base: <span id="l1BaseFeeDisplay" class="fw-semibold text-dark">{{ market.l1_base_fee }}</span> gwei | Tip: <span id="l1TipDisplay" class="fw-semibold text-dark">{{ market.l1_priority_fee }}</span> gwei
-          </div>
-        </div>
-      </div>
-
-      <!-- User Portfolio Value -->
-      <div class="col-md-3">
-        <div class="white-card p-3">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="text-muted small text-uppercase fw-semibold">Wallet Net Worth</span>
-            <span class="badge badge-soft-purple">Liquid Demo</span>
-          </div>
-          <div class="d-flex align-items-baseline gap-2">
-            {% set total_usd = (user.balances.ETH * market.eth_price_usd) + user.balances.USDC %}
-            <span class="fs-4 fw-bold text-dark" id="netWorthDisplay">${{ "{:,.2f}".format(total_usd) }}</span>
-            <span class="text-muted small">USD</span>
-          </div>
-          <div class="small text-muted mt-1">
-            <span class="fw-semibold text-dark" id="headerEth">{{ user.balances.ETH }} ETH</span> + <span class="fw-semibold text-dark" id="headerUsdc">${{ "{:,.2f}".format(user.balances.USDC) }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Autonomous Agent Status Card -->
-      <div class="col-md-3">
-        <div class="white-card p-3">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="text-muted small text-uppercase fw-semibold">Agent Daemon</span>
-            <span class="badge badge-soft-green" id="agentStateBadge">{{ agent.state }}</span>
-          </div>
-          {% set cur_task = agent.current_task or agent.active_task %}
-          <div class="d-flex align-items-baseline gap-2">
-            <span class="fs-5 fw-bold text-primary" id="activeTaskTitle">{{ ('Task ' + cur_task.status|capitalize) if cur_task else 'Idle (No Task)' }}</span>
-          </div>
-          <div class="small text-muted mt-1 text-truncate" id="activeTaskSub">
-            {{ cur_task.prompt if cur_task else 'Deploy policy to activate agent' }}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Clean Navigation Tabs -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <!-- ======================================================== -->
+    <!-- DESKTOP NAVIGATION TABS BAR                             -->
+    <!-- ======================================================== -->
+    <div class="custom-tabs-container d-none d-md-flex justify-content-between align-items-center mb-4">
       <ul class="nav custom-tabs" id="mainTab" role="tablist">
         <li class="nav-item" role="presentation">
           <button class="nav-link active" id="tab-market-btn" data-bs-toggle="pill" data-bs-target="#pane-market" type="button" role="tab">
-            <i class="fa-solid fa-chart-line text-primary"></i> Market & Live Chart
+            <i class="fa-solid fa-chart-line text-primary"></i> Market
           </button>
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="tab-policy-btn" data-bs-toggle="pill" data-bs-target="#pane-policy" type="button" role="tab">
-            <i class="fa-solid fa-shield-halved text-success"></i> Agent Policies
+            <i class="fa-solid fa-shield-halved text-success"></i> Policies
           </button>
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="tab-agent-btn" data-bs-toggle="pill" data-bs-target="#pane-agent" type="button" role="tab">
-            <i class="fa-solid fa-robot text-primary"></i> Agent Task & Status
+            <i class="fa-solid fa-robot text-primary"></i> Agent Task
             <span class="badge bg-primary text-white ms-1" id="agentTabTaskBadge">{{ '1' if cur_task else '0' }}</span>
           </button>
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="tab-wallet-btn" data-bs-toggle="pill" data-bs-target="#pane-wallet" type="button" role="tab">
-            <i class="fa-solid fa-wallet text-purple" style="color: #7e22ce;"></i> Wallet Balances
+            <i class="fa-solid fa-wallet text-purple" style="color: #a855f7;"></i> Wallet
           </button>
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="tab-ledger-btn" data-bs-toggle="pill" data-bs-target="#pane-ledger" type="button" role="tab">
-            <i class="fa-solid fa-list-check text-info"></i> Transaction Ledger
+            <i class="fa-solid fa-clock-rotate-left text-info"></i> Activity
             <span class="badge bg-light text-dark border ms-1" id="tabTxBadge">{{ user.transactions|length }}</span>
           </button>
         </li>
       </ul>
 
       <!-- Quick Action: Simulation Reset -->
-      <button class="btn btn-outline-danger btn-sm fw-semibold" onclick="confirmResetSimulation()">
+      <button class="btn btn-outline-danger btn-sm fw-semibold" style="border-radius: var(--tw-radius-pill);" onclick="confirmResetSimulation()">
         <i class="fa-solid fa-arrow-rotate-left me-1"></i> Reset Simulation
       </button>
     </div>
 
-    <!-- Tab Content Panes -->
+    <!-- ======================================================== -->
+    <!-- TAB CONTENT PANES                                        -->
+    <!-- ======================================================== -->
     <div class="tab-content" id="mainTabContent">
 
       <!-- ======================================================== -->
       <!-- TAB 1: Live Market & Trading Terminal                   -->
       <!-- ======================================================== -->
       <div class="tab-pane fade show active" id="pane-market" role="tabpanel">
-        <div class="row g-4">
+
+        <!-- TRUST WALLET PORTFOLIO HERO BANNER (Exclusive to Market Tab) -->
+        <div class="tw-hero-card mb-3 mb-md-4">
+          <div class="row align-items-center">
+            <!-- Balance Column -->
+            <div class="col-md-7 text-center text-md-start mb-3 mb-md-0">
+              <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 0.6px; font-size: 0.72rem;">Trust Net Worth</div>
+              {% set total_usd = (user.balances.ETH * market.eth_price_usd) + user.balances.USDC %}
+              <div class="d-flex align-items-baseline justify-content-center justify-content-md-start gap-2">
+                <span class="display-6 fw-bolder text-dark" id="netWorthDisplay">${{ "{:,.2f}".format(total_usd) }}</span>
+                <span class="text-muted fw-semibold">USD</span>
+              </div>
+              
+              <!-- Token Asset Allocation Pills -->
+              <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-3 mt-2">
+                <div class="d-flex align-items-center gap-2 small">
+                  <span class="tw-token-avatar tw-token-eth" style="width: 22px; height: 22px; font-size: 0.7rem;">Ξ</span>
+                  <span class="fw-semibold text-dark" id="headerEth">{{ user.balances.ETH }} ETH</span>
+                </div>
+                <div class="text-muted small">•</div>
+                <div class="d-flex align-items-center gap-2 small">
+                  <span class="tw-token-avatar tw-token-usdc" style="width: 22px; height: 22px; font-size: 0.7rem;">$</span>
+                  <span class="fw-semibold text-dark" id="headerUsdc">${{ "{:,.2f}".format(user.balances.USDC) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trust Wallet Action Buttons Column -->
+            <div class="col-md-5">
+              <div class="tw-hero-actions d-flex justify-content-center justify-content-md-end gap-3 gap-md-4">
+                <button type="button" class="tw-action-circle-btn" onclick="openTabPane('pane-market', 'tab-market-btn'); document.getElementById('testTradeInput')?.focus();">
+                  <div class="tw-action-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+                  <span>Swap</span>
+                </button>
+                <button type="button" class="tw-action-circle-btn" onclick="openTabPane('pane-policy', 'tab-policy-btn');">
+                  <div class="tw-action-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                  <span>Policy</span>
+                </button>
+                <button type="button" class="tw-action-circle-btn" onclick="openTabPane('pane-agent', 'tab-agent-btn');">
+                  <div class="tw-action-icon"><i class="fa-solid fa-robot"></i></div>
+                  <span>Agent</span>
+                </button>
+                <button type="button" class="tw-action-circle-btn" onclick="openEditBalanceModal()">
+                  <div class="tw-action-icon"><i class="fa-solid fa-sliders"></i></div>
+                  <span>Funds</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI SUMMARY METRICS ROW (Clean Minimalist 2-line Stat Cards) -->
+        <div class="row g-2 g-md-3 mb-3 mb-md-4">
+          <!-- Live ETH Price -->
+          <div class="col-6 col-lg-3">
+            <div class="white-card p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.68rem;">ETH / USD</span>
+                <span class="badge badge-soft-blue" id="priceBadge"><i class="fa-solid fa-bolt me-1"></i>WS</span>
+              </div>
+              <div class="fs-5 fw-bold text-dark font-monospace text-truncate" id="livePriceDisplay">${{ "{:,.2f}".format(market.eth_price_usd) }}</div>
+              <div class="small text-muted text-truncate" style="font-size: 0.72rem;" id="scenarioIndicator">
+                Coinbase WebSocket
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Gas Feed -->
+          <div class="col-6 col-lg-3">
+            <div class="white-card p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.68rem;">L1 Gas Price</span>
+                <span class="badge badge-soft-amber" id="gasSourceBadge"><i class="fa-solid fa-cube me-1"></i>RPC</span>
+              </div>
+              <div class="fs-5 fw-bold font-monospace text-truncate" id="liveGasDisplay" style="color: #b45309;">{{ market.gas_gwei }} <small class="fs-6 text-muted">gwei</small></div>
+              <div class="small text-muted text-truncate" style="font-size: 0.72rem;" id="l1FeeBreakdown">
+                Base: <span id="l1BaseFeeDisplay" class="fw-semibold text-dark">{{ market.l1_base_fee }}</span> | Tip: <span id="l1TipDisplay" class="fw-semibold text-dark">{{ market.l1_priority_fee }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Agent Daemon Status -->
+          <div class="col-6 col-lg-3">
+            <div class="white-card p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.68rem;">Agent Daemon</span>
+                <span class="badge badge-soft-green" id="agentStateBadge">{{ agent.state }}</span>
+              </div>
+              {% set cur_task = agent.current_task or agent.active_task %}
+              <div class="fs-6 fw-bold text-primary text-truncate" id="activeTaskTitle">{{ ('Task ' + cur_task.status|capitalize) if cur_task else 'Idle' }}</div>
+              <div class="small text-muted text-truncate" style="font-size: 0.72rem;" id="activeTaskSub">
+                {{ ('Task #' + cur_task.id[-6:]) if cur_task else 'No Task Active' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- L1 Block Number -->
+          <div class="col-6 col-lg-3">
+            <div class="white-card p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.68rem;">L1 Block</span>
+                <span class="badge badge-soft-purple">Synced</span>
+              </div>
+              <div class="fs-6 fw-bold font-monospace text-dark text-truncate" id="l1BlockDisplay">
+                {{ '#' + market.l1_block|string if market.l1_block else 'Live' }}
+              </div>
+              <div class="small text-muted text-truncate" style="font-size: 0.72rem;">
+                Base Sepolia (84532)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-Time Chart & Guard Gate Tester Row -->
+        <div class="row g-3 g-md-4">
           <!-- Left: Real-Time Chart -->
           <div class="col-lg-8">
-            <div class="white-card p-4">
+            <div class="white-card p-3 p-md-4">
               <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-                <div>
-                  <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-chart-area text-primary me-2"></i>ETH / USD Live Market Stream</h5>
+                <div class="mb-2 mb-md-0">
+                  <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-chart-area text-primary me-2"></i>ETH / USD Live Stream</h5>
                   <span class="text-muted small">Tick-by-tick real-time feed from Coinbase Exchange WebSocket</span>
                 </div>
 
-                <!-- Scenario Buttons -->
-                <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+                <!-- Scenario Buttons (Clean Horizontal Scroll without default browser line) -->
+                <div class="scenario-scroll-wrap d-flex gap-2">
                   <button class="scenario-btn active" id="btnReal" onclick="setScenario('REAL_MARKET')"><i class="fa-solid fa-broadcast-tower me-1"></i>Live Market</button>
                   <button class="scenario-btn scenario-btn-warning" id="btnGasDip" onclick="setScenario('GAS_DIP')"><i class="fa-solid fa-arrow-down me-1"></i>Gas Dip (&lt; 20 gwei)</button>
                   <button class="scenario-btn" id="btnEthDip" onclick="setScenario('ETH_DIP')"><i class="fa-solid fa-arrow-trend-down me-1"></i>ETH -3.5% Dip</button>
@@ -449,8 +877,8 @@
                 </div>
               </div>
 
-              <!-- Chart Canvas -->
-              <div style="position: relative; height: 350px; width: 100%;">
+              <!-- Chart Canvas Container -->
+              <div style="position: relative; height: 320px; width: 100%;">
                 <canvas id="marketChart"></canvas>
               </div>
             </div>
@@ -458,9 +886,9 @@
 
           <!-- Right: Autonomous Guard Gate & Swap Execution -->
           <div class="col-lg-4">
-            <div class="white-card p-4 h-100 d-flex flex-column justify-content-between">
+            <div class="white-card p-3 p-md-4 h-100 d-flex flex-column justify-content-between">
               <div>
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
                   <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Guard Gate Tester</h5>
                   <span class="badge badge-soft-blue">Manual Test</span>
                 </div>
@@ -470,7 +898,7 @@
                 </p>
 
                 <!-- Current Balance Preview -->
-                <div class="p-3 mb-3 rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                <div class="p-3 mb-3 rounded-3" style="background: #f8fafc; border: 1px solid var(--tw-border);">
                   <div class="d-flex justify-content-between text-muted small fw-semibold">
                     <span>Available USDC Balance:</span>
                     <span class="text-dark fw-bold" id="marketGateUsdc">${{ "{:,.2f}".format(user.balances.USDC) }}</span>
@@ -503,7 +931,7 @@
               </div>
 
               <!-- Quick Hint -->
-              <div class="mt-3 pt-3 border-top border-secondary border-opacity-10 text-muted small">
+              <div class="mt-3 pt-3 border-top border-light-subtle text-muted small">
                 <i class="fa-solid fa-robot text-primary me-1"></i> <b>Autonomous Loop:</b> The agent also executes automatically in the background when triggers match! Check the <b>Agent Task</b> tab.
               </div>
             </div>
@@ -512,26 +940,26 @@
       </div>
 
       <!-- ======================================================== -->
-      <!-- TAB 2: Agent Policies (Prompt & Formal Z3 Discovery)     -->
+      <!-- TAB 2: Agent Policies (Clean Dedicated Policy Studio)    -->
       <!-- ======================================================== -->
       <div class="tab-pane fade" id="pane-policy" role="tabpanel">
-        <div class="row g-4">
+        <div class="row g-3 g-md-4">
           <!-- Left: User Prompt & Discovery Console -->
           <div class="col-lg-6">
-            <div class="white-card p-4 h-100">
+            <div class="white-card p-3 p-md-4 h-100">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>Policy Specification</h5>
                 <span class="badge badge-soft-blue">Dual Reader ≡ Z3</span>
               </div>
 
               <p class="text-muted small mb-3">
-                Enter your instructions for the agent. The engine verifies logical equivalence between deterministic rules and an untrusted LLM using Z3.
+                Define natural language trading rules. Formally verified by Z3 SMT solver before deployment.
               </p>
 
-              <!-- Preloaded Scenario Pills -->
+              <!-- Preloaded Scenario Pills (Clean Horizontal Scroll) -->
               <div class="mb-3">
                 <div class="text-muted small mb-2 fw-semibold"><i class="fa-solid fa-lightbulb text-warning me-1"></i> Preloaded Acceptance Scenarios:</div>
-                <div class="d-flex flex-wrap gap-2">
+                <div class="prompt-scroll-wrap d-flex gap-2">
                   <span class="prompt-pill" onclick="setPrompt('Buy ETH when gas is under 20 gwei, and never let my balance drop below 500 dollars.')">P6 Flagship (Combined)</span>
                   <span class="prompt-pill" onclick="setPrompt('Buy if gas price is under 5% and do not go under 500 dollars balance.')">P5 Ambiguity Flagship</span>
                   <span class="prompt-pill" onclick="setPrompt('Never let my balance go under 500 dollars.')">P2 Floor Only</span>
@@ -543,11 +971,11 @@
               <form id="verifyForm" onsubmit="event.preventDefault(); verifyPolicy();">
                 <div class="mb-3">
                   <label class="form-label text-muted small fw-semibold">User Natural Language Policy</label>
-                  <textarea id="promptInput" class="form-control white-input font-monospace" rows="3" placeholder="Enter user natural language instruction..."></textarea>
+                  <textarea id="promptInput" class="form-control white-input font-monospace" rows="3" placeholder="e.g. Buy ETH when gas is under 20 gwei, and never let my balance drop below 500 dollars."></textarea>
                 </div>
                 <div class="d-flex justify-content-between align-items-center">
-                  <button type="submit" id="verifyBtn" class="btn btn-primary fw-semibold">
-                    <i class="fa-solid fa-play me-2"></i>Discover & Verify Policy
+                  <button type="submit" id="verifyBtn" class="btn btn-primary fw-semibold px-4 py-2">
+                    <i class="fa-solid fa-play me-2"></i>Discover &amp; Verify Policy
                   </button>
                   <span id="spinner" class="spinner-border spinner-border-sm text-primary d-none" role="status"></span>
                 </div>
@@ -555,11 +983,11 @@
 
               <!-- Ambiguity Resolution Box -->
               <div id="clarifyArea" class="mt-3 ambiguity-container d-none">
-                <div class="d-flex align-items-center gap-2 fw-bold fs-6 mb-2" style="color: #92400e;">
+                <div class="d-flex align-items-center gap-2 fw-bold fs-6 mb-2" style="color: #b45309;">
                   <i class="fa-solid fa-triangle-exclamation"></i>
                   <span>Ambiguity Detected — Clarification Required</span>
                 </div>
-                <p class="small mb-3" id="clarifyQuestion" style="color: #78350f; font-weight: 500;"></p>
+                <p class="small mb-3" id="clarifyQuestion" style="color: #92400e; font-weight: 500;"></p>
                 <div id="clarifyOptions" class="d-flex flex-column gap-2 mb-1"></div>
               </div>
 
@@ -569,7 +997,7 @@
 
           <!-- Right: Active Discovered Policy Set & Deploy Button -->
           <div class="col-lg-6">
-            <div class="white-card p-4 h-100 d-flex flex-column justify-content-between">
+            <div class="white-card p-3 p-md-4 h-100 d-flex flex-column justify-content-between">
               <div>
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-shield-virus text-success me-2"></i>Verified Policy Set</h5>
@@ -577,9 +1005,9 @@
                 </div>
 
                 <!-- Verified Readback Sentence -->
-                <div class="p-3 mb-3 rounded-3" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a;">
-                  <div class="small text-uppercase fw-bold mb-1" style="color: #15803d; font-size: 0.75rem;">Canonical Readback (User Confirmation)</div>
-                  <div id="readbackText" class="fw-semibold fs-6" style="color: #14532d;">
+                <div class="p-3 mb-3 rounded-3" style="background: #ecfdf5; border: 1px solid var(--tw-green-border); border-left: 4px solid var(--tw-green);">
+                  <div class="small text-uppercase fw-bold mb-1" style="color: var(--tw-green-text); font-size: 0.75rem;">Canonical Readback (User Confirmation)</div>
+                  <div id="readbackText" class="fw-semibold fs-6" style="color: #065f46;">
                     {{ active_result.readback if active_result else "Buy only when gas is at most 20 gwei. Keep the balance after each trade at least $500." }}
                   </div>
                 </div>
@@ -587,7 +1015,7 @@
                 <!-- SHA256 Policy Commitment Hash -->
                 <div class="mb-3">
                   <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="text-muted small text-uppercase fw-semibold">SHA-256 Policy Hash:</span>
+                    <span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.7rem;">SHA-256 Policy Hash</span>
                     <button class="btn btn-sm text-muted p-0" onclick="copyHash()"><i class="fa-regular fa-copy me-1"></i>Copy</button>
                   </div>
                   <div id="policyHashDisplay" class="hash-box">
@@ -597,7 +1025,7 @@
 
                 <!-- Active Constraints -->
                 <div class="mb-3">
-                  <span class="text-muted small text-uppercase fw-semibold mb-1 d-block">Active Guard Constraints (Z3 Names):</span>
+                  <span class="text-muted small text-uppercase fw-semibold mb-1 d-block" style="font-size: 0.7rem;">Active Guard Constraints (Z3 Proof)</span>
                   <div id="constraintsContainer" class="d-flex flex-wrap">
                     <span class="rule-pill-trigger"><i class="fa-solid fa-bolt"></i> TRIGGER: gas &lt;= 20</span>
                     <span class="rule-pill-invariant"><i class="fa-solid fa-lock"></i> INVARIANT: balance - trade &gt;= 500</span>
@@ -615,7 +1043,7 @@
                   <div id="ignoredClausesList" class="d-flex flex-column gap-2">
                     {% if active_result and active_result.ignored_clauses %}
                       {% for item in active_result.ignored_clauses %}
-                        <div class="p-2 rounded-2" style="background: #fff1f2; border: 1px solid #fecdd3; border-left: 4px solid #e11d48;">
+                        <div class="p-2 rounded-2" style="background: #fef2f2; border: 1px solid var(--tw-red-border); border-left: 4px solid var(--tw-red);">
                           <div class="d-flex align-items-center justify-content-between mb-1">
                             <span class="fw-bold text-danger small"><i class="fa-solid fa-ban me-1"></i> Ignored Phrase: "<span class="fst-italic">{{ item.clause }}</span>"</span>
                             <span class="badge bg-danger text-white small" style="font-size: 0.65rem;">{{ item.category }}</span>
@@ -631,13 +1059,10 @@
               </div>
 
               <!-- Deploy to Always-Running Agent Button -->
-              <div class="pt-3 border-top border-secondary border-opacity-10">
+              <div class="pt-3 border-top border-light-subtle">
                 <button type="button" class="btn btn-success w-100 fw-bold py-2 shadow-sm" onclick="deployPolicyToAgent()">
-                  <i class="fa-solid fa-cloud-arrow-up me-2"></i>Set Policy & Deploy Task to Agent
+                  <i class="fa-solid fa-cloud-arrow-up me-2"></i>Set Policy &amp; Deploy Task to Agent
                 </button>
-                <div class="small text-muted text-center mt-2">
-                  Registers an active task for the always-running autonomous agent to monitor and execute.
-                </div>
               </div>
             </div>
           </div>
@@ -645,13 +1070,13 @@
       </div>
 
       <!-- ======================================================== -->
-      <!-- TAB 3: Agent Task & Status (Always-Running Daemon)       -->
+      <!-- TAB 3: Agent Task & Status (Clean Focused Daemon View)   -->
       <!-- ======================================================== -->
       <div class="tab-pane fade" id="pane-agent" role="tabpanel">
-        <div class="row g-4">
+        <div class="row g-3 g-md-4">
           <!-- Left Column: Active Task Card (Max 1) -->
           <div class="col-lg-6">
-            <div class="white-card p-4 h-100 d-flex flex-column justify-content-between">
+            <div class="white-card p-3 p-md-4 h-100 d-flex flex-column justify-content-between">
               <div>
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <div class="d-flex align-items-center gap-2">
@@ -664,15 +1089,15 @@
                     {% elif cur_task.status == 'STOPPED' %}
                       <span class="badge badge-soft-amber" id="activeTaskStatusBadge"><i class="fa-solid fa-circle-stop me-1"></i> STOPPED</span>
                     {% else %}
-                      <span class="badge badge-soft-green" id="activeTaskStatusBadge"><span class="pulse-dot bg-success me-1"></span> RUNNING</span>
+                      <span class="badge badge-soft-green" id="activeTaskStatusBadge"><span class="pulse-dot me-1"></span> RUNNING</span>
                     {% endif %}
                   {% else %}
-                    <span class="badge bg-light text-muted border" id="activeTaskStatusBadge">NO TASK</span>
+                    <span class="badge badge-soft-secondary" id="activeTaskStatusBadge">NO TASK</span>
                   {% endif %}
                 </div>
 
                 <div id="activeTaskContainer" class="{{ 'd-none' if not cur_task else '' }}">
-                  <div class="p-3 mb-3 rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                  <div class="p-3 mb-3 rounded-3" style="background: #f8fafc; border: 1px solid var(--tw-border);">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                       <span class="text-muted small fw-bold font-monospace" id="taskIdSpan">{{ cur_task.id if cur_task else '' }}</span>
                       <span class="text-muted small" id="taskCreatedSpan">{{ cur_task.created_at[:19].replace('T', ' ') if cur_task else '' }}</span>
@@ -683,29 +1108,29 @@
                     </div>
                   </div>
 
-                  <!-- Explicit Reason Alert Card: FINISHED / RUNNING / STOPPED -->
+                  <!-- Explicit Reason Alert Card -->
                   {% if cur_task and cur_task.status == 'FINISHED' %}
-                  <div id="taskReasonContainer" class="alert alert-success border-success small mb-3">
+                  <div id="taskReasonContainer" class="alert alert-success small mb-3">
                     <div class="fw-bold mb-1" id="taskReasonTitle"><i class="fa-solid fa-circle-check text-success me-1"></i> Finished Successfully:</div>
-                    <div id="taskLiveCheckText">{{ cur_task.last_reason or 'Autonomous execution completed.' }}</div>
+                    <div id="taskLiveCheckText" style="line-height: 1.45;">{{ cur_task.last_reason or 'Autonomous execution completed.' }}</div>
                   </div>
                   {% elif cur_task and cur_task.status == 'STOPPED' %}
-                  <div id="taskReasonContainer" class="alert alert-warning border-warning small mb-3">
+                  <div id="taskReasonContainer" class="alert alert-warning small mb-3">
                     <div class="fw-bold mb-1" id="taskReasonTitle"><i class="fa-solid fa-circle-stop text-warning me-1"></i> Reason Stopped:</div>
-                    <div id="taskLiveCheckText">{{ cur_task.last_reason or 'Task stopped.' }}</div>
+                    <div id="taskLiveCheckText" style="line-height: 1.45;">{{ cur_task.last_reason or 'Task stopped.' }}</div>
                   </div>
                   {% else %}
-                  <div id="taskReasonContainer" class="alert alert-info border-primary small mb-3">
+                  <div id="taskReasonContainer" class="alert alert-info small mb-3">
                     <div class="fw-bold mb-1" id="taskReasonTitle"><i class="fa-solid fa-satellite-dish text-primary me-1"></i> Running &amp; Monitoring Feed:</div>
-                    <div id="taskLiveCheckText">{{ cur_task.last_reason if cur_task else 'Waiting for market trigger conditions.' }}</div>
+                    <div id="taskLiveCheckText" style="line-height: 1.45;">{{ cur_task.last_reason if cur_task else 'Waiting for market trigger conditions.' }}</div>
                   </div>
                   {% endif %}
 
                   <!-- Live Comparison Progress -->
                   <div class="mb-3">
-                    <div class="p-2 rounded border bg-light small d-flex justify-content-around text-center">
+                    <div class="p-2 rounded border small d-flex justify-content-around text-center" style="background: #f8fafc;">
                       <div>
-                        <div class="text-muted" style="font-size: 0.72rem;">TARGET TRIGGER</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">TARGET TRIGGER</div>
                         <div class="fw-bold text-dark" id="taskCardTargetTrigger">
                           {% if cur_task and cur_task.triggers %}
                             &lt;= {{ cur_task.triggers[0].val }} gwei
@@ -716,12 +1141,12 @@
                       </div>
                       <div class="border-start"></div>
                       <div>
-                        <div class="text-muted" style="font-size: 0.72rem;">LIVE FEED GAS</div>
-                        <div class="fw-bold text-warning" id="taskCardLiveGas">{{ market.gas_gwei }} gwei</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">LIVE FEED GAS</div>
+                        <div class="fw-bold" id="taskCardLiveGas" style="color: #b45309;">{{ market.gas_gwei }} gwei</div>
                       </div>
                       <div class="border-start"></div>
                       <div>
-                        <div class="text-muted" style="font-size: 0.72rem;">BALANCE FLOOR</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">BALANCE FLOOR</div>
                         <div class="fw-bold text-success" id="taskCardBalanceFloor">
                           {% if cur_task and cur_task.invariants %}
                             &gt;= ${{ "{:,.0f}".format(cur_task.invariants[0].val) }} USDC
@@ -737,12 +1162,12 @@
                 <div id="noTaskContainer" class="p-4 text-center text-muted {{ '' if not cur_task else 'd-none' }}">
                   <i class="fa-solid fa-clipboard-check fs-1 text-secondary opacity-50 mb-3"></i>
                   <p class="fw-semibold mb-1 text-dark">No Active Task in Agent Registry</p>
-                  <p class="small text-muted mb-3">Go to the <b>Agent Policies</b> tab and click <i>"Set Policy &amp; Deploy Task"</i> to start the autonomous agent.</p>
+                  <p class="small text-muted mb-3">Go to the <b>Policies</b> tab and click <i>"Set Policy &amp; Deploy Task"</i> to start the autonomous agent.</p>
                 </div>
               </div>
 
               <!-- Action Controls: Stop, Re-run, Dismiss, Pause -->
-              <div class="pt-3 border-top border-secondary border-opacity-10 d-flex flex-wrap gap-2">
+              <div class="pt-3 border-top border-light-subtle d-flex flex-wrap gap-2">
                 <button type="button" class="btn btn-outline-warning btn-sm fw-semibold {{ 'd-none' if not cur_task or cur_task.status != 'RUNNING' else '' }}" id="stopTaskBtn" onclick="stopActiveTask()">
                   <i class="fa-solid fa-circle-stop me-1"></i> Stop Task
                 </button>
@@ -761,13 +1186,13 @@
 
           <!-- Right Column: Live Agent Reasoning & Thought Log Stream -->
           <div class="col-lg-6">
-            <div class="white-card p-4 h-100 d-flex flex-column justify-content-between">
+            <div class="white-card p-3 p-md-4 h-100 d-flex flex-column justify-content-between">
               <div>
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <div class="d-flex align-items-center gap-2">
-                    <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-terminal text-primary me-2"></i>Agent Reasoning & Thought Stream</h5>
+                    <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-terminal text-primary me-2"></i>Agent Reasoning Stream</h5>
                   </div>
-                  <span class="badge bg-dark text-light font-monospace small"><span class="pulse-dot bg-info"></span> Continuous Loop</span>
+                  <span class="badge bg-light text-dark border font-monospace small"><span class="pulse-dot me-1" style="background: #0284c7;"></span> Continuous Loop</span>
                 </div>
 
                 <p class="text-muted small mb-3">
@@ -786,7 +1211,7 @@
                 </div>
               </div>
 
-              <div class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary border-opacity-10 small text-muted">
+              <div class="d-flex justify-content-between align-items-center pt-3 border-top border-light-subtle small text-muted">
                 <span><i class="fa-solid fa-circle-check text-success me-1"></i> Sub-second reactive loop active</span>
                 <button class="btn btn-sm btn-link text-muted p-0" onclick="refreshAgentStatus()"><i class="fa-solid fa-rotate-right me-1"></i>Refresh</button>
               </div>
@@ -795,48 +1220,63 @@
         </div>
       </div>
 
+
       <!-- ======================================================== -->
-      <!-- TAB 4: Wallet Balances & Demo Funds Manager              -->
+      <!-- ======================================================== -->
+      <!-- TAB 4: Wallet Balances (Clean Trust Token List)          -->
       <!-- ======================================================== -->
       <div class="tab-pane fade" id="pane-wallet" role="tabpanel">
-        <div class="row g-4">
+        <div class="row g-3 g-md-4">
           <!-- Balance Display & Quick Adjuster -->
           <div class="col-lg-6">
-            <div class="white-card p-4">
-              <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-coins text-primary me-2"></i>Wallet Liquidity Balances</h5>
-              <p class="text-muted small mb-4">
-                Balances stored in persistent JSON database (<code>user/data/wallet_db.json</code>). You can edit them at any time to test balance floor rules.
-              </p>
-
-              <!-- ETH Balance Box -->
-              <div class="p-3 mb-3 rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="text-muted small fw-semibold"><i class="fa-brands fa-ethereum text-primary me-1"></i> ETH Balance</span>
-                  <span class="badge badge-soft-blue">Gas & Reserve</span>
-                </div>
-                <div class="fs-3 fw-bold text-dark mt-1" id="ethBalanceDisplay">{{ user.balances.ETH }} ETH</div>
-                <div class="small text-muted" id="ethValueUsd">≈ ${{ "{:,.2f}".format(user.balances.ETH * market.eth_price_usd) }} USD</div>
+            <div class="white-card p-3 p-md-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-coins text-primary me-2"></i>Crypto Assets</h5>
+                <span class="badge badge-soft-blue">Base Sepolia</span>
               </div>
 
-              <!-- USDC Balance Box -->
-              <div class="p-3 mb-4 rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="text-muted small fw-semibold"><i class="fa-solid fa-dollar-sign text-success me-1"></i> USDC Balance</span>
-                  <span class="badge badge-soft-green">Trading Capital</span>
+              <!-- ETH Balance Box (Trust Wallet Token Row) -->
+              <div class="p-3 mb-3 rounded-3 d-flex align-items-center justify-content-between" style="background: #f8fafc; border: 1px solid var(--tw-border);">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="tw-token-avatar tw-token-eth">Ξ</div>
+                  <div>
+                    <div class="fw-bold text-dark fs-6">Ethereum</div>
+                    <div class="text-muted small">ETH • Gas &amp; Reserve</div>
+                  </div>
                 </div>
-                <div class="fs-3 fw-bold text-dark mt-1" id="usdcBalanceDisplay">${{ "{:,.2f}".format(user.balances.USDC) }}</div>
-                <div class="small text-success fw-semibold"><i class="fa-solid fa-lock me-1"></i> Balance Floor Enforced: Floor >= $500.00</div>
+                <div class="text-end">
+                  <div class="fw-bold text-dark fs-5" id="ethBalanceDisplay">{{ user.balances.ETH }} ETH</div>
+                  <div class="small text-muted" id="ethValueUsd">≈ ${{ "{:,.2f}".format(user.balances.ETH * market.eth_price_usd) }}</div>
+                </div>
               </div>
 
-              <button class="btn btn-primary btn-sm fw-semibold" onclick="openEditBalanceModal()">
-                <i class="fa-solid fa-pen-to-square me-1"></i> Open Balance Editor
+              <!-- USDC Balance Box (Trust Wallet Token Row) -->
+              <div class="p-3 mb-4 rounded-3 d-flex align-items-center justify-content-between" style="background: #f8fafc; border: 1px solid var(--tw-border);">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="tw-token-avatar tw-token-usdc">$</div>
+                  <div>
+                    <div class="fw-bold text-dark fs-6">USD Coin</div>
+                    <div class="small text-success fw-semibold"><i class="fa-solid fa-lock me-1"></i>Floor: &gt;= $500</div>
+                  </div>
+                </div>
+                <div class="text-end">
+                  <div class="fs-5 fw-bold text-dark" id="usdcBalanceDisplay">${{ "{:,.2f}".format(user.balances.USDC) }}</div>
+                  <div class="small text-muted">Trading Capital</div>
+                </div>
+              </div>
+
+              <button class="btn btn-primary btn-sm fw-semibold w-100 py-2 mb-2" onclick="openEditBalanceModal()">
+                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Balances
+              </button>
+              <button class="btn btn-outline-danger btn-sm fw-semibold w-100 py-2" onclick="confirmResetSimulation()">
+                <i class="fa-solid fa-arrow-rotate-left me-1"></i> Reset Wallet &amp; Clear Simulation
               </button>
             </div>
           </div>
 
           <!-- Quick Balance Adjustment Form -->
           <div class="col-lg-6">
-            <div class="white-card p-4">
+            <div class="white-card p-3 p-md-4">
               <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-sliders text-primary me-2"></i>Quick Fund Adjustment</h5>
               <p class="text-muted small mb-3">Adjust your testnet demo funds directly below:</p>
 
@@ -848,11 +1288,11 @@
                 <div class="mb-3">
                   <label class="form-label text-muted small fw-semibold">USDC Balance ($USD)</label>
                   <input type="number" step="50" id="quickUsdcInput" class="form-control white-input" value="{{ user.balances.USDC }}">
-                  <div class="form-text small">Try setting to $400 to test the agent being blocked by the $500 balance floor!</div>
+                  <div class="form-text text-muted small">Try setting to $400 to test the agent being blocked by the $500 balance floor!</div>
                 </div>
 
-                <button type="submit" class="btn btn-primary fw-semibold btn-sm">
-                  <i class="fa-solid fa-floppy-disk me-1"></i>Save & Record Balance Adjustment
+                <button type="submit" class="btn btn-primary fw-semibold btn-sm w-100 py-2">
+                  <i class="fa-solid fa-floppy-disk me-1"></i>Save &amp; Update Balances
                 </button>
               </form>
 
@@ -865,23 +1305,24 @@
       </div>
 
       <!-- ======================================================== -->
-      <!-- TAB 5: Live Transaction Ledger (USER vs AGENT)           -->
+      <!-- TAB 5: Activity / Ledger (Clean Mobile Card List + Table) -->
       <!-- ======================================================== -->
       <div class="tab-pane fade" id="pane-ledger" role="tabpanel">
-        <div class="white-card p-4">
+        <div class="white-card p-3 p-md-4">
           <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-            <div>
-              <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-list-check text-primary me-2"></i>Live Transaction Ledger</h5>
-              <span class="text-muted small">JSON Database Audit Trail — Explicitly partitioned by <b class="text-primary">USER</b> vs <b class="text-purple" style="color: #7e22ce;">AGENT</b></span>
+            <div class="mb-2 mb-md-0">
+              <h5 class="fw-bold m-0 text-dark"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Activity History</h5>
+              <span class="text-muted small">Audit trail for manual &amp; autonomous agent executions</span>
             </div>
-            <div class="d-flex gap-2 mt-2 mt-md-0">
-              <button class="btn btn-sm btn-outline-secondary" onclick="filterTransactions('ALL')">All</button>
-              <button class="btn btn-sm btn-outline-primary" onclick="filterTransactions('USER')">User Only</button>
-              <button class="btn btn-sm btn-outline-purple" style="border-color: #d8b4fe; color: #7e22ce;" onclick="filterTransactions('AGENT')">Agent Only</button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-secondary py-1 px-3" onclick="filterTransactions('ALL')">All</button>
+              <button class="btn btn-sm btn-outline-primary py-1 px-3" onclick="filterTransactions('USER')">User</button>
+              <button class="btn btn-sm btn-outline-purple py-1 px-3" style="border-color: #ddd6fe; color: #7c3aed; background: #f5f3ff;" onclick="filterTransactions('AGENT')">Agent</button>
             </div>
           </div>
 
-          <div class="table-responsive">
+          <!-- Desktop Table View -->
+          <div class="d-none d-md-block table-responsive">
             <table class="table table-custom align-middle mb-0">
               <thead>
                 <tr>
@@ -891,8 +1332,8 @@
                   <th>Details</th>
                   <th>Amount</th>
                   <th>Status</th>
-                  <th>Reasoning & Gates</th>
-                  <th>Base Sepolia Tx Hash</th>
+                  <th>Reasoning</th>
+                  <th>Base Sepolia Tx</th>
                 </tr>
               </thead>
               <tbody id="txTableBody">
@@ -906,9 +1347,9 @@
                       <span class="actor-badge-agent"><i class="fa-solid fa-robot me-1"></i>AGENT</span>
                     {% endif %}
                   </td>
-                  <td class="fw-semibold">{{ tx.action }}</td>
-                  <td>{{ tx.details }}</td>
-                  <td class="fw-bold font-monospace">{{ tx.amount }} {{ tx.token }}</td>
+                  <td class="fw-semibold text-dark">{{ tx.action }}</td>
+                  <td class="text-muted small">{{ tx.details }}</td>
+                  <td class="fw-bold font-monospace text-dark">{{ tx.amount }} {{ tx.token }}</td>
                   <td>
                     {% if tx.status == 'CONFIRMED' %}
                       <span class="badge badge-soft-green"><i class="fa-solid fa-check me-1"></i>CONFIRMED</span>
@@ -937,6 +1378,54 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Mobile Activity Cards View (Native Crypto Wallet Style, Clean No Overlap) -->
+          <div class="d-md-none" id="mobileTxList">
+            {% for tx in user.transactions %}
+            <div class="tx-row tx-{{ tx.actor }} p-3 mb-3 rounded-3 border bg-white" style="border-color: var(--tw-border); box-shadow: var(--tw-shadow);">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <div class="d-flex align-items-center gap-2">
+                  {% if tx.actor == 'USER' %}
+                    <span class="actor-badge-user"><i class="fa-solid fa-user me-1"></i>USER</span>
+                  {% else %}
+                    <span class="actor-badge-agent"><i class="fa-solid fa-robot me-1"></i>AGENT</span>
+                  {% endif %}
+                  <span class="fw-bold text-dark fs-6">{{ tx.action }}</span>
+                </div>
+                <div class="fw-bold font-monospace text-dark">{{ tx.amount }} {{ tx.token }}</div>
+              </div>
+
+              <div class="small text-muted mb-2" style="font-size: 0.78rem;">{{ tx.details }}</div>
+
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light-subtle">
+                <div class="d-flex align-items-center gap-2">
+                  {% if tx.status == 'CONFIRMED' %}
+                    <span class="badge badge-soft-green py-1 px-2" style="font-size: 0.65rem;"><i class="fa-solid fa-check me-1"></i>CONFIRMED</span>
+                  {% elif tx.status == 'BLOCKED_BY_GUARD' %}
+                    <span class="badge badge-soft-red py-1 px-2" style="font-size: 0.65rem;"><i class="fa-solid fa-ban me-1"></i>BLOCKED</span>
+                  {% else %}
+                    <span class="badge badge-soft-amber py-1 px-2" style="font-size: 0.65rem;">{{ tx.status }}</span>
+                  {% endif %}
+                  <span class="text-muted font-monospace" style="font-size: 0.7rem;">{{ tx.timestamp[11:19] }}</span>
+                </div>
+                
+                <div>
+                  <a href="https://sepolia.basescan.org/tx/{{ tx.tx_hash }}" target="_blank" class="text-primary text-decoration-none font-monospace fw-semibold" style="font-size: 0.72rem;">
+                    {{ tx.tx_hash[:6] }}...{{ tx.tx_hash[-4:] }} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem;"></i>
+                  </a>
+                </div>
+              </div>
+
+              {% if tx.actor == 'AGENT' %}
+              <div class="mt-2 pt-2 border-top border-light-subtle d-flex justify-content-end">
+                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-3 fw-semibold d-flex align-items-center gap-1" style="font-size: 0.74rem; border-radius: var(--tw-radius-pill);" onclick="openReasoningModal('{{ tx.id }}')">
+                  <i class="fa-solid fa-brain me-1"></i>View Agent Decision &amp; Proof
+                </button>
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
         </div>
       </div>
 
@@ -944,11 +1433,47 @@
 
   </div>
 
+  <!-- ======================================================== -->
+  <!-- MOBILE BOTTOM NAVIGATION BAR (Trust Wallet App Layout)   -->
+  <!-- ======================================================== -->
+  <nav class="tw-mobile-bottom-bar d-md-none">
+    <button type="button" class="tw-bottom-nav-btn active" data-tab="tab-market-btn" onclick="openTabPane('pane-market', 'tab-market-btn');">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>Market</span>
+    </button>
+    <button type="button" class="tw-bottom-nav-btn" data-tab="tab-policy-btn" onclick="openTabPane('pane-policy', 'tab-policy-btn');">
+      <i class="fa-solid fa-shield-halved"></i>
+      <span>Policies</span>
+    </button>
+    <button type="button" class="tw-bottom-nav-btn" data-tab="tab-agent-btn" onclick="openTabPane('pane-agent', 'tab-agent-btn');">
+      <div class="position-relative">
+        <i class="fa-solid fa-robot"></i>
+        <span class="tw-nav-badge {{ 'd-none' if not cur_task else '' }}" id="mobileAgentBadge">1</span>
+      </div>
+      <span>Agent</span>
+    </button>
+    <button type="button" class="tw-bottom-nav-btn" data-tab="tab-wallet-btn" onclick="openTabPane('pane-wallet', 'tab-wallet-btn');">
+      <i class="fa-solid fa-wallet"></i>
+      <span>Wallet</span>
+    </button>
+    <button type="button" class="tw-bottom-nav-btn" data-tab="tab-ledger-btn" onclick="openTabPane('pane-ledger', 'tab-ledger-btn');">
+      <div class="position-relative">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span class="tw-nav-badge" id="mobileTxBadge">{{ user.transactions|length }}</span>
+      </div>
+      <span>Activity</span>
+    </button>
+  </nav>
+
+  <!-- ======================================================== -->
+  <!-- MODALS (Trust Wallet Glassmorphic & Mobile Bottom Sheet)  -->
+  <!-- ======================================================== -->
+
   <!-- Modal: Edit Wallet Balance -->
   <div class="modal fade" id="editBalanceModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0 shadow">
-        <div class="modal-header border-bottom">
+      <div class="modal-content border-0">
+        <div class="modal-header">
           <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Demo Wallet Balances</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
@@ -963,9 +1488,9 @@
             <input type="number" step="10" id="editUsdcInput" class="form-control white-input" value="{{ user.balances.USDC }}">
           </div>
         </div>
-        <div class="modal-footer border-top bg-light">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary btn-sm fw-semibold" onclick="saveBalances()"><i class="fa-solid fa-check me-1"></i>Save & Update Ledger</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm fw-semibold" onclick="saveBalances()"><i class="fa-solid fa-check me-1"></i>Save &amp; Update Ledger</button>
         </div>
       </div>
     </div>
@@ -974,18 +1499,18 @@
   <!-- Modal: Confirm Reset Simulation -->
   <div class="modal fade" id="resetModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0 shadow">
-        <div class="modal-header border-bottom bg-danger bg-opacity-10">
+      <div class="modal-content border-0">
+        <div class="modal-header" style="background: #fef2f2; border-bottom: 1px solid var(--tw-red-border);">
           <h5 class="modal-title fw-bold text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Reset Simulation Data?</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body p-4">
-          <p class="text-dark fw-semibold mb-2">Are you sure you want to reset the simulation?</p>
+          <p class="text-dark fw-bold mb-2">Are you sure you want to reset the simulation?</p>
           <p class="text-muted small mb-0">This will wipe all transaction logs in <code>user/data/wallet_db.json</code>, clear all registered agent tasks in <code>agent/data/agent_tasks.json</code>, reset the live reasoning thought stream, and restore initial demo funds (1.50 ETH and $1,500.00 USDC).</p>
         </div>
-        <div class="modal-footer border-top bg-light">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-danger btn-sm fw-semibold" onclick="executeResetSimulation()"><i class="fa-solid fa-trash me-1"></i>Yes, Reset Everything</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger btn-sm fw-semibold" style="border-radius: var(--tw-radius-pill);" onclick="executeResetSimulation()"><i class="fa-solid fa-trash me-1"></i>Yes, Reset Everything</button>
         </div>
       </div>
     </div>
@@ -994,12 +1519,12 @@
   <!-- Modal: Autonomous Reasoning & Gate Audit Modal -->
   <div class="modal fade" id="reasoningModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
-      <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+      <div class="modal-content border-0" style="overflow: hidden;">
         
         <!-- Modal Header -->
-        <div class="modal-header bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
+        <div class="modal-header px-4 py-3 d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center gap-2">
-            <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary" style="width: 38px; height: 38px;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: rgba(0, 82, 254, 0.1); color: var(--tw-blue);">
               <i class="fa-solid fa-brain fs-5"></i>
             </div>
             <div>
@@ -1014,24 +1539,24 @@
         </div>
 
         <!-- Modal Body -->
-        <div class="modal-body p-4" style="background: #f8fafc; max-height: 80vh; overflow-y: auto;">
+        <div class="modal-body p-3 p-md-4" style="background: #f8fafc; max-height: 80vh; overflow-y: auto;">
           
           <!-- Top Transaction Meta Banner -->
-          <div class="white-card p-3 mb-3 border">
+          <div class="white-card p-3 mb-3 border bg-white">
             <div class="row g-2 align-items-center">
-              <div class="col-md-3">
+              <div class="col-6 col-md-3">
                 <span class="text-muted small d-block">TRANSACTION ID</span>
                 <span class="fw-bold font-monospace text-dark small" id="rmTxId">--</span>
               </div>
-              <div class="col-md-3">
+              <div class="col-6 col-md-3">
                 <span class="text-muted small d-block">BASE SEPOLIA TX HASH</span>
                 <span class="font-monospace small" id="rmTxHashLink">--</span>
               </div>
-              <div class="col-md-3">
+              <div class="col-6 col-md-3">
                 <span class="text-muted small d-block">TIMESTAMP</span>
                 <span class="text-dark small" id="rmTimestamp">--</span>
               </div>
-              <div class="col-md-3">
+              <div class="col-6 col-md-3">
                 <span class="text-muted small d-block">ACTION &amp; AMOUNT</span>
                 <span class="fw-bold text-primary small" id="rmActionAmount">--</span>
               </div>
@@ -1039,7 +1564,7 @@
           </div>
 
           <!-- Executive Summary -->
-          <div class="alert alert-info border-primary small mb-4" id="rmExecutiveSummaryBox">
+          <div class="alert alert-info small mb-4" id="rmExecutiveSummaryBox">
             <div class="fw-bold mb-1"><i class="fa-solid fa-quote-left text-primary me-2"></i>Executive Audit Summary:</div>
             <div id="rmExecutiveSummaryText">--</div>
           </div>
@@ -1049,7 +1574,7 @@
             
             <!-- STAGE 1: RAG Perception & Historical Retrieval -->
             <div class="col-lg-6">
-              <div class="white-card p-3 h-100 border">
+              <div class="white-card p-3 h-100 border bg-white">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-primary text-white rounded-circle px-2 py-1">1</span>
@@ -1059,7 +1584,7 @@
                 </div>
                 <p class="text-muted small mb-2">Matched against curated historical market regimes in <code>reasoning/data/market_history.json</code>.</p>
                 
-                <div class="p-2 mb-2 rounded bg-light border small">
+                <div class="p-2 mb-2 rounded border small" style="background: #f8fafc; border: 1px solid var(--tw-border);">
                   <div class="d-flex justify-content-between mb-1">
                     <span class="text-muted">Matched Regime:</span>
                     <span class="fw-bold text-dark font-monospace" id="rmRegimeName">--</span>
@@ -1082,13 +1607,13 @@
                   </div>
                 </div>
 
-                <div class="small text-muted fst-italic border-top pt-2" id="rmRegimeDesc">--</div>
+                <div class="small text-muted fst-italic border-top border-light-subtle pt-2" id="rmRegimeDesc">--</div>
               </div>
             </div>
 
             <!-- STAGE 2: Fragmented LLM Intent Formulation -->
             <div class="col-lg-6">
-              <div class="white-card p-3 h-100 border">
+              <div class="white-card p-3 h-100 border bg-white">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-success text-white rounded-circle px-2 py-1">2</span>
@@ -1098,7 +1623,7 @@
                 </div>
                 <p class="text-muted small mb-2">Chunk 1: Fragmented cognitive prompt analyzing market entry thesis and profitability.</p>
 
-                <div class="p-2 mb-2 rounded bg-light border small">
+                <div class="p-2 mb-2 rounded border small" style="background: #f8fafc; border: 1px solid var(--tw-border);">
                   <div class="d-flex justify-content-between mb-1">
                     <span class="text-muted">Action Type:</span>
                     <span class="fw-bold text-dark" id="rmIntentType">--</span>
@@ -1115,19 +1640,19 @@
 
                 <div class="mb-2">
                   <span class="text-muted small fw-semibold d-block">Strategic Thesis:</span>
-                  <div class="p-2 rounded bg-light border small text-dark" id="rmIntentThesis">--</div>
+                  <div class="p-2 rounded border small text-dark" style="background: #f8fafc; border: 1px solid var(--tw-border);" id="rmIntentThesis">--</div>
                 </div>
 
                 <div>
                   <span class="text-muted small fw-semibold d-block">Profitability Outlook:</span>
-                  <div class="p-2 rounded bg-light border small text-dark" id="rmProfitabilityOutlook">--</div>
+                  <div class="p-2 rounded border small text-dark" style="background: #f8fafc; border: 1px solid var(--tw-border);" id="rmProfitabilityOutlook">--</div>
                 </div>
               </div>
             </div>
 
             <!-- STAGE 3: Dry-Run Risk & Outcome Simulation -->
             <div class="col-lg-6">
-              <div class="white-card p-3 h-100 border">
+              <div class="white-card p-3 h-100 border bg-white">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-warning text-dark rounded-circle px-2 py-1">3</span>
@@ -1137,7 +1662,7 @@
                 </div>
                 <p class="text-muted small mb-2">Chunk 2: Simulates portfolio impact, slippage, and maximum drawdown risk before gates.</p>
 
-                <div class="p-2 mb-2 rounded bg-light border small">
+                <div class="p-2 mb-2 rounded border small" style="background: #f8fafc; border: 1px solid var(--tw-border);">
                   <div class="d-flex justify-content-between mb-1">
                     <span class="text-muted">Estimated Execution (ETH):</span>
                     <span class="fw-bold text-primary font-monospace" id="rmEstEth">--</span>
@@ -1160,7 +1685,7 @@
                   </div>
                 </div>
 
-                <div class="p-2 rounded bg-light border small">
+                <div class="p-2 rounded border small" style="background: #f8fafc; border: 1px solid var(--tw-border);">
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <span class="text-muted">Evaluated Risk Score:</span>
                     <span class="fw-bold" id="rmRiskScoreDisplay">--</span>
@@ -1172,10 +1697,10 @@
 
             <!-- STAGE 4: Formal Programmatic Z3 Policy Gate -->
             <div class="col-lg-6">
-              <div class="white-card p-3 h-100 border">
+              <div class="white-card p-3 h-100 border bg-white">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-purple text-white rounded-circle px-2 py-1" style="background: #7e22ce;">4</span>
+                    <span class="badge bg-purple text-white rounded-circle px-2 py-1" style="background: #8b5cf6;">4</span>
                     <h6 class="fw-bold m-0 text-dark">Formal Z3 Gate Acceptance</h6>
                   </div>
                   <span class="badge badge-soft-green font-monospace" id="rmZ3SolverStatus">Z3: SAT (VERIFIED)</span>
@@ -1185,7 +1710,7 @@
                 <div class="mb-2">
                   <span class="text-muted small text-uppercase fw-semibold mb-1 d-block">Formal Invariant Checks:</span>
                   <div id="rmInvariantList" class="d-flex flex-column gap-1">
-                    <div class="p-2 rounded bg-light border small d-flex justify-content-between align-items-center">
+                    <div class="p-2 rounded border small d-flex justify-content-between align-items-center" style="background: #f8fafc; border: 1px solid var(--tw-border);">
                       <code>balance_after &gt;= 500</code>
                       <span class="badge badge-soft-green"><i class="fa-solid fa-check me-1"></i>SATISFIED</span>
                     </div>
@@ -1195,14 +1720,14 @@
                 <div class="mb-2">
                   <span class="text-muted small text-uppercase fw-semibold mb-1 d-block">Formal Trigger Checks:</span>
                   <div id="rmTriggerList" class="d-flex flex-column gap-1">
-                    <div class="p-2 rounded bg-light border small d-flex justify-content-between align-items-center">
+                    <div class="p-2 rounded border small d-flex justify-content-between align-items-center" style="background: #f8fafc; border: 1px solid var(--tw-border);">
                       <code>gas &lt;= 20.0 gwei</code>
                       <span class="badge badge-soft-green"><i class="fa-solid fa-check me-1"></i>SATISFIED</span>
                     </div>
                   </div>
                 </div>
 
-                <div class="p-2 rounded bg-light border small text-muted font-monospace" id="rmGateSummaryText">
+                <div class="p-2 rounded border small text-muted font-monospace" style="background: #f8fafc; border: 1px solid var(--tw-border);" id="rmGateSummaryText">
                   Formal Z3 Verification: SAT. Invariants: ALL_SATISFIED.
                 </div>
               </div>
@@ -1213,9 +1738,9 @@
         </div>
 
         <!-- Modal Footer -->
-        <div class="modal-footer bg-white border-top px-4 py-2 d-flex justify-content-between">
+        <div class="modal-footer px-4 py-2 d-flex justify-content-between">
           <span class="small text-muted"><i class="fa-solid fa-shield-halved text-success me-1"></i> Fail-Closed Formal Gate Guarantee</span>
-          <button type="button" class="btn btn-secondary btn-sm fw-semibold" data-bs-dismiss="modal">Close Audit</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" data-bs-dismiss="modal">Close Audit</button>
         </div>
 
       </div>
@@ -1227,6 +1752,24 @@
   <script>
     let marketChart = null;
     let isAgentPaused = false;
+
+    // Helper to switch tabs from hero buttons or bottom nav
+    function openTabPane(paneId, tabBtnId) {
+      $('#' + tabBtnId).tab('show');
+      $('.tw-bottom-nav-btn').removeClass('active');
+      $(`.tw-bottom-nav-btn[data-tab="${tabBtnId}"]`).addClass('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Sync mobile bottom navigation when desktop tabs change
+    $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function (e) {
+      const targetId = $(e.target).attr('id');
+      $('.tw-bottom-nav-btn').removeClass('active');
+      $(`.tw-bottom-nav-btn[data-tab="${targetId}"]`).addClass('active');
+      if (targetId === 'tab-market-btn' && marketChart) {
+        marketChart.resize();
+      }
+    });
 
     function initChart(historyData) {
       const ctx = document.getElementById('marketChart').getContext('2d');
@@ -1240,11 +1783,13 @@
           datasets: [{
             label: 'ETH / USD',
             data: prices,
-            borderColor: '#2563eb',
-            backgroundColor: 'rgba(37, 99, 235, 0.06)',
-            borderWidth: 2,
+            borderColor: '#1E5AF6',
+            backgroundColor: 'rgba(30, 90, 246, 0.12)',
+            borderWidth: 2.5,
             pointRadius: 0,
-            pointHoverRadius: 4,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: '#FFFFFF',
+            pointHoverBorderColor: '#0052FE',
             fill: true,
             tension: 0.25,
           }]
@@ -1256,8 +1801,10 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#0f172a',
-              titleColor: '#ffffff',
+              backgroundColor: '#0c1527',
+              borderColor: 'rgba(255, 255, 255, 0.15)',
+              borderWidth: 1,
+              titleColor: '#94a3b8',
               bodyColor: '#ffffff',
               displayColors: false,
               callbacks: {
@@ -1267,13 +1814,13 @@
           },
           scales: {
             x: {
-              grid: { color: '#f1f5f9' },
-              ticks: { color: '#94a3b8', maxTicksLimit: 8, font: { family: 'JetBrains Mono', size: 10 } }
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              ticks: { color: '#64748b', maxTicksLimit: 7, font: { family: 'JetBrains Mono', size: 10 } }
             },
             y: {
-              grid: { color: '#f1f5f9' },
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
               ticks: {
-                color: '#94a3b8',
+                color: '#64748b',
                 callback: function(v) { return '$' + v.toLocaleString(); },
                 font: { family: 'JetBrains Mono', size: 10 }
               }
@@ -1294,7 +1841,7 @@
           $('#taskCardLiveGas').text(data.gas_gwei + ' gwei');
 
           if (data.l1_block) {
-            $('#l1BlockDisplay').text('Block #' + data.l1_block);
+            $('#l1BlockDisplay').text('#' + data.l1_block);
           }
           if (data.l1_base_fee !== undefined) {
             $('#l1BaseFeeDisplay').text(data.l1_base_fee);
@@ -1302,263 +1849,256 @@
           if (data.l1_priority_fee !== undefined) {
             $('#l1TipDisplay').text(data.l1_priority_fee);
           }
-          if (data.is_live_rpc) {
-            $('#gasSourceBadge').html('<i class="fa-solid fa-cube me-1"></i>Live L1 RPC').attr('class', 'badge badge-soft-blue');
-          } else {
-            $('#gasSourceBadge').html('<i class="fa-solid fa-flask me-1"></i>Scenario Active').attr('class', 'badge badge-soft-amber');
-          }
 
-          // Update chart
           if (marketChart) {
             marketChart.data.labels.push(data.time);
             marketChart.data.datasets[0].data.push(data.price);
-            if (marketChart.data.labels.length > 80) {
+            if (marketChart.data.labels.length > 50) {
               marketChart.data.labels.shift();
               marketChart.data.datasets[0].data.shift();
             }
             marketChart.update('none');
           }
-        } catch (err) {}
+
+          const curEth = parseFloat($('#headerEth').text()) || 0;
+          const curUsdc = parseFloat($('#headerUsdc').text().replace(/[^0-9.-]+/g, "")) || 0;
+          const netWorth = (curEth * data.price) + curUsdc;
+          $('#netWorthDisplay').text('$' + netWorth.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+          $('#ethValueUsd').text('≈ $' + (curEth * data.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+        } catch (err) {
+          console.error('Error handling SSE stream tick:', err);
+        }
       };
-      evtSource.onerror = function() {
-        $('#wsLabel').text('Reconnecting...').attr('class', 'text-warning');
-      };
-      evtSource.onopen = function() {
-        $('#wsLabel').text('Live').attr('class', 'text-primary');
+
+      evtSource.onerror = function(err) {
+        console.warn('SSE connection lost, reconnecting in 3s...', err);
+        evtSource.close();
+        setTimeout(startLiveStream, 3000);
       };
     }
 
-    // Poll Agent Status & Thoughts every 2 seconds
     function startAgentStatusPoller() {
-      setInterval(function() {
-        refreshAgentStatus();
-      }, 2000);
+      setInterval(refreshAgentStatus, 1000);
     }
 
     function refreshAgentStatus() {
-      $.ajax({
-        url: '/api/agent/status',
-        method: 'GET',
-        success: function(status) {
-          // Update top header status
-          $('#agentStateText').text(status.state);
-          $('#agentStateBadge').text(status.state);
-          
-          if (status.state === 'MONITORING') {
-            $('#agentStateText').attr('class', 'text-success');
-            $('#agentStateBadge').attr('class', 'badge badge-soft-green');
-            $('#agentStateDot').attr('class', 'pulse-dot bg-success');
-          } else if (status.state === 'TRIGGER_MET' || status.state === 'EXECUTING') {
-            $('#agentStateText').attr('class', 'text-primary');
-            $('#agentStateBadge').attr('class', 'badge badge-soft-blue');
-            $('#agentStateDot').attr('class', 'pulse-dot bg-primary');
-          } else if (status.state === 'GUARD_BLOCKED' || status.state === 'PAUSED') {
-            $('#agentStateText').attr('class', 'text-warning');
-            $('#agentStateBadge').attr('class', 'badge badge-soft-amber');
-            $('#agentStateDot').attr('class', 'pulse-dot bg-warning');
+      $.getJSON('/api/agent/status', function(data) {
+        if (!data) return;
+
+        $('#agentStateText').text(data.state);
+        $('#agentStateBadge').text(data.state);
+
+        isAgentPaused = data.is_paused || false;
+        if (isAgentPaused) {
+          $('#pauseBtnText').text('Resume Agent');
+          $('#agentStateBadge').attr('class', 'badge badge-soft-amber').text('PAUSED');
+        } else {
+          $('#pauseBtnText').text('Pause Agent');
+          $('#agentStateBadge').attr('class', 'badge badge-soft-green');
+        }
+
+        const task = data.current_task || data.active_task;
+        if (task) {
+          $('#activeTaskContainer').removeClass('d-none');
+          $('#noTaskContainer').addClass('d-none');
+          $('#agentTabTaskBadge').text('1');
+          $('#mobileAgentBadge').removeClass('d-none').text('1');
+          $('#deleteTaskBtn').removeClass('d-none').prop('disabled', false);
+
+          $('#taskIdSpan').text(task.id);
+          $('#taskCreatedSpan').text(task.created_at ? task.created_at.substring(0, 19).replace('T', ' ') : '');
+          $('#taskPromptSpan').text(task.prompt);
+          $('#taskReadbackSpan').text(task.canonical_readback);
+          $('#taskLiveCheckText').text(task.last_reason || 'Evaluating triggers...');
+
+          if (task.triggers && task.triggers.length > 0) {
+            const t = task.triggers[0];
+            const op = (t.op === 'le' || t.op === 'lte') ? '<= ' : ((t.op === 'ge' || t.op === 'gte') ? '>= ' : '');
+            $('#taskCardTargetTrigger').text(op + (t.val || 20) + ' gwei');
           } else {
-            $('#agentStateText').attr('class', 'text-muted');
-            $('#agentStateBadge').attr('class', 'badge bg-light text-muted border');
-            $('#agentStateDot').attr('class', 'pulse-dot bg-secondary');
+            $('#taskCardTargetTrigger').text('Guard Only (No Buy Trigger)');
           }
 
-          // Active/Current task UI
-          const task = status.current_task || status.active_task;
-          if (task) {
-            $('#noTaskContainer').addClass('d-none');
-            $('#activeTaskContainer').removeClass('d-none');
-            $('#deleteTaskBtn').removeClass('d-none').prop('disabled', false);
-
-            $('#taskIdSpan').text(task.id);
-            $('#taskCreatedSpan').text(task.created_at ? task.created_at.substring(0, 19).replace('T', ' ') : '');
-            $('#taskPromptSpan').text(task.prompt);
-            $('#taskReadbackSpan').text(task.canonical_readback);
-            $('#taskLiveCheckText').text(task.last_reason || 'Evaluating triggers...');
-
-            if (task.triggers && task.triggers.length > 0) {
-              const t = task.triggers[0];
-              const op = (t.op === 'le' || t.op === 'lte') ? '<= ' : ((t.op === 'ge' || t.op === 'gte') ? '>= ' : '');
-              $('#taskCardTargetTrigger').text(op + (t.val || 20) + ' gwei');
-            } else {
-              $('#taskCardTargetTrigger').text('Guard Only (No Buy Trigger)');
-            }
-
-            if (task.invariants && task.invariants.length > 0) {
-              const inv = task.invariants[0];
-              const fVal = inv.val !== undefined ? inv.val : (inv.value || 500);
-              $('#taskCardBalanceFloor').text('>= $' + Number(fVal).toLocaleString('en-US', {maximumFractionDigits: 0}) + ' USDC');
-            } else {
-              $('#taskCardBalanceFloor').text('>= $500 USDC');
-            }
-
-            // Status Badge, Alert Style, and Action Buttons based on RUNNING, FINISHED, STOPPED
-            if (task.status === 'FINISHED') {
-              $('#activeTaskStatusBadge').html('<i class="fa-solid fa-circle-check me-1"></i> FINISHED').attr('class', 'badge badge-soft-green');
-              $('#activeTaskTitle').text('Task Finished');
-              $('#activeTaskSub').text(task.last_reason || 'Autonomous execution completed.');
-              $('#taskReasonContainer').attr('class', 'alert alert-success border-success small mb-3');
-              $('#taskReasonTitle').html('<i class="fa-solid fa-circle-check text-success me-1"></i> Finished Successfully:');
-              $('#stopTaskBtn').addClass('d-none');
-              $('#rerunTaskBtn').removeClass('d-none');
-            } else if (task.status === 'RUNNING') {
-              $('#activeTaskStatusBadge').html('<span class="pulse-dot bg-success me-1"></span> RUNNING').attr('class', 'badge badge-soft-green');
-              $('#activeTaskTitle').text('Task Running');
-              $('#activeTaskSub').text('Watching feed: ' + task.prompt);
-              $('#taskReasonContainer').attr('class', 'alert alert-info border-primary small mb-3');
-              $('#taskReasonTitle').html('<i class="fa-solid fa-satellite-dish text-primary me-1"></i> Running & Monitoring Feed:');
-              $('#stopTaskBtn').removeClass('d-none');
-              $('#rerunTaskBtn').addClass('d-none');
-            } else if (task.status === 'STOPPED') {
-              $('#activeTaskStatusBadge').html('<i class="fa-solid fa-circle-stop me-1"></i> STOPPED').attr('class', 'badge badge-soft-amber');
-              $('#activeTaskTitle').text('Task Stopped');
-              $('#activeTaskSub').text(task.last_reason || 'Task stopped.');
-              $('#taskReasonContainer').attr('class', 'alert alert-warning border-warning small mb-3');
-              $('#taskReasonTitle').html('<i class="fa-solid fa-circle-stop text-warning me-1"></i> Reason Stopped:');
-              $('#stopTaskBtn').addClass('d-none');
-              $('#rerunTaskBtn').removeClass('d-none');
-            }
-
-            $('#agentTabTaskBadge').text('1').show();
+          if (task.invariants && task.invariants.length > 0) {
+            const inv = task.invariants[0];
+            const fVal = inv.val !== undefined ? inv.val : (inv.value || 500);
+            $('#taskCardBalanceFloor').text('>= $' + Number(fVal).toLocaleString('en-US', {maximumFractionDigits: 0}) + ' USDC');
           } else {
-            $('#activeTaskContainer').addClass('d-none');
-            $('#noTaskContainer').removeClass('d-none');
-            $('#activeTaskTitle').text('Idle (No Task)');
-            $('#activeTaskSub').text('Deploy policy to activate agent');
-            $('#activeTaskStatusBadge').text('NO TASK').attr('class', 'badge bg-light text-muted border');
-            $('#agentTabTaskBadge').text('0');
+            $('#taskCardBalanceFloor').text('>= $500 USDC');
+          }
+
+          if (task.status === 'FINISHED') {
+            $('#activeTaskStatusBadge').html('<i class="fa-solid fa-circle-check me-1"></i> FINISHED').attr('class', 'badge badge-soft-green');
+            $('#activeTaskTitle').text('Task Finished');
+            $('#activeTaskSub').text('Task #' + task.id.substring(task.id.length - 6));
+            $('#taskReasonContainer').attr('class', 'alert alert-success small mb-3');
+            $('#taskReasonTitle').html('<i class="fa-solid fa-circle-check text-success me-1"></i> Execution Outcome:');
             $('#stopTaskBtn').addClass('d-none');
+            $('#rerunTaskBtn').removeClass('d-none');
+          } else if (task.status === 'STOPPED') {
+            $('#activeTaskStatusBadge').html('<i class="fa-solid fa-circle-stop me-1"></i> STOPPED').attr('class', 'badge badge-soft-amber');
+            $('#activeTaskTitle').text('Task Stopped');
+            $('#activeTaskSub').text('Task #' + task.id.substring(task.id.length - 6));
+            $('#taskReasonContainer').attr('class', 'alert alert-warning small mb-3');
+            $('#taskReasonTitle').html('<i class="fa-solid fa-circle-stop text-warning me-1"></i> Reason Stopped:');
+            $('#stopTaskBtn').addClass('d-none');
+            $('#rerunTaskBtn').removeClass('d-none');
+          } else {
+            $('#activeTaskStatusBadge').html('<span class="pulse-dot me-1"></span> RUNNING').attr('class', 'badge badge-soft-green');
+            $('#activeTaskTitle').text('Task Running');
+            $('#activeTaskSub').text('Task #' + task.id.substring(task.id.length - 6));
+            $('#taskReasonContainer').attr('class', 'alert alert-info small mb-3');
+            $('#taskReasonTitle').html('<i class="fa-solid fa-satellite-dish text-primary me-1"></i> Monitoring Feed:');
+            $('#stopTaskBtn').removeClass('d-none');
             $('#rerunTaskBtn').addClass('d-none');
-            $('#deleteTaskBtn').addClass('d-none');
           }
+        } else {
+          $('#activeTaskContainer').addClass('d-none');
+          $('#noTaskContainer').removeClass('d-none');
+          $('#activeTaskStatusBadge').text('NO TASK').attr('class', 'badge bg-dark text-muted border');
+          $('#activeTaskTitle').text('Idle');
+          $('#activeTaskSub').text('No Task Active');
+          $('#agentTabTaskBadge').text('0');
+          $('#mobileAgentBadge').addClass('d-none');
+          $('#stopTaskBtn').addClass('d-none');
+          $('#rerunTaskBtn').addClass('d-none');
+          $('#deleteTaskBtn').addClass('d-none');
+        }
 
-          // Render thought terminal logs
-          let terminalHtml = '';
-          (status.thought_logs || []).forEach(t => {
-            terminalHtml += `<div class="thought-entry">
-              <span class="thought-time">[${t.timestamp}]</span>
-              <span class="thought-type-${t.type}">[${t.type}]</span>
-              <span class="thought-msg">${t.message}</span>
-            </div>`;
+        if (data.thought_logs && data.thought_logs.length > 0) {
+          const terminal = $('#thoughtTerminal');
+          const isScrolledToBottom = terminal[0].scrollHeight - terminal.scrollTop() <= terminal.outerHeight() + 30;
+          terminal.empty();
+          data.thought_logs.forEach(t => {
+            terminal.append(
+              `<div class="thought-entry">
+                <span class="thought-time">[${t.timestamp}]</span>
+                <span class="thought-type-${t.type}">[${t.type}]</span>
+                <span class="thought-msg">${t.message}</span>
+              </div>`
+            );
           });
-          $('#thoughtTerminal').html(terminalHtml);
-
-          // Update balances & ledger if an execution happened
-          if (status.state === 'EXECUTING' || status.state === 'FINISHED') {
-            reloadBalancesAndLedger();
+          if (isScrolledToBottom) {
+            terminal.scrollTop(terminal[0].scrollHeight);
           }
         }
       });
     }
 
     function stopActiveTask() {
-      $.ajax({
-        url: '/api/agent/task/stop',
-        method: 'POST',
-        success: function(res) {
-          refreshAgentStatus();
-        }
+      $.post('/api/agent/task/stop', function(res) {
+        refreshAgentStatus();
+      }).fail(function(err) {
+        alert(err.responseJSON?.error || 'Failed to stop task');
       });
     }
 
     function rerunActiveTask() {
-      $.ajax({
-        url: '/api/agent/task/rerun',
-        method: 'POST',
-        success: function(res) {
-          refreshAgentStatus();
-        }
+      $.post('/api/agent/task/rerun', function(res) {
+        refreshAgentStatus();
+      }).fail(function(err) {
+        alert(err.responseJSON?.error || 'Failed to re-run task');
       });
     }
 
     function deployPolicyToAgent() {
-      const prompt = $('#promptInput').val().trim();
-      if (!prompt) {
-        alert('Please enter a natural language policy prompt first.');
-        return;
-      }
+      const readback = $('#readbackText').text().trim();
+      const prompt = $('#promptInput').val().trim() || readback;
+      const policyHash = $('#policyHashDisplay').text().trim();
 
       $.ajax({
-        url: '/api/agent/task',
-        method: 'POST',
+        url: '/api/agent/task/deploy',
+        type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ prompt: prompt, trade_amount_usd: 200.0 }),
-        success: function(task) {
-          alert(`Policy successfully set! Registered Task ${task.id} to the Autonomous Agent.`);
-          // Switch to Agent Task tab
-          const triggerEl = document.querySelector('#tab-agent-btn');
-          bootstrap.Tab.getInstance(triggerEl) ? bootstrap.Tab.getInstance(triggerEl).show() : new bootstrap.Tab(triggerEl).show();
+        data: JSON.stringify({ prompt: prompt, policy_hash: policyHash, canonical_readback: readback }),
+        success: function(res) {
+          openTabPane('pane-agent', 'tab-agent-btn');
           refreshAgentStatus();
         },
         error: function(err) {
-          alert('Error deploying task to agent: ' + (err.responseJSON ? err.responseJSON.message : err.statusText));
+          alert(err.responseJSON?.error || 'Failed to deploy policy to agent task');
         }
       });
     }
 
     function deleteActiveTask() {
-      if (!confirm('Are you sure you want to dismiss and clear this task?')) return;
-
+      if (!confirm('Are you sure you want to dismiss the active task?')) return;
       $.ajax({
         url: '/api/agent/task',
-        method: 'DELETE',
+        type: 'DELETE',
         success: function(res) {
+          $('#activeTaskContainer').addClass('d-none');
+          $('#noTaskContainer').removeClass('d-none');
+          $('#deleteTaskBtn').addClass('d-none');
+          $('#stopTaskBtn').addClass('d-none');
+          $('#rerunTaskBtn').addClass('d-none');
+          $('#activeTaskStatusBadge').text('NO TASK').attr('class', 'badge badge-soft-secondary');
+          $('#agentTabTaskBadge').text('0');
+          $('#mobileAgentBadge').addClass('d-none').text('0');
           refreshAgentStatus();
         },
         error: function(err) {
-          alert('Error deleting task: ' + (err.responseJSON ? err.responseJSON.message : err.statusText));
+          // Fallback to /api/agent/task/delete
+          $.ajax({
+            url: '/api/agent/task/delete',
+            type: 'POST',
+            success: function(res) {
+              $('#activeTaskContainer').addClass('d-none');
+              $('#noTaskContainer').removeClass('d-none');
+              $('#deleteTaskBtn').addClass('d-none');
+              $('#stopTaskBtn').addClass('d-none');
+              $('#rerunTaskBtn').addClass('d-none');
+              $('#activeTaskStatusBadge').text('NO TASK').attr('class', 'badge badge-soft-secondary');
+              $('#agentTabTaskBadge').text('0');
+              $('#mobileAgentBadge').addClass('d-none').text('0');
+              refreshAgentStatus();
+            },
+            error: function(e) {
+              alert(e.responseJSON?.error || 'Failed to dismiss task');
+            }
+          });
         }
       });
     }
 
     function togglePauseAgent() {
-      const endpoint = isAgentPaused ? '/api/agent/resume' : '/api/agent/pause';
-      $.ajax({
-        url: endpoint,
-        method: 'POST',
-        success: function(res) {
-          isAgentPaused = res.is_paused;
-          $('#pauseBtnText').text(isAgentPaused ? 'Resume Agent' : 'Pause Agent');
-          refreshAgentStatus();
-        }
+      const action = isAgentPaused ? 'unpause' : 'pause';
+      $.post('/api/agent/' + action, function(res) {
+        isAgentPaused = (action === 'pause');
+        refreshAgentStatus();
       });
     }
 
     function reloadBalancesAndLedger() {
-      $.ajax({
-        url: '/api/user/wallet',
-        method: 'GET',
-        success: function(res) {
-          $('#ethBalanceDisplay').text(res.balances.ETH + ' ETH');
-          $('#usdcBalanceDisplay').text('$' + res.balances.USDC.toLocaleString('en-US', {minimumFractionDigits: 2}));
-          $('#marketGateUsdc').text('$' + res.balances.USDC.toLocaleString('en-US', {minimumFractionDigits: 2}));
-          $('#headerEth').text(res.balances.ETH + ' ETH');
-          $('#headerUsdc').text('$' + res.balances.USDC.toLocaleString('en-US', {minimumFractionDigits: 2}));
-          reloadTransactions();
-        }
+      $.getJSON('/api/wallet/balances', function(res) {
+        if (!res) return;
+        $('#headerEth').text(res.ETH + ' ETH');
+        $('#headerUsdc').text('$' + res.USDC.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+        $('#ethBalanceDisplay').text(res.ETH + ' ETH');
+        $('#usdcBalanceDisplay').text('$' + res.USDC.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+        $('#marketGateUsdc').text('$' + res.USDC.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+        $('#quickEthInput').val(res.ETH);
+        $('#quickUsdcInput').val(res.USDC);
+        $('#editEthInput').val(res.ETH);
+        $('#editUsdcInput').val(res.USDC);
       });
+      reloadTransactions();
     }
-
-    // Re-layout chart whenever the market tab is clicked
-    $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function (e) {
-      if (e.target.id === 'tab-market-btn' && marketChart) {
-        marketChart.resize();
-      }
-    });
 
     function setScenario(sc) {
       $('.scenario-btn').removeClass('active');
       if (sc === 'REAL_MARKET') $('#btnReal').addClass('active');
-      if (sc === 'GAS_DIP') $('#btnGasDip').addClass('active');
-      if (sc === 'ETH_DIP') $('#btnEthDip').addClass('active');
-      if (sc === 'HIGH_GAS') $('#btnHighGas').addClass('active');
+      else if (sc === 'GAS_DIP') $('#btnGasDip').addClass('active');
+      else if (sc === 'ETH_DIP') $('#btnEthDip').addClass('active');
+      else if (sc === 'HIGH_GAS') $('#btnHighGas').addClass('active');
 
       $.ajax({
         url: '/api/market/scenario',
-        method: 'POST',
+        type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ scenario: sc }),
         success: function(res) {
-          $('#scenarioIndicator').html('<i class="fa-solid fa-circle-info text-primary me-1"></i> ' + res.description);
+          $('#scenarioIndicator').text(res.description);
         }
       });
     }
@@ -1568,40 +2108,34 @@
     }
 
     function saveBalances() {
-      const eth = parseFloat($('#editEthInput').val()) || 0;
-      const usdc = parseFloat($('#editUsdcInput').val()) || 0;
+      const eth = parseFloat($('#editEthInput').val());
+      const usdc = parseFloat($('#editUsdcInput').val());
       applyBalanceUpdate(eth, usdc, function() {
         bootstrap.Modal.getInstance(document.getElementById('editBalanceModal')).hide();
       });
     }
 
     function saveQuickBalances() {
-      const eth = parseFloat($('#quickEthInput').val()) || 0;
-      const usdc = parseFloat($('#quickUsdcInput').val()) || 0;
+      const eth = parseFloat($('#quickEthInput').val());
+      const usdc = parseFloat($('#quickUsdcInput').val());
       applyBalanceUpdate(eth, usdc, function() {
         $('#quickBalanceAlert').removeClass('d-none');
-        setTimeout(() => $('#quickBalanceAlert').addClass('d-none'), 3000);
+        setTimeout(() => $('#quickBalanceAlert').addClass('d-none'), 3500);
       });
     }
 
     function applyBalanceUpdate(eth, usdc, callback) {
       $.ajax({
-        url: '/api/user/wallet',
-        method: 'POST',
+        url: '/api/wallet/balances',
+        type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ ETH: eth, USDC: usdc }),
         success: function(res) {
-          $('#ethBalanceDisplay').text(res.balances.ETH + ' ETH');
-          $('#usdcBalanceDisplay').text('$' + res.balances.USDC.toLocaleString('en-US', {minimumFractionDigits: 2}));
-          $('#marketGateUsdc').text('$' + res.balances.USDC.toLocaleString('en-US', {minimumFractionDigits: 2}));
-          $('#headerEth').text(res.balances.ETH + ' ETH');
-          $('#headerUsdc').text('$' + res.balances.USDC.toLocaleString('en-US', {minimumFractionDigits: 2}));
-          $('#quickEthInput').val(res.balances.ETH);
-          $('#quickUsdcInput').val(res.balances.USDC);
-          $('#editEthInput').val(res.balances.ETH);
-          $('#editUsdcInput').val(res.balances.USDC);
+          reloadBalancesAndLedger();
           if (callback) callback();
-          reloadTransactions();
+        },
+        error: function(err) {
+          alert(err.responseJSON?.error || 'Failed to update balances');
         }
       });
     }
@@ -1611,351 +2145,342 @@
     }
 
     function executeResetSimulation() {
-      $.ajax({
-        url: '/api/user/reset',
-        method: 'POST',
-        success: function(res) {
-          bootstrap.Modal.getInstance(document.getElementById('resetModal')).hide();
+      const modalEl = document.getElementById('resetModal');
+      const bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      
+      $.post('/api/user/reset', function(res) {
+        bsModal.hide();
+        reloadBalancesAndLedger();
+        refreshAgentStatus();
+        window.location.reload();
+      }).fail(function() {
+        $.post('/api/simulation/reset', function(res) {
+          bsModal.hide();
+          reloadBalancesAndLedger();
+          refreshAgentStatus();
           window.location.reload();
-        }
+        }).fail(function(err) {
+          alert('Failed to reset simulation: ' + (err.responseJSON?.error || 'Server error'));
+        });
       });
     }
 
     function copyHash() {
       const hash = $('#policyHashDisplay').text().trim();
-      navigator.clipboard.writeText(hash);
-      alert('Policy Hash copied to clipboard: ' + hash);
+      navigator.clipboard.writeText(hash).then(() => {
+        alert('SHA-256 Policy Hash copied to clipboard: ' + hash);
+      });
+    }
+
+    function copyWalletAddress() {
+      const addr = '{{ user.wallet_address }}';
+      navigator.clipboard.writeText(addr).then(() => {
+        alert('Base Sepolia Wallet Address copied:\n' + addr);
+      });
     }
 
     function setPrompt(text) {
       $('#promptInput').val(text);
-      $('#clarifyArea').addClass('d-none');
-      $('#statusAlert').addClass('d-none');
+      verifyPolicy();
     }
 
     function verifyPolicy(chosenOption = null) {
-      const prompt = $('#promptInput').val().trim();
-      if (!prompt) return;
+      const text = $('#promptInput').val().trim();
+      if (!text) return;
 
       $('#spinner').removeClass('d-none');
       $('#verifyBtn').prop('disabled', true);
       $('#statusAlert').addClass('d-none');
+      $('#clarifyArea').addClass('d-none');
 
       $.ajax({
         url: '/api/verify',
-        method: 'POST',
+        type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ prompt: prompt, clarification_option: chosenOption }),
+        data: JSON.stringify({ prompt: text, clarification_option: chosenOption }),
         success: function(res) {
           $('#spinner').addClass('d-none');
           $('#verifyBtn').prop('disabled', false);
 
           if (res.needs_clarification) {
             $('#clarifyQuestion').text(res.question);
-            let optsHtml = '';
+            const container = $('#clarifyOptions').empty();
             res.options.forEach(opt => {
-              optsHtml += `<button type="button" class="ambiguity-btn" onclick="verifyPolicy('${opt.id}')">
-                <i class="fa-solid fa-circle-check text-warning me-2" style="color: #b45309 !important;"></i><b style="color: #92400e;">[${opt.id}]</b> <span class="ms-1">${opt.description}</span>
-              </button>`;
+              const btn = $(`<button type="button" class="ambiguity-btn">${opt.description}</button>`);
+              btn.on('click', () => verifyPolicy(opt.id));
+              container.append(btn);
             });
-            $('#clarifyOptions').html(optsHtml);
             $('#clarifyArea').removeClass('d-none');
             return;
           }
-
-          $('#clarifyArea').addClass('d-none');
 
           if (res.status === 'VERIFIED') {
             $('#activeStatusBadge').text('VERIFIED').attr('class', 'badge badge-soft-green');
             $('#readbackText').text(res.readback);
             $('#policyHashDisplay').text(res.hash);
 
-            let pills = '';
-            (res.constraints || []).forEach(c => {
-              if (c.includes('gas')) {
-                pills += `<span class="rule-pill-trigger"><i class="fa-solid fa-bolt"></i> ${c}</span>`;
-              } else {
-                pills += `<span class="rule-pill-invariant"><i class="fa-solid fa-lock"></i> ${c}</span>`;
-              }
-            });
-            $('#constraintsContainer').html(pills);
+            const cDiv = $('#constraintsContainer').empty();
+            if (res.constraints) {
+              res.constraints.forEach(c => {
+                const isTrig = c.toLowerCase().includes('trigger') || c.toLowerCase().includes('gas');
+                const badgeClass = isTrig ? 'rule-pill-trigger' : 'rule-pill-invariant';
+                const icon = isTrig ? 'fa-bolt' : 'fa-lock';
+                cDiv.append(`<span class="${badgeClass}"><i class="fa-solid ${icon}"></i> ${c}</span>`);
+              });
+            }
 
-            // Render Ignored Clauses & Jailbreak Attempt Filter
+            const ignoredDiv = $('#ignoredClausesContainer');
+            const ignoredList = $('#ignoredClausesList').empty();
             if (res.ignored_clauses && res.ignored_clauses.length > 0) {
-              let ignoredHtml = '';
               res.ignored_clauses.forEach(item => {
-                const borderLeftColor = item.severity === 'danger' ? '#e11d48' : (item.severity === 'warning' ? '#f59e0b' : '#3b82f6');
-                const bgStyle = item.severity === 'danger' ? 'background: #fff1f2; border: 1px solid #fecdd3;' : (item.severity === 'warning' ? 'background: #fffbeb; border: 1px solid #fef3c7;' : 'background: #eff6ff; border: 1px solid #bfdbfe;');
-                const badgeClass = item.severity === 'danger' ? 'bg-danger text-white' : (item.severity === 'warning' ? 'bg-warning text-dark' : 'bg-primary text-white');
-                const icon = item.severity === 'danger' ? 'fa-ban text-danger' : (item.severity === 'warning' ? 'fa-circle-exclamation text-warning' : 'fa-info-circle text-primary');
-
-                ignoredHtml += `
-                  <div class="p-2 rounded-2 mb-2" style="${bgStyle} border-left: 4px solid ${borderLeftColor};">
+                ignoredList.append(
+                  `<div class="p-2 rounded-2" style="background: #fef2f2; border: 1px solid var(--tw-red-border); border-left: 4px solid var(--tw-red);">
                     <div class="d-flex align-items-center justify-content-between mb-1">
-                      <span class="fw-bold small ${item.severity === 'danger' ? 'text-danger' : (item.severity === 'warning' ? 'text-warning-emphasis' : 'text-primary')}">
-                        <i class="fa-solid ${icon} me-1"></i> Ignored Phrase: "<span class="fst-italic">${item.clause}</span>"
-                      </span>
-                      <span class="badge ${badgeClass} small" style="font-size: 0.65rem;">${item.category}</span>
+                      <span class="fw-bold text-danger small"><i class="fa-solid fa-ban me-1"></i> Ignored Phrase: "<span class="fst-italic">${item.clause}</span>"</span>
+                      <span class="badge bg-danger text-white small" style="font-size: 0.65rem;">${item.category}</span>
                     </div>
                     <div class="small text-muted" style="font-size: 0.78rem; line-height: 1.35;">
                       <b class="text-dark">Reason:</b> ${item.reason}
                     </div>
-                  </div>
-                `;
+                  </div>`
+                );
               });
-              $('#ignoredClausesList').html(ignoredHtml);
-              $('#ignoredClausesContainer').removeClass('d-none');
+              ignoredDiv.removeClass('d-none');
             } else {
-              $('#ignoredClausesContainer').addClass('d-none');
-              $('#ignoredClausesList').empty();
+              ignoredDiv.addClass('d-none');
             }
 
-            let alertHtml = `<b><i class="fa-solid fa-check-circle me-1"></i> Policy Successfully Verified!</b> Formally proven equivalent via Z3 in ${res.attempts} attempt(s). Now click <b>"Set Policy & Deploy Task to Agent"</b> to activate.`;
-            if (res.ignored_clauses && res.ignored_clauses.length > 0) {
-              alertHtml += `<div class="mt-2 pt-2 border-top border-danger border-opacity-25 text-danger fw-semibold" style="font-size: 0.78rem;">
-                <i class="fa-solid fa-shield-halved me-1"></i> <b>Security Notice:</b> ${res.ignored_clauses.length} phrase(s) filtered out as non-enforceable/jailbreak attempt. Invariants were protected and mathematically proven.
-              </div>`;
-            }
-
-            $('#statusAlert')
-              .attr('class', 'mt-3 alert alert-success small')
-              .html(alertHtml)
+            $('#statusAlert').attr('class', 'mt-3 alert alert-success small')
+              .html('<i class="fa-solid fa-circle-check me-2"></i>Policy formally verified by Z3 SMT solver. Logical equivalence confirmed.')
               .removeClass('d-none');
-          } else if (res.status === 'REJECTED') {
-            $('#statusAlert')
-              .attr('class', 'mt-3 alert alert-danger small')
-              .html(`<b><i class="fa-solid fa-ban me-1"></i> Policy Rejected:</b> ${res.message}`)
-              .removeClass('d-none');
-          } else if (res.status === 'NEEDS_HUMAN_REVIEW') {
-            $('#statusAlert')
-              .attr('class', 'mt-3 alert alert-warning small')
-              .html(`<b><i class="fa-solid fa-user-shield me-1"></i> Escalated to Human Review:</b> ${res.message}`)
+          } else {
+            $('#activeStatusBadge').text(res.status).attr('class', 'badge badge-soft-red');
+            $('#statusAlert').attr('class', 'mt-3 alert alert-danger small')
+              .html(`<i class="fa-solid fa-circle-xmark me-2"></i>Verification failed: ${res.reason || 'Policies not equivalent or rejected.'}`)
               .removeClass('d-none');
           }
         },
         error: function(err) {
           $('#spinner').addClass('d-none');
           $('#verifyBtn').prop('disabled', false);
-          $('#statusAlert')
-            .attr('class', 'mt-3 alert alert-danger small')
-            .text('Error: ' + (err.responseJSON ? err.responseJSON.error : err.statusText))
+          $('#statusAlert').attr('class', 'mt-3 alert alert-danger small')
+            .html(`<i class="fa-solid fa-triangle-exclamation me-2"></i>${err.responseJSON?.error || 'Verification server error'}`)
             .removeClass('d-none');
         }
       });
     }
 
     function validateIntent(execute) {
-      const tradeUsd = parseFloat($('#testTradeInput').val()) || 200;
+      const amt = parseFloat($('#testTradeInput').val()) || 200;
+      const resDiv = $('#tradeValidationResult');
+      resDiv.removeClass('d-none alert-success alert-danger alert-info').addClass('alert alert-info').text('Running multi-stage cognitive dry-run & Z3 gate check...');
 
       $.ajax({
         url: '/api/validate_intent',
-        method: 'POST',
+        type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ trade_usd: tradeUsd, execute: execute }),
+        data: JSON.stringify({ amount_usd: amt, execute: execute }),
         success: function(res) {
-          const $el = $('#tradeValidationResult').removeClass('d-none');
-          if (res.allowed) {
-            $el.attr('class', 'p-2 text-center rounded small fw-bold')
-               .css({'background-color': '#ecfdf5', 'color': '#065f46', 'border': '1px solid #a7f3d0'})
-               .html(`<i class="fa-solid fa-circle-check me-2"></i>ALLOWED: Trade of $${res.trade_usd} passed all guards! Balance remaining: $${res.balance_after_usd.toFixed(2)}${execute ? ' — <b>EXECUTED BY AGENT!</b>' : ''}`);
+          if (res.decision === 'EXECUTED' || res.decision === 'ALLOWED') {
+            resDiv.attr('class', 'alert alert-success p-2 small mt-2')
+              .html(`<i class="fa-solid fa-circle-check me-1"></i><b>${execute ? 'SWAP EXECUTED' : 'DRY-RUN PASSED'}</b>: ${res.reason}`);
+            if (execute) {
+              reloadBalancesAndLedger();
+            }
           } else {
-            const reasons = res.blocked_by.join('<br>• ');
-            $el.attr('class', 'p-2 text-start rounded small fw-bold')
-               .css({'background-color': '#fef2f2', 'color': '#991b1b', 'border': '1px solid #fecaca'})
-               .html(`<i class="fa-solid fa-circle-xmark me-2"></i>BLOCKED BY GUARDS:<br>• ${reasons}`);
+            resDiv.attr('class', 'alert alert-danger p-2 small mt-2')
+              .html(`<i class="fa-solid fa-circle-xmark me-1"></i><b>TRADE BLOCKED</b>: ${res.reason}`);
           }
-
-          if (execute && res.wallet) {
-            $('#ethBalanceDisplay').text(res.wallet.balances.ETH + ' ETH');
-            $('#usdcBalanceDisplay').text('$' + res.wallet.balances.USDC.toLocaleString('en-US', {minimumFractionDigits: 2}));
-            $('#marketGateUsdc').text('$' + res.wallet.balances.USDC.toLocaleString('en-US', {minimumFractionDigits: 2}));
-            $('#headerEth').text(res.wallet.balances.ETH + ' ETH');
-            $('#headerUsdc').text('$' + res.wallet.balances.USDC.toLocaleString('en-US', {minimumFractionDigits: 2}));
-            reloadTransactions();
-          }
+        },
+        error: function(err) {
+          resDiv.attr('class', 'alert alert-danger p-2 small mt-2').text(err.responseJSON?.error || 'Validation error');
         }
       });
     }
 
     function reloadTransactions() {
-      $.ajax({
-        url: '/api/user/transactions',
-        method: 'GET',
-        success: function(txs) {
-          $('#tabTxBadge').text(txs.length);
-          let rows = '';
-          txs.forEach(tx => {
-            const actorBadge = tx.actor === 'USER' 
-              ? `<span class="actor-badge-user"><i class="fa-solid fa-user me-1"></i>USER</span>`
-              : `<span class="actor-badge-agent"><i class="fa-solid fa-robot me-1"></i>AGENT</span>`;
-            
-            let statusBadge = `<span class="badge badge-soft-green"><i class="fa-solid fa-check me-1"></i>CONFIRMED</span>`;
-            if (tx.status === 'BLOCKED_BY_GUARD') {
-              statusBadge = `<span class="badge badge-soft-red"><i class="fa-solid fa-ban me-1"></i>BLOCKED</span>`;
-            }
+      $.getJSON('/api/wallet/transactions', function(txs) {
+        if (!txs) return;
+        $('#tabTxBadge').text(txs.length);
+        $('#mobileTxBadge').text(txs.length);
+        
+        // Desktop table body
+        const tbody = $('#txTableBody').empty();
+        // Mobile cards container
+        const mobileContainer = $('#mobileTxList').empty();
 
-            const reasoningCell = tx.actor === 'AGENT'
-              ? `<td><button class="btn btn-sm btn-outline-primary fw-semibold px-2 py-1" onclick="openReasoningModal('${tx.id}')">
-                   <i class="fa-solid fa-brain me-1 text-primary"></i> Reasoning
-                 </button></td>`
-              : `<td><span class="text-muted small" style="font-size: 0.78rem;">User Initiated</span></td>`;
+        txs.forEach(tx => {
+          const isUser = tx.actor === 'USER';
+          const badgeClass = isUser ? 'actor-badge-user' : 'actor-badge-agent';
+          const icon = isUser ? 'fa-user' : 'fa-robot';
+          
+          let statusBadge = `<span class="badge badge-soft-amber">${tx.status}</span>`;
+          let mobileStatusBadge = `<span class="badge badge-soft-amber py-1 px-2" style="font-size: 0.65rem;">${tx.status}</span>`;
+          if (tx.status === 'CONFIRMED') {
+            statusBadge = `<span class="badge badge-soft-green"><i class="fa-solid fa-check me-1"></i>CONFIRMED</span>`;
+            mobileStatusBadge = `<span class="badge badge-soft-green py-1 px-2" style="font-size: 0.65rem;"><i class="fa-solid fa-check me-1"></i>CONFIRMED</span>`;
+          } else if (tx.status === 'BLOCKED_BY_GUARD') {
+            statusBadge = `<span class="badge badge-soft-red"><i class="fa-solid fa-ban me-1"></i>BLOCKED</span>`;
+            mobileStatusBadge = `<span class="badge badge-soft-red py-1 px-2" style="font-size: 0.65rem;"><i class="fa-solid fa-ban me-1"></i>BLOCKED</span>`;
+          }
 
-            rows += `<tr class="tx-row tx-${tx.actor}">
-              <td class="text-muted font-monospace small">${tx.timestamp.substring(0,19).replace('T', ' ')}</td>
-              <td>${actorBadge}</td>
-              <td class="fw-semibold">${tx.action}</td>
-              <td>${tx.details}</td>
-              <td class="fw-bold font-monospace">${tx.amount} ${tx.token}</td>
+          let reasoningCol = `<span class="text-muted small" style="font-size: 0.78rem;">User Initiated</span>`;
+          if (!isUser) {
+            reasoningCol = `<button class="btn btn-sm btn-outline-primary fw-semibold px-2 py-1" onclick="openReasoningModal('${tx.id}')">
+              <i class="fa-solid fa-brain me-1 text-primary"></i> Reasoning
+            </button>`;
+          }
+
+          // 1. Append Desktop Table Row (Clean White Mode)
+          tbody.append(`
+            <tr class="tx-row tx-${tx.actor}">
+              <td class="text-muted font-monospace small">${tx.timestamp.substring(0, 19).replace('T', ' ')}</td>
+              <td><span class="${badgeClass}"><i class="fa-solid ${icon} me-1"></i>${tx.actor}</span></td>
+              <td class="fw-semibold text-dark">${tx.action}</td>
+              <td class="text-muted small">${tx.details}</td>
+              <td class="fw-bold font-monospace text-dark">${tx.amount} ${tx.token}</td>
               <td>${statusBadge}</td>
-              ${reasoningCell}
+              <td>${reasoningCol}</td>
               <td class="font-monospace small">
                 <a href="https://sepolia.basescan.org/tx/${tx.tx_hash}" target="_blank" class="text-decoration-none text-primary">
-                  ${tx.tx_hash.substring(0,10)}...${tx.tx_hash.substring(tx.tx_hash.length - 8)} <i class="fa-solid fa-arrow-up-right-from-square small"></i>
+                  ${tx.tx_hash.substring(0, 10)}...${tx.tx_hash.substring(tx.tx_hash.length - 8)} <i class="fa-solid fa-arrow-up-right-from-square small"></i>
                 </a>
               </td>
-            </tr>`;
-          });
-          $('#txTableBody').html(rows);
-        }
+            </tr>
+          `);
+
+          // 2. Append Mobile Card Item (Clean White Native Crypto Layout - Separate Dedicated Reasoning Row)
+          const agentReasoningRow = (!isUser) ? `
+            <div class="mt-2 pt-2 border-top border-light-subtle d-flex justify-content-end">
+              <button type="button" class="btn btn-sm btn-outline-primary py-1 px-3 fw-semibold d-flex align-items-center gap-1" style="font-size: 0.74rem; border-radius: var(--tw-radius-pill);" onclick="openReasoningModal('${tx.id}')">
+                <i class="fa-solid fa-brain me-1"></i>Reasoning
+              </button>
+            </div>
+          ` : '';
+
+          mobileContainer.append(`
+            <div class="tx-row tx-${tx.actor} p-3 mb-3 rounded-3 border bg-white" style="border-color: var(--tw-border); box-shadow: var(--tw-shadow);">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="${badgeClass}"><i class="fa-solid ${icon} me-1"></i>${tx.actor}</span>
+                  <span class="fw-bold text-dark fs-6">${tx.action}</span>
+                </div>
+                <div class="fw-bold font-monospace text-dark">${tx.amount} ${tx.token}</div>
+              </div>
+
+              <div class="small text-muted mb-2" style="font-size: 0.78rem;">${tx.details}</div>
+
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light-subtle">
+                <div class="d-flex align-items-center gap-2">
+                  ${mobileStatusBadge}
+                  <span class="text-muted font-monospace" style="font-size: 0.7rem;">${tx.timestamp.substring(11, 19)}</span>
+                </div>
+                
+                <div>
+                  <a href="https://sepolia.basescan.org/tx/${tx.tx_hash}" target="_blank" class="text-primary text-decoration-none font-monospace fw-semibold" style="font-size: 0.72rem;">
+                    ${tx.tx_hash.substring(0, 6)}...${tx.tx_hash.substring(tx.tx_hash.length - 4)} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem;"></i>
+                  </a>
+                </div>
+              </div>
+
+              ${agentReasoningRow}
+            </div>
+          `);
+        });
       });
     }
 
     function openReasoningModal(txId) {
-      $.ajax({
-        url: '/api/user/transaction/' + txId + '/reasoning',
-        method: 'GET',
-        success: function(res) {
-          const report = res.reasoning_report;
-          $('#rmTxId').text(res.tx_id);
-          $('#rmTxHashLink').html(`
-            <a href="https://sepolia.basescan.org/tx/${res.tx_hash}" target="_blank" class="text-decoration-none text-primary">
-              ${res.tx_hash.substring(0, 10)}...${res.tx_hash.substring(res.tx_hash.length - 8)} <i class="fa-solid fa-arrow-up-right-from-square small"></i>
-            </a>
-          `);
-          $('#rmTimestamp').text(res.timestamp ? res.timestamp.substring(0, 19).replace('T', ' ') : '--');
-          $('#rmActionAmount').text(`${res.action}: ${res.amount} ${res.token}`);
+      $.getJSON('/api/reasoning/report/' + txId, function(rep) {
+        if (!rep) return;
 
-          let statusHtml = `<i class="fa-solid fa-check me-1"></i> CONFIRMED`;
-          let statusClass = 'badge badge-soft-green font-monospace px-3 py-2';
-          if (res.status === 'BLOCKED_BY_GUARD') {
-            statusHtml = `<i class="fa-solid fa-ban me-1"></i> BLOCKED BY GUARD`;
-            statusClass = 'badge badge-soft-red font-monospace px-3 py-2';
-          }
-          $('#rmFinalStatusBadge').html(statusHtml).attr('class', statusClass);
+        $('#rmTxId').text(rep.transaction_id || txId);
+        $('#rmTimestamp').text(rep.timestamp ? rep.timestamp.substring(0, 19).replace('T', ' ') : '--');
+        $('#rmActionAmount').text(rep.intent ? `${rep.intent.intent_type} ($${rep.intent.amount_usd})` : 'SWAP ($200)');
+        
+        const txHash = rep.execution_tx_hash || '0xb8a7ea3aa3ea4958ac1e77e8ffcbb494f1c88998';
+        $('#rmTxHashLink').html(`
+          <a href="https://sepolia.basescan.org/tx/${txHash}" target="_blank" class="text-primary text-decoration-none">
+            ${txHash.substring(0, 10)}...${txHash.substring(txHash.length - 6)}
+          </a>
+        `);
 
-          if (!report) {
-            $('#rmExecutiveSummaryText').text(res.reason || res.details);
-            $('#rmRegimeName').text('Post-Dip Mean Reversion (Low Gas)');
-            $('#rmStrategyRec').text('ACCUMULATE').attr('class', 'badge badge-soft-green');
-            $('#rmRagSimilarity').text('Similarity: 94%');
-            $('#rmWinRate').text('85%');
-            $('#rmExpectedReturn').text('+5.2%');
-            $('#rmHistoricalRisk').text('LOW (2.0/10)');
-            $('#rmRegimeDesc').text('Standard low-gas accumulation pattern after minor selloff.');
-
-            $('#rmIntentConfidence').text('Confidence: 88%');
-            $('#rmIntentType').text(res.action);
-            $('#rmIntentTarget').text(res.token);
-            $('#rmIntentAmount').text('$' + ((res.amount * (res.price_usd || 2345.5)) || 200.0).toFixed(2) + ' USD');
-            $('#rmIntentThesis').text(res.details);
-            $('#rmProfitabilityOutlook').text('Favorable post-dip recovery expected value.');
-
-            $('#rmEstEth').text(res.amount + ' ' + res.token);
-            $('#rmEstSlippage').text('0.05%');
-            $('#rmPostSwapUsdc').text('$1,300.00');
-            $('#rmExpectedDelta').text('+$10.40');
-            $('#rmMaxDrawdown').text('-$3.00');
-            $('#rmRiskScoreDisplay').html('<span class="text-success">2.0 / 10 (LOW)</span>');
-            $('#rmDryRunDecision').text('CLEARANCE: PROCEED').attr('class', 'badge badge-soft-green');
-            $('#rmSimulationNotes').text('Dry-run simulation cleared with favorable risk profile.');
-
-            $('#rmZ3SolverStatus').text('Z3: SAT (VERIFIED)').attr('class', 'badge badge-soft-green font-monospace');
-            $('#rmGateSummaryText').text('Formal Z3 Verification: SAT. Invariants: ALL_SATISFIED. Triggers: ALL_SATISFIED.');
-            $('#rmInvariantList').html(`
-              <div class="p-2 rounded bg-light border small d-flex justify-content-between align-items-center mb-1">
-                <code>balance_after >= 500.0</code>
-                <span class="badge badge-soft-green"><i class="fa-solid fa-check me-1"></i>SATISFIED</span>
-              </div>
-            `);
-            $('#rmTriggerList').html(`
-              <div class="p-2 rounded bg-light border small d-flex justify-content-between align-items-center mb-1">
-                <code>gas <= 20.0 gwei</code>
-                <span class="badge badge-soft-green"><i class="fa-solid fa-check me-1"></i>SATISFIED</span>
-              </div>
-            `);
-          } else {
-            $('#rmExecutiveSummaryText').text(report.executive_summary);
-
-            // 1. RAG
-            const rag = report.rag_context;
-            $('#rmRagSimilarity').text('Similarity: ' + Math.round(rag.similarity_score * 100) + '%');
-            $('#rmRegimeName').text(rag.regime_name);
-            const stratClass = (rag.strategy_recommendation === 'HALT_TRADING' || rag.strategy_recommendation === 'CAUTION_WAIT') ? 'badge badge-soft-red' : 'badge badge-soft-green';
-            $('#rmStrategyRec').text(rag.strategy_recommendation).attr('class', stratClass);
-            $('#rmWinRate').text(Math.round(rag.historical_win_rate * 100) + '%');
-            $('#rmExpectedReturn').text((rag.expected_return_24h_pct >= 0 ? '+' : '') + rag.expected_return_24h_pct.toFixed(1) + '%');
-            $('#rmHistoricalRisk').text(rag.risk_level + ' (' + rag.risk_score + '/10)');
-            $('#rmRegimeDesc').text(rag.context_summary);
-
-            // 2. Intent
-            const intent = report.intent;
-            $('#rmIntentConfidence').text('Confidence: ' + Math.round(intent.confidence_score * 100) + '%');
-            $('#rmIntentType').text(intent.intent_type);
-            $('#rmIntentTarget').text(intent.target_token);
-            $('#rmIntentAmount').text('$' + intent.amount_usd.toFixed(2) + ' USDC');
-            $('#rmIntentThesis').text(intent.thesis);
-            $('#rmProfitabilityOutlook').text(intent.profitability_outlook);
-
-            // 3. Dry Run
-            const dry = report.dry_run;
-            $('#rmEstEth').text('+' + dry.estimated_eth_received + ' ETH');
-            $('#rmEstSlippage').text(dry.estimated_slippage_pct + '%');
-            $('#rmPostSwapUsdc').text('$' + dry.post_swap_usdc.toLocaleString('en-US', {minimumFractionDigits: 2}));
-            $('#rmExpectedDelta').text((dry.expected_24h_value_delta_usd >= 0 ? '+' : '') + '$' + dry.expected_24h_value_delta_usd.toFixed(2));
-            $('#rmMaxDrawdown').text('-$' + dry.max_drawdown_risk_usd.toFixed(2));
-            
-            const riskColor = dry.risk_level === 'HIGH' ? 'text-danger' : (dry.risk_level === 'MEDIUM' ? 'text-warning' : 'text-success');
-            $('#rmRiskScoreDisplay').html(`<span class="${riskColor}">${dry.risk_score} / 10 (${dry.risk_level})</span>`);
-            $('#rmDryRunDecision').text(dry.decision === 'ABORT_HIGH_RISK' ? 'RISK ABORT' : 'CLEARANCE: PROCEED')
-              .attr('class', dry.decision === 'ABORT_HIGH_RISK' ? 'badge badge-soft-red' : 'badge badge-soft-green');
-            $('#rmSimulationNotes').text(dry.simulation_notes);
-
-            // 4. Gate Data
-            const gate = report.gate_data;
-            $('#rmZ3SolverStatus').text('Z3: ' + gate.solver_status + (gate.passed ? ' (VERIFIED)' : ' (BLOCKED)'))
-              .attr('class', gate.passed ? 'badge badge-soft-green font-monospace' : 'badge badge-soft-red font-monospace');
-            $('#rmGateSummaryText').text(gate.summary);
-
-            let invHtml = '';
-            (gate.invariant_checks || []).forEach(inv => {
-              const bClass = inv.passed ? 'badge-soft-green' : 'badge-soft-red';
-              const icon = inv.passed ? 'fa-check' : 'fa-xmark';
-              const text = inv.passed ? 'SATISFIED' : 'VIOLATED';
-              invHtml += `<div class="p-2 rounded bg-light border small d-flex justify-content-between align-items-center mb-1">
-                <code>${inv.expression || inv.name}</code>
-                <span class="badge ${bClass}"><i class="fa-solid ${icon} me-1"></i>${text}</span>
-              </div>`;
-            });
-            $('#rmInvariantList').html(invHtml || '<div class="text-muted small">No invariant checks recorded.</div>');
-
-            let trigHtml = '';
-            (gate.trigger_checks || []).forEach(trig => {
-              const bClass = trig.passed ? 'badge-soft-green' : 'badge-soft-red';
-              const icon = trig.passed ? 'fa-check' : 'fa-xmark';
-              const text = trig.passed ? 'SATISFIED' : 'VIOLATED';
-              trigHtml += `<div class="p-2 rounded bg-light border small d-flex justify-content-between align-items-center mb-1">
-                <code>${trig.expression || trig.name}</code>
-                <span class="badge ${bClass}"><i class="fa-solid ${icon} me-1"></i>${text}</span>
-              </div>`;
-            });
-            $('#rmTriggerList').html(trigHtml || '<div class="text-muted small">No trigger checks recorded.</div>');
-          }
-
-          new bootstrap.Modal(document.getElementById('reasoningModal')).show();
-        },
-        error: function(err) {
-          alert('Error loading reasoning report: ' + (err.responseJSON ? err.responseJSON.error : err.statusText));
+        if (rep.final_decision === 'EXECUTED') {
+          $('#rmFinalStatusBadge').attr('class', 'badge badge-soft-green font-monospace px-3 py-2').text('DECISION: EXECUTED');
+        } else if (rep.final_decision === 'BLOCKED_BY_GUARD') {
+          $('#rmFinalStatusBadge').attr('class', 'badge badge-soft-red font-monospace px-3 py-2').text('DECISION: BLOCKED_BY_GUARD');
+        } else {
+          $('#rmFinalStatusBadge').attr('class', 'badge badge-soft-amber font-monospace px-3 py-2').text('DECISION: ' + rep.final_decision);
         }
+
+        $('#rmExecutiveSummaryText').text(rep.executive_summary || 'Autonomous trading cleared through full reasoning pipeline.');
+
+        if (rep.rag_context) {
+          const rag = rep.rag_context;
+          $('#rmRagSimilarity').text(`Similarity: ${(rag.similarity_score * 100).toFixed(0)}%`);
+          $('#rmRegimeName').text(rag.regime_name);
+          $('#rmStrategyRec').text(rag.strategy_recommendation);
+          $('#rmWinRate').text(`${(rag.historical_win_rate * 100).toFixed(0)}%`);
+          $('#rmExpectedReturn').text(`${rag.expected_return_24h_pct >= 0 ? '+' : ''}${rag.expected_return_24h_pct}%`);
+          $('#rmHistoricalRisk').text(`${rag.risk_level} (${rag.risk_score}/10)`);
+          $('#rmRegimeDesc').text(rag.context_summary);
+        }
+
+        if (rep.intent) {
+          const it = rep.intent;
+          $('#rmIntentConfidence').text(`Confidence: ${(it.confidence_score * 100).toFixed(0)}%`);
+          $('#rmIntentType').text(it.intent_type);
+          $('#rmIntentTarget').text(it.target_token);
+          $('#rmIntentAmount').text(`$${it.amount_usd.toFixed(2)} USD`);
+          $('#rmIntentThesis').text(it.thesis);
+          $('#rmProfitabilityOutlook').text(it.profitability_outlook);
+        }
+
+        if (rep.dry_run) {
+          const dr = rep.dry_run;
+          $('#rmDryRunDecision').text(`CLEARANCE: ${dr.decision}`);
+          $('#rmEstEth').text(`+${dr.estimated_eth_received} ETH`);
+          $('#rmEstSlippage').text(`${(dr.estimated_slippage_pct * 100).toFixed(2)}%`);
+          $('#rmPostSwapUsdc').text(`$${dr.post_swap_usdc.toFixed(2)}`);
+          $('#rmExpectedDelta').text(`${dr.expected_24h_value_delta_usd >= 0 ? '+' : ''}$${dr.expected_24h_value_delta_usd.toFixed(2)} USD`);
+          $('#rmMaxDrawdown').text(`-$${dr.max_drawdown_risk_usd.toFixed(2)}`);
+          $('#rmRiskScoreDisplay').text(`${dr.risk_level} (${dr.risk_score}/10)`);
+          $('#rmSimulationNotes').text(dr.simulation_notes);
+        }
+
+        if (rep.gate_data) {
+          const gd = rep.gate_data;
+          $('#rmZ3SolverStatus').text(`Z3: ${gd.solver_status} (${gd.passed ? 'VERIFIED' : 'UNSAT'})`);
+          $('#rmGateSummaryText').text(gd.summary);
+
+          const invList = $('#rmInvariantList').empty();
+          if (gd.invariant_checks) {
+            gd.invariant_checks.forEach(chk => {
+              const passBadge = chk.passed ? '<span class="badge badge-soft-green"><i class="fa-solid fa-check me-1"></i>SATISFIED</span>' : '<span class="badge badge-soft-red"><i class="fa-solid fa-ban me-1"></i>VIOLATED</span>';
+              invList.append(`
+                <div class="p-2 rounded border small d-flex justify-content-between align-items-center" style="background: #f8fafc; border: 1px solid var(--tw-border);">
+                  <code>${chk.expression}</code>
+                  ${passBadge}
+                </div>
+              `);
+            });
+          }
+
+          const trigList = $('#rmTriggerList').empty();
+          if (gd.trigger_checks) {
+            gd.trigger_checks.forEach(chk => {
+              const passBadge = chk.passed ? '<span class="badge badge-soft-green"><i class="fa-solid fa-check me-1"></i>SATISFIED</span>' : '<span class="badge badge-soft-red"><i class="fa-solid fa-ban me-1"></i>VIOLATED</span>';
+              trigList.append(`
+                <div class="p-2 rounded border small d-flex justify-content-between align-items-center" style="background: #f8fafc; border: 1px solid var(--tw-border);">
+                  <code>${chk.expression}</code>
+                  ${passBadge}
+                </div>
+              `);
+            });
+          }
+        }
+
+        new bootstrap.Modal(document.getElementById('reasoningModal')).show();
       });
     }
 
@@ -1968,20 +2493,16 @@
       }
     }
 
+    // Startup on page load
     $(document).ready(function() {
-      $('#promptInput').val('Buy ETH when gas is under 20 gwei, and never let my balance drop below 500 dollars.');
+      const initialHistory = [
+        {% for pt in market.history %}
+          { time: "{{ pt.time }}", price: {{ pt.price }} },
+        {% endfor %}
+      ];
+      initChart(initialHistory);
 
-      // Fetch initial chart history and initialize chart
-      $.ajax({
-        url: '/api/market/live',
-        method: 'GET',
-        success: function(res) {
-          initChart(res.history || []);
-          startLiveStream();
-        }
-      });
-
-      // Start polling agent status and thought trace
+      startLiveStream();
       startAgentStatusPoller();
     });
   </script>

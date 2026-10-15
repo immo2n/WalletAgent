@@ -97,6 +97,8 @@ def create_app() -> Flask:
         template_folder=template_dir,
         static_folder=static_dir,
     )
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.jinja_env.auto_reload = True
 
     # Start always-running autonomous agent daemon
     autonomous_agent.start()
@@ -203,10 +205,13 @@ def create_app() -> Flask:
         return jsonify([t.to_dict() for t in state.transactions])
 
     @app.route("/api/user/reset", methods=["POST"])
+    @app.route("/api/simulation/reset", methods=["POST"])
     def api_user_reset():
         state = user_db.reset_db()
+        task_manager.clear_all()
         autonomous_agent.reset()
         return jsonify({
+            "success": True,
             "message": "Simulation wallet database and all agent tasks successfully reset.",
             "wallet": state.to_dict(),
         })
@@ -249,8 +254,9 @@ def create_app() -> Flask:
         return jsonify(autonomous_agent.get_status())
 
     @app.route("/api/agent/task", methods=["GET", "POST", "DELETE"])
+    @app.route("/api/agent/task/delete", methods=["POST", "DELETE"])
     def api_agent_task():
-        if request.method == "POST":
+        if request.method == "POST" and not request.path.endswith("/delete"):
             data = request.get_json() or {}
             prompt = data.get("prompt", "Buy ETH when gas is under 20 gwei, and never let my balance drop below 500 dollars.")
             vp = POLICY_ENGINE_STATE["active_verified_result"]
@@ -280,13 +286,18 @@ def create_app() -> Flask:
             autonomous_agent.add_thought("TASK", f"User deployed new task {task.id}: '{task.prompt}' (Trade: ${trade_amount:.2f} USDC)")
             return jsonify(task.to_dict()), 201
 
-        elif request.method == "DELETE":
+        elif request.method == "DELETE" or request.path.endswith("/delete"):
+            data = request.get_json() if request.is_json else {}
+            task_id = (data or {}).get("task_id")
             current = task_manager.get_current_task()
-            if current:
-                task_manager.delete_task(current.id)
-                autonomous_agent.add_thought("TASK", f"Task {current.id} dismissed and deleted by user.")
-                return jsonify({"success": True, "message": f"Task {current.id} deleted."})
-            return jsonify({"success": False, "message": "No task found to delete."}), 404
+            target_id = task_id or (current.id if current else None)
+            if target_id:
+                task_manager.delete_task(target_id)
+                autonomous_agent.add_thought("TASK", f"Task {target_id} dismissed and deleted by user.")
+                return jsonify({"success": True, "message": f"Task {target_id} deleted."})
+            # If no specific task, clear all tasks as fallback
+            task_manager.clear_all()
+            return jsonify({"success": True, "message": "All tasks cleared."})
 
         current = task_manager.get_current_task()
         return jsonify(current.to_dict() if current else None)
