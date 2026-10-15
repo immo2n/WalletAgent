@@ -9,7 +9,7 @@
   "transactions": [
     {
       "id": "tx-init-001",
-      "timestamp": "2026-10-15T23:17:32.822596+00:00",
+      "timestamp": "2026-10-15T23:20:35.277676+00:00",
       "actor": "USER",
       "action": "DEPOSIT",
       "details": "Initial Demo Wallet Funding (Base Sepolia Faucet)",
@@ -23,7 +23,7 @@
     },
     {
       "id": "tx-init-002",
-      "timestamp": "2026-10-15T23:17:32.822596+00:00",
+      "timestamp": "2026-10-15T23:20:35.277676+00:00",
       "actor": "USER",
       "action": "DEPOSIT",
       "details": "Initial Demo USDC Reserve Allocation",
@@ -36,6 +36,6 @@
       "reasoning_report": null
     }
   ],
-  "created_at": "2026-10-15T23:17:32.822596+00:00",
-  "last_reset": "2026-10-15T23:17:32.822596+00:00"
+  "created_at": "2026-10-15T23:20:35.277676+00:00",
+  "last_reset": "2026-10-15T23:20:35.277676+00:00"
 }
