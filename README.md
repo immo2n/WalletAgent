@@ -38,33 +38,141 @@ WalletAgent is a mathematically verified autonomous trading agent and wallet pol
 
 ## 🏗️ Architecture
 
+```mermaid
+flowchart TB
+    Prompt["User Prompt"]
+    ChannelA["Channel A (spaCy)<br/>Deterministic Parser"]
+    ChannelB["Channel B (LLM)<br/>Groq / Gemini / etc."]
+    Verifier["Z3 Equivalence Verifier<br/>Proves AST_A &lt;=&gt; AST_B"]
+    Deployed["Verified Policy Deployed"]
+    Feeds["Market Feeds: WS &amp; RPC<br/>Live Gas &amp; ETH Price Stream"]
+    Gates["Reasoning &amp; Safety Gates<br/>1. RAG Historical Regime Match<br/>2. Dry-Run Risk Assessment<br/>3. Formal Z3 Invariant Gate"]
+    Daemon["Autonomous Daemon Loop"]
+    Execution["Base Sepolia Execution"]
+
+    Prompt --> ChannelA
+    Prompt --> ChannelB
+    ChannelA --> Verifier
+    ChannelB --> Verifier
+    Verifier -->|SAT / Equivalent| Deployed
+    Deployed --> Feeds
+    Deployed --> Gates
+    Feeds --> Daemon
+    Daemon -->|Trigger Satisfied?| Execution
+    Gates --> Execution
 ```
-                                  User Prompt
-                                       │
-                    ┌──────────────────┴──────────────────┐
-                    ▼                                     ▼
-        ┌───────────────────────┐             ┌───────────────────────┐
-        │   Channel A (spaCy)   │             │   Channel B (LLM)     │
-        │ Deterministic Parser  │             │  Groq / Gemini / etc. │
-        └───────────┬───────────┘             └───────────┬───────────┘
-                    │                                     │
-                    └──────────────────┬──────────────────┘
-                                       ▼
-                       ┌───────────────────────────────┐
-                       │   Z3 Equivalence Verifier     │
-                       │  (Proves AST_A <=> AST_B)     │
-                       └───────────────┬───────────────┘
-                                       │ SAT / Equivalent
-                                       ▼
-                         Verified Policy Deployed
-                                       │
-   ┌───────────────────────────────────┴───────────────────────────────────┐
-   ▼                                                                       ▼
-[Market Feeds: WS & RPC]                                     [Reasoning & Safety Gates]
-Live Gas & ETH Price Stream                                  1. RAG Historical Regime Match
-         │                                                   2. Dry-Run Risk Assessment
-         ▼                                                   3. Formal Z3 Invariant Gate
-[Autonomous Daemon Loop] ────── Trigger Satisfied? ────────> 4. Base Sepolia Execution
+
+WalletAgent is a single Python process with a Flask dashboard, background market-feed
+workers, and one autonomous agent worker. The dashboard and agent share singleton
+services for the exchange, policy state, task registry, reasoning engine, and wallet
+database.
+
+### System context
+
+```mermaid
+flowchart LR
+    User[User / Operator]
+    Browser[Browser dashboard]
+    Main[main.py<br/>startup orchestrator]
+    Flask[Flask application<br/>flask/server.py]
+    Agent[AutonomousAgent<br/>agent/runtime.py]
+    Policy[Verified policy state]
+    Exchange[ExchangeService<br/>exchange/service.py]
+    Reasoning[ReasoningEngine<br/>reasoning/engine.py]
+    Wallet[UserDatabase<br/>user/db.py]
+    Tasks[TaskManager<br/>agent/task.py]
+    Coinbase[(Coinbase WebSocket)]
+    Ethereum[(Ethereum L1 JSON-RPC)]
+    History[(market_history.json)]
+    Ledger[(wallet_db.json)]
+    TaskStore[(agent_tasks.json)]
+
+    User --> Browser
+    Browser <-->|HTML, JSON, SSE| Flask
+    Main --> Policy
+    Main --> Flask
+    Flask --> Policy
+    Flask --> Agent
+    Flask --> Exchange
+    Flask --> Wallet
+    Agent --> Exchange
+    Agent --> Reasoning
+    Agent --> Wallet
+    Agent --> Tasks
+    Exchange --> Coinbase
+    Exchange --> Ethereum
+    Reasoning --> History
+    Wallet --> Ledger
+    Tasks --> TaskStore
+```
+
+### Application components
+
+```mermaid
+flowchart TB
+    subgraph Presentation["Presentation and control"]
+        Main["main.py"]
+        Dashboard["Flask routes and templates<br/>flask/server.py"]
+    end
+
+    subgraph PolicyPlane["Policy plane"]
+        RuleReader["RuleReader<br/>deterministic parser"]
+        LLMReader["LLMReader<br/>untrusted JSON reader"]
+        Typecheck["typecheck + resolve<br/>dimensional sorts"]
+        Compare["compare<br/>counterexample search"]
+        Sanity["sanity<br/>satisfiable / vacuous / redundant"]
+        Compile["z3_compile<br/>named constraints"]
+        Verified["VerifiedPolicy<br/>hash + readback + on-chain params"]
+    end
+
+    subgraph Perception["Market perception"]
+        Coinbase["CoinbaseWebSocketClient"]
+        Gas["EthereumL1GasOracle"]
+        Scenario["MarketScenarioEmitter"]
+        Exchange["ExchangeService"]
+    end
+
+    subgraph Decision["Autonomous decision plane"]
+        Task["TaskManager<br/>single active task"]
+        Runtime["AutonomousAgent<br/>1-second loop"]
+        RAG["RAGRetriever"]
+        Intent["Reasoning LLM<br/>intent and risk chunks"]
+        DryRun["RiskSimulator"]
+        Gate["Deterministic trigger/invariant gate"]
+    end
+
+    subgraph State["Persistent state"]
+        Wallet["UserDatabase"]
+        WalletFile[("wallet_db.json")]
+        TaskFile[("agent_tasks.json")]
+        HistoryFile[("market_history.json")]
+    end
+
+    Main --> Dashboard
+    Dashboard --> RuleReader
+    Dashboard --> LLMReader
+    RuleReader --> Typecheck
+    LLMReader --> Typecheck
+    Typecheck --> Compare
+    Compare --> Compile
+    Compile --> Sanity
+    Sanity --> Verified
+    Dashboard --> Exchange
+    Coinbase --> Exchange
+    Gas --> Exchange
+    Scenario --> Exchange
+    Dashboard --> Task
+    Task --> Runtime
+    Exchange --> Runtime
+    Runtime --> RAG
+    RAG --> Intent
+    Intent --> DryRun
+    DryRun --> Gate
+    Gate --> Wallet
+    Runtime --> Wallet
+    Wallet --> WalletFile
+    Task --> TaskFile
+    RAG --> HistoryFile
 ```
 
 ---
@@ -81,8 +189,8 @@ Live Gas & ETH Price Stream                                  1. RAG Historical R
 git clone https://github.com/immo2n/WalletAgent.git
 cd WalletAgent
 
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -121,6 +229,187 @@ http://127.0.0.1:5000
 
 ---
 
+## 🔄 Runtime Flows
+
+### Application startup
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant CLI as main.py
+    participant Policy as Policy verifier
+    participant Exchange as ExchangeService
+    participant Server as Flask app
+    participant Agent as AutonomousAgent
+    participant Browser as Browser
+
+    CLI->>Policy: Parse default or --prompt policy
+    Policy-->>CLI: VerifiedPolicy or failure status
+    CLI->>Server: Load flask/server.py
+    Server->>Policy: set_default_policy(prompt)
+    Server->>Exchange: Read market and gas snapshot
+    Server->>Agent: create_app() starts daemon
+    Agent-->>Server: Background monitoring active
+    Server-->>Browser: Serve dashboard at host:port
+```
+
+### Natural-language policy verification
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User
+    participant API as Flask /api/verify
+    participant Rule as RuleReader
+    participant LLM as LLMReader
+    participant Types as typecheck / resolve
+    participant Z3 as compare + z3_compile
+    participant Sanity as sanity
+    participant Result as VerifiedPolicy
+
+    User->>API: Submit natural-language policy
+    API->>Rule: Read prompt into Policy AST A
+    API->>LLM: Read prompt into Policy AST B
+    LLM-->>API: Schema-validated, assumed provenance AST
+    API->>Types: Type-check both ASTs
+    alt Sort mismatch
+        Types-->>API: Clarification options
+        API-->>User: Ask for unit interpretation
+        User-->>API: Select coercion
+        API->>Types: Resolve both ASTs
+    end
+    API->>Z3: Check A and not B
+    API->>Z3: Check B and not A
+    alt Counterexample found
+        Z3-->>LLM: Repair feedback with counterexample
+        LLM-->>API: Revised AST B
+    else Equivalent
+        Z3-->>API: No counterexamples
+    end
+    API->>Sanity: Check satisfiable, non-vacuous, non-redundant
+    Sanity-->>Result: Hash, readback, and on-chain parameters
+    Result-->>API: Deploy verified policy state
+```
+
+### Continuous autonomous decision loop
+
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE
+    IDLE --> MONITORING: RUNNING task exists
+    MONITORING --> MONITORING: Trigger not met\nupdate task check
+    MONITORING --> TRIGGER_MET: Trigger satisfied
+    TRIGGER_MET --> MONITORING: RAG/dry-run abort
+    TRIGGER_MET --> GUARD_BLOCKED: Formal gate UNSAT
+    TRIGGER_MET --> EXECUTING: Risk and formal gates pass
+    EXECUTING --> FINISHED: Persist swap and audit report
+    GUARD_BLOCKED --> MONITORING: Record blocked transaction
+    MONITORING --> PAUSED: User pauses agent
+    PAUSED --> MONITORING: User resumes agent
+    MONITORING --> STOPPED: User stops task
+    FINISHED --> [*]
+    STOPPED --> [*]
+    IDLE --> ERROR: Unhandled step exception
+    MONITORING --> ERROR: Unhandled step exception
+    ERROR --> MONITORING: Next loop iteration
+```
+
+### Trigger-to-execution reasoning pipeline
+
+```mermaid
+flowchart LR
+    Tick["Market tick<br/>ETH price + gas + scenario"]
+    Trigger{"Task trigger<br/>satisfied?"}
+    RAG["1. RAG retrieval<br/>match historical regime"]
+    Intent["2. Intent generation<br/>trade thesis and amount"]
+    Dry["3. Dry-run simulation<br/>slippage, balances, drawdown"]
+    Risk{"Risk acceptable?"}
+    Gate["4. Formal gate<br/>trigger and invariant checks"]
+    SAT{"Gate SAT?"}
+    Execute["Persist balances<br/>append confirmed AGENT swap"]
+    AbortRisk["Record blocked-by-guard<br/>high-risk decision"]
+    Block["Record blocked-by-guard<br/>policy violation"]
+
+    Tick --> Trigger
+    Trigger -- "No" --> Tick
+    Trigger -- "Yes" --> RAG --> Intent --> Dry --> Risk
+    Risk -- "No" --> AbortRisk
+    Risk -- "Yes" --> Gate --> SAT
+    SAT -- "No" --> Block
+    SAT -- "Yes" --> Execute
+```
+
+### Market perception and scenario overrides
+
+```mermaid
+flowchart LR
+    WS["Coinbase ticker WebSocket<br/>ETH-USD"]
+    RPC["Ethereum L1 JSON-RPC<br/>feeHistory / gasPrice"]
+    WS --> Price["CoinbaseWebSocketClient<br/>price and rolling history"]
+    RPC --> Oracle["EthereumL1GasOracle<br/>base fee + priority tip"]
+    Price --> Emitter["MarketScenarioEmitter"]
+    Oracle --> Emitter
+    Emitter --> State["Effective MarketConditions"]
+    Scenario{"Scenario mode"}
+    Scenario --> Real["REAL_MARKET"]
+    Scenario --> GasDip["GAS_DIP<br/>16.5 gwei"]
+    Scenario --> EthDip["ETH_DIP<br/>-3.5% ETH price"]
+    Scenario --> HighGas["HIGH_GAS<br/>36 gwei"]
+    Real --> Emitter
+    GasDip --> Emitter
+    EthDip --> Emitter
+    HighGas --> Emitter
+    State --> Service["ExchangeService"]
+    Service --> Dashboard["Dashboard APIs / SSE"]
+    Service --> Agent["AutonomousAgent"]
+```
+
+### Persistence and audit trail
+
+```mermaid
+flowchart TB
+    UserAction["User wallet edit or task control"]
+    MarketAction["Autonomous agent decision"]
+    WalletDB["UserDatabase<br/>thread-safe JSON access"]
+    TaskDB["TaskManager<br/>single active task"]
+    Report["ReasoningReport"]
+    WalletFile[("user/data/wallet_db.json")]
+    TaskFile[("agent/data/agent_tasks.json")]
+
+    UserAction --> WalletDB
+    MarketAction --> Report
+    Report --> WalletDB
+    MarketAction --> TaskDB
+    WalletDB --> WalletFile
+    TaskDB --> TaskFile
+    WalletFile --> Ledger["Transaction ledger<br/>USER / AGENT actors"]
+    Report --> Ledger
+```
+
+### Dashboard API surface
+
+```mermaid
+flowchart LR
+    UI["Browser dashboard"]
+    Market["/api/market/live<br/>/api/market/scenario<br/>/api/market/stream"]
+    Wallet["/api/user/wallet<br/>/api/user/transactions<br/>/api/user/reset"]
+    Reasoning["/api/reasoning/history<br/>/api/user/transaction/:id/reasoning"]
+    Agent["/api/agent/status<br/>/api/agent/task<br/>/api/agent/pause<br/>/api/agent/resume"]
+    Policy["/api/verify<br/>/api/validate_intent"]
+    Services["ExchangeService<br/>UserDatabase<br/>TaskManager<br/>Policy state"]
+
+    UI --> Market
+    UI --> Wallet
+    UI --> Reasoning
+    UI --> Agent
+    UI --> Policy
+    Market --> Services
+    Wallet --> Services
+    Reasoning --> Services
+    Agent --> Services
+    Policy --> Services
+```
+
 ## 🧪 Running Tests
 
 The test suite covers formal AST verification, dual-reader equivalence, parser mutations, RAG regime matching, and autonomous runtime loops:
@@ -157,14 +446,17 @@ WalletAgent/
 ├── policy/                 # Z3 formal verification engine, AST definitions, and parsers
 │   ├── ast.py              # First-order logic AST expressions
 │   ├── typecheck.py        # Dimensional sort and type checking
-│   ├── verifier.py         # Z3 solver policy equivalence checker
+│   ├── compare.py          # Z3 equivalence and counterexample checker
+│   ├── loop.py             # Dual-reader verification orchestration
+│   ├── z3_compile.py       # Named Z3 constraints and bounded domain
 │   └── readers/            # RuleReader (spaCy) and LLMReader
 ├── reasoning/              # Fragmented cognitive reasoning pipeline
 │   ├── data/               # Historical market regime database
 │   ├── rag.py              # Thread-safe market regime RAG retriever
-│   └── engine.py           # Dry-run simulator and executive decision audit
+│   ├── dry_run.py          # Slippage, balance, and risk simulation
+│   └── engine.py           # Intent, risk, gate, and audit orchestration
 ├── testing/                # Supported phrase catalog and reference prompts
-├── tests/                  # Pytest test suite (79 tests)
+├── tests/                  # Pytest unit and integration suite
 ├── user/                   # Persistent wallet database, balance tracking, and ledger
 ├── main.py                 # Application entrypoint
 └── requirements.txt        # Project dependencies
