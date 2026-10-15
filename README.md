@@ -38,6 +38,35 @@ WalletAgent is a mathematically verified autonomous trading agent and wallet pol
 
 ## 🏗️ Architecture
 
+```
+                                  User Prompt
+                                       │
+                    ┌──────────────────┴──────────────────┐
+                    ▼                                     ▼
+        ┌───────────────────────┐             ┌───────────────────────┐
+        │   Channel A (spaCy)   │             │   Channel B (LLM)     │
+        │ Deterministic Parser  │             │  Groq / Gemini / etc. │
+        └───────────┬───────────┘             └───────────┬───────────┘
+                    │                                     │
+                    └──────────────────┬──────────────────┘
+                                       ▼
+                       ┌───────────────────────────────┐
+                       │   Z3 Equivalence Verifier     │
+                       │  (Proves AST_A <=> AST_B)     │
+                       └───────────────┬───────────────┘
+                                       │ SAT / Equivalent
+                                       ▼
+                         Verified Policy Deployed
+                                       │
+   ┌───────────────────────────────────┴───────────────────────────────────┐
+   ▼                                                                       ▼
+[Market Feeds: WS & RPC]                                     [Reasoning & Safety Gates]
+Live Gas & ETH Price Stream                                  1. RAG Historical Regime Match
+         │                                                   2. Dry-Run Risk Assessment
+         ▼                                                   3. Formal Z3 Invariant Gate
+[Autonomous Daemon Loop] ────── Trigger Satisfied? ────────> 4. Base Sepolia Execution
+```
+
 WalletAgent is a single Python process with a Flask dashboard, background market-feed
 workers, and one autonomous agent worker. The dashboard and agent share singleton
 services for the exchange, policy state, task registry, reasoning engine, and wallet
