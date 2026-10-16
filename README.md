@@ -177,11 +177,18 @@ flowchart TB
 
 ---
 
-## 🚀 Quickstart
+## 🚀 Setup and Quickstart
 
 ### Prerequisites
 - Python 3.10+ (tested on Python 3.11 - 3.14)
 - Git
+- A supported OS with a working C/C++ build toolchain for Python packages when binary wheels are unavailable
+- Optional: an API key for a supported LLM provider
+
+The default configuration is safe for local development: the implemented
+offline provider is `mock`, which uses the deterministic rule reader and mock
+LLM reader. Wallet balances, transactions, and task state are stored in local
+JSON files for the simulation.
 
 ### 1. Clone & Set Up Virtual Environment
 
@@ -194,6 +201,19 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+On Windows PowerShell, activate the environment with:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+If the shell does not activate virtual environments, run the project commands
+through the interpreter directly:
+
+```bash
+.venv/bin/python --version
+```
+
 ### 2. Configure Environment Variables
 
 Copy the example environment configuration:
@@ -202,30 +222,150 @@ Copy the example environment configuration:
 cp .env.example .env
 ```
 
-Edit `.env` to configure your preferred LLM provider and network settings:
+Edit `.env` to configure the implemented LLM provider:
 
 ```dotenv
-LLM_PROVIDER=groq
-GROQ_API_KEY=your_groq_api_key_here
-LLM_MODEL=openai/gpt-oss-20b
+# Offline development:
+LLM_PROVIDER=mock
 
-CHAIN_ID=84532
-RPC_URL=https://sepolia.base.org
-PORT=5000
+# Optional live Groq-compatible policy reader:
+# LLM_PROVIDER=groq
+# GROQ_API_KEY=your_groq_api_key_here
+# LLM_MODEL=llama-3.3-70b-versatile
+
+LLM_MODEL=llama-3.3-70b-versatile
+LLM_BASE_URL=https://api.groq.com/openai/v1/chat/completions
 ```
 
-*(Note: If no API key is provided, the engine automatically falls back to deterministic rule-based evaluation and mock LLM synthesis for testing).*
+The application currently implements `mock` and `groq` adapters. The
+`gemini`, `openai`, `anthropic`, and `ollama` names are not implemented by the
+current adapters. The `CHAIN_ID`, `RPC_URL`, `EXPLORER_URL`, contract/key,
+market API key, and timeout values in `.env.example` are reference settings
+for future integrations; the local simulation does not read them. The CLI
+uses `--host` and `--port` rather than a `PORT` environment variable.
 
-### 3. Run the Application
+If you use a live provider, never commit `.env` or API keys.
+
+### 3. Verify the Policy Engine
+
+Run the formal policy discovery without starting the web server:
 
 ```bash
-python main.py
+PYTHONPATH=. python main.py --cli-only
+```
+
+The command should finish with a successful verified policy and exit without
+binding a network port.
+
+### 4. Run the Application
+
+```bash
+PYTHONPATH=. python main.py
 ```
 
 Open your browser and navigate to:
 ```
 http://127.0.0.1:5000
 ```
+
+Useful runtime options:
+
+```bash
+PYTHONPATH=. python main.py --host 127.0.0.1 --port 5000
+PYTHONPATH=. python main.py --prompt "Buy ETH when gas is under 20 gwei and keep at least 500 dollars."
+```
+
+Stop the local server with `Ctrl+C`.
+
+## 🔌 Dashboard API Reference
+
+The Flask dashboard exposes the following local simulation endpoints:
+
+| Area | Methods and routes |
+|:---|:---|
+| Dashboard | `GET /` |
+| Market | `GET /api/market/live`, `POST /api/market/scenario`, `GET /api/market/stream` |
+| Wallet | `GET,POST /api/user/wallet`, `GET /api/wallet/balances` |
+| Transactions | `GET,POST /api/user/transactions`, `GET,POST /api/wallet/transactions` |
+| Reset | `POST /api/user/reset`, `POST /api/simulation/reset` |
+| Reasoning | `GET /api/user/transaction/<tx_id>/reasoning`, `GET,POST /api/reasoning/history` |
+| Agent | `GET /api/agent/status`, `GET,POST,DELETE /api/agent/task` |
+| Agent control | `POST,DELETE /api/agent/task/delete`, `POST /api/agent/task/stop`, `POST /api/agent/task/rerun`, `POST /api/agent/pause`, `POST /api/agent/resume` |
+| Policy | `POST /api/verify`, `POST /api/validate_intent` |
+
+Example requests:
+
+```bash
+curl -fsS http://127.0.0.1:5000/api/market/live
+curl -fsS -X POST http://127.0.0.1:5000/api/market/scenario \
+  -H 'Content-Type: application/json' \
+  -d '{"scenario":"REAL_MARKET"}'
+curl -fsS -X POST http://127.0.0.1:5000/api/verify \
+  -H 'Content-Type: application/json' \
+  -d '{"prompt":"Buy ETH when gas is under 20 gwei and keep at least 500 dollars."}'
+curl -fsS -X POST http://127.0.0.1:5000/api/validate_intent \
+  -H 'Content-Type: application/json' \
+  -d '{"trade_usd":200,"gas_gwei":10,"execute":false}'
+```
+
+`/api/market/stream` is an open Server-Sent Events stream and is intended for
+browser clients; do not use it as a terminating smoke-test command. Setting
+`execute` to `true` on `/api/validate_intent` mutates the local JSON wallet
+ledger and does not submit an on-chain transaction.
+
+---
+
+## 🚢 Deployment
+
+WalletAgent is a simulation and verification dashboard, not a production
+custody service. Deploy it only in a trusted environment, do not commit
+`.env` files or API keys, and do not connect it to real funds without adding
+production-grade authentication, secret management, persistence, monitoring,
+and transaction signing controls.
+
+### Single-host deployment
+
+1. Provision Python 3.10 or newer and Git on the host.
+2. Clone the repository and create the virtual environment:
+
+   ```bash
+   git clone https://github.com/immo2n/WalletAgent.git
+   cd WalletAgent
+   python3 -m venv .venv
+   .venv/bin/python -m pip install -r requirements.txt
+   ```
+
+3. Create `.env` from `.env.example` and configure only the required provider
+   values.
+4. Run the dashboard on the host interface:
+
+   ```bash
+   .venv/bin/python main.py --host 0.0.0.0 --port 5000
+   ```
+
+5. Restrict port `5000` with the host firewall or place the service behind a
+   TLS-terminating reverse proxy. The application currently exposes a
+   development Flask server and should not be exposed directly to the public
+   internet.
+6. Keep `user/data/wallet_db.json`, `agent/data/agent_tasks.json`, and other
+   local state files on persistent storage. Back them up before upgrades.
+
+For a production deployment, run the Flask application behind a production
+WSGI server and reverse proxy. The repository does not include a WSGI server
+dependency or a deployment manifest; add and pin those deployment dependencies
+according to the target platform rather than installing them implicitly.
+
+### Deployment checklist
+
+- [ ] Use a dedicated virtual environment.
+- [ ] Configure secrets through the platform secret store or protected
+  environment variables.
+- [ ] Keep `.env` out of version control.
+- [ ] Run `PYTHONPATH=. python main.py --cli-only` during release verification.
+- [ ] Run the full test suite before starting the service.
+- [ ] Restrict network access and terminate HTTPS at a trusted proxy.
+- [ ] Persist and back up JSON state files.
+- [ ] Monitor application logs and restart the service on failure.
 
 ---
 
@@ -410,7 +550,7 @@ flowchart LR
     Policy --> Services
 ```
 
-## 🧪 Running Tests
+## 🧪 Tests and Test Cases
 
 The test suite covers formal AST verification, dual-reader equivalence, parser mutations, RAG regime matching, and autonomous runtime loops:
 
@@ -418,10 +558,49 @@ The test suite covers formal AST verification, dual-reader equivalence, parser m
 PYTHONPATH=. pytest tests/
 ```
 
-All 79 unit and integration tests should pass:
-```text
-============================== 79 passed in 6.12s ==============================
+Run focused groups while developing:
+
+```bash
+PYTHONPATH=. pytest tests/policy
+PYTHONPATH=. pytest tests/test_agent.py tests/test_reasoning.py
+PYTHONPATH=. pytest tests/test_exchange.py tests/test_user_db.py
 ```
+
+The expected test count can change as the suite evolves. A successful run
+should report zero failures and zero errors:
+
+```text
+============================== N passed in ...s ===============================
+```
+
+### Test-case matrix
+
+| ID | Area | Test case | Expected result |
+|:---|:---|:---|:---|
+| TC-01 | Setup | Create `.venv` and install `requirements.txt` | Dependencies install successfully |
+| TC-02 | Policy verification | Run `python main.py --cli-only` | Policy is parsed, type-checked, verified by Z3, and the process exits successfully |
+| TC-03 | Policy equivalence | Submit a supported natural-language policy | Deterministic and LLM/mock interpretations match or request clarification |
+| TC-04 | Safety invariants | Verify a balance-floor or transaction-cap policy | Unsafe trades are rejected by the formal guard |
+| TC-05 | RAG reasoning | Evaluate a market condition with a matching historical regime | RAG context, risk score, and recommendation are included in the reasoning report |
+| TC-06 | Dry run | Test a proposed swap before execution | Slippage, received amount, post-trade balance, and risk are calculated without changing balances |
+| TC-07 | Wallet ledger | Edit balances or run a simulated swap | Balances and the USER/AGENT transaction ledger persist to JSON |
+| TC-08 | Agent lifecycle | Start, pause, resume, stop, dismiss, and re-run a task | Task state transitions remain within the supported lifecycle |
+| TC-09 | Dashboard API | Start the server and request `/` | HTTP 200 response and dashboard HTML are returned |
+| TC-10 | Responsive UI | Open the dashboard at desktop and mobile widths | Tabs, forms, activity cards, and navigation remain usable without horizontal overflow |
+| TC-11 | Theme UI | Toggle dark/light mode and reload | Theme changes immediately and the explicit user preference persists |
+| TC-12 | Activity audit | Open Activity and inspect a transaction’s reasoning report | Actor, amount, status, transaction hash, and reasoning details remain readable |
+
+### Dashboard smoke test
+
+With the server running, verify the primary route and a live API endpoint:
+
+```bash
+curl -fsS -o /dev/null -w "Dashboard: HTTP %{http_code}\n" http://127.0.0.1:5000/
+curl -fsS http://127.0.0.1:5000/api/market/live
+```
+
+The first command should report `Dashboard: HTTP 200`. The second should
+return JSON containing the current market state.
 
 ---
 
