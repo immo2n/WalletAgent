@@ -3544,19 +3544,33 @@
     function deployPolicyToAgent() {
       const readback = $('#readbackText').text().trim();
       const prompt = $('#promptInput').val().trim() || readback;
-      const policyHash = $('#policyHashDisplay').attr('data-full-hash') || '';
+      const policyHash = $('#policyHashDisplay').attr('data-full-hash') || $('#policyHashDisplay').text().trim() || '';
+      const payload = JSON.stringify({ prompt: prompt, policy_hash: policyHash, canonical_readback: readback });
 
       $.ajax({
         url: '/api/agent/task/deploy',
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ prompt: prompt, policy_hash: policyHash, canonical_readback: readback }),
+        data: payload,
         success: function(res) {
           openTabPane('pane-agent', 'tab-agent-btn');
           refreshAgentStatus();
         },
         error: function(err) {
-          alert(err.responseJSON?.error || 'Failed to deploy policy to agent task');
+          // Fallback to /api/agent/task if /deploy returns 404 on older server instances
+          $.ajax({
+            url: '/api/agent/task',
+            type: 'POST',
+            contentType: 'application/json',
+            data: payload,
+            success: function(res) {
+              openTabPane('pane-agent', 'tab-agent-btn');
+              refreshAgentStatus();
+            },
+            error: function(e) {
+              alert(e.responseJSON?.error || err.responseJSON?.error || 'Failed to deploy policy to agent task');
+            }
+          });
         }
       });
     }

@@ -259,6 +259,7 @@ def create_app() -> Flask:
         return jsonify(autonomous_agent.get_status())
 
     @app.route("/api/agent/task", methods=["GET", "POST", "DELETE"])
+    @app.route("/api/agent/task/deploy", methods=["POST"])
     @app.route("/api/agent/task/delete", methods=["POST", "DELETE"])
     def api_agent_task():
         if request.method == "POST" and not request.path.endswith("/delete"):
