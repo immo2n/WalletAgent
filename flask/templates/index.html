@@ -76,7 +76,7 @@
       color: var(--tw-text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
-      padding-bottom: 90px; /* Space for mobile bottom bar */
+      padding-bottom: calc(120px + env(safe-area-inset-bottom, 24px)); /* Space for mobile bottom bar */
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
     }
@@ -883,9 +883,15 @@
 
     @media (max-width: 768px) {
       body {
+        padding-bottom: calc(140px + env(safe-area-inset-bottom, 24px)) !important;
         background-image:
           radial-gradient(520px 260px at 50% -8%, rgba(99, 102, 241, 0.14), transparent 70%),
           linear-gradient(180deg, #f8f9ff 0%, #f2f5fa 100%);
+      }
+
+      .tab-content,
+      .tab-pane {
+        padding-bottom: 50px !important;
       }
 
       .tw-hero-card {
@@ -2440,6 +2446,8 @@
             </div>
           </div>
         </div>
+        <!-- Generous Mobile Bottom Spacer so content is never covered by bottom bar -->
+        <div class="d-md-none" style="height: 80px;"></div>
       </div>
 
       <!-- ======================================================== -->
@@ -2573,14 +2581,16 @@
               </div>
 
               <!-- Deploy to Always-Running Agent Button -->
-              <div class="pt-3 border-top border-light-subtle">
-                <button type="button" class="btn btn-success w-100 fw-bold py-2 shadow-sm" onclick="deployPolicyToAgent()">
+              <div class="pt-3 pb-3 border-top border-light-subtle">
+                <button type="button" class="btn btn-success w-100 fw-bold py-3 shadow-sm mb-3" onclick="deployPolicyToAgent()" style="font-size: 0.95rem; border-radius: var(--tw-radius-sm);">
                   <i class="fa-solid fa-cloud-arrow-up me-2"></i>Set Policy &amp; Deploy Task to Agent
                 </button>
               </div>
             </div>
           </div>
         </div>
+        <!-- Generous Mobile Bottom Spacer so button is never covered by bottom bar -->
+        <div class="d-md-none" style="height: 80px;"></div>
       </div>
 
       <!-- ======================================================== -->
@@ -2732,6 +2742,8 @@
             </div>
           </div>
         </div>
+        <!-- Generous Mobile Bottom Spacer so action controls are never covered by bottom bar -->
+        <div class="d-md-none" style="height: 80px;"></div>
       </div>
 
 
@@ -2816,6 +2828,8 @@
             </div>
           </div>
         </div>
+        <!-- Generous Mobile Bottom Spacer so save button is never covered by bottom bar -->
+        <div class="d-md-none" style="height: 80px;"></div>
       </div>
 
       <!-- ======================================================== -->
@@ -2951,6 +2965,8 @@
             {% endfor %}
           </div>
         </div>
+        <!-- Generous Mobile Bottom Spacer so bottom activity card is never covered by bottom bar -->
+        <div class="d-md-none" style="height: 80px;"></div>
       </div>
 
     </div>
