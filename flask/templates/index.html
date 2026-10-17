@@ -268,15 +268,24 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 64px;
+      height: 62px;
       background: #ffffff;
       border-top: 1px solid var(--tw-border);
       display: flex;
       align-items: center;
       justify-content: space-around;
       z-index: 1040;
-      padding-bottom: env(safe-area-inset-bottom, 4px);
+      padding: 0 4px;
+      padding-bottom: env(safe-area-inset-bottom, 2px);
       box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+      overflow-x: auto;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    .tw-mobile-bottom-bar::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
     .tw-bottom-nav-btn {
       background: transparent;
@@ -286,22 +295,32 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3px;
-      padding: 4px 8px;
-      font-size: 0.7rem;
+      gap: 2px;
+      padding: 3px 2px;
+      font-size: 0.62rem;
       font-weight: 600;
       cursor: pointer;
       transition: color 0.15s ease, transform 0.15s ease;
       position: relative;
-      flex: 1;
+      flex: 1 1 0;
+      min-width: 0;
       height: 100%;
     }
     .tw-bottom-nav-btn i {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       transition: transform 0.15s ease;
+    }
+    .tw-bottom-nav-btn span:not(.tw-nav-badge) {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: block;
+      line-height: 1.1;
     }
     .tw-bottom-nav-btn.active {
       color: var(--tw-blue);
+      font-weight: 700;
     }
     .tw-bottom-nav-btn.active i {
       transform: translateY(-2px);
@@ -309,16 +328,16 @@
     }
     .tw-nav-badge {
       position: absolute;
-      top: 5px;
-      right: calc(50% - 17px);
+      top: -3px;
+      right: -8px;
       background: var(--tw-red);
       color: #ffffff;
-      font-size: 0.6rem;
+      font-size: 0.58rem;
       font-weight: 700;
-      padding: 1px 5px;
+      padding: 0px 4px;
       border-radius: 9999px;
       line-height: 1.2;
-      border: 1px solid #ffffff;
+      border: 1.5px solid #ffffff;
     }
 
     /* Hash Box & Token Badges */
@@ -904,14 +923,23 @@
       }
 
       .tw-mobile-bottom-bar {
-        height: calc(66px + env(safe-area-inset-bottom, 0px));
+        height: calc(62px + env(safe-area-inset-bottom, 0px));
         padding-bottom: env(safe-area-inset-bottom, 0px);
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+
+      .tw-mobile-bottom-bar::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
       }
 
       .tw-bottom-nav-btn {
         min-width: 0;
-        padding-left: 2px;
-        padding-right: 2px;
+        padding-left: 1px;
+        padding-right: 1px;
+        font-size: 0.6rem;
       }
 
       .tw-bottom-nav-btn i {
@@ -2142,10 +2170,10 @@
 
   <!-- Top Navigation (Trust Wallet Brand Bar) -->
   <nav class="navbar navbar-expand-lg py-2 mb-3 sticky-top">
-    <div class="container-fluid px-3 px-md-4">
-      <a class="navbar-brand m-0" href="#">
+    <div class="container-fluid px-2 px-md-4 flex-nowrap">
+      <a class="navbar-brand m-0 d-flex align-items-center flex-shrink-0" href="#">
         <!-- Trust Wallet Beveled Shield SVG -->
-        <svg width="26" height="30" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="tw-shield-icon me-1">
+        <svg width="24" height="28" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="tw-shield-icon me-1">
           <defs>
             <linearGradient id="twGrad" x1="0" y1="0" x2="32" y2="36" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stop-color="#0500FF"/>
@@ -2156,12 +2184,12 @@
           <path d="M16 4.2L28 8.4V16.8C28 24.5 22.8 30.6 16 32.8C9.2 30.6 4 24.5 4 16.8V8.4L16 4.2Z" fill="#ffffff"/>
           <path d="M16 7L24.5 10V16.8C24.5 22.8 20.8 27.6 16 29.5C11.2 27.6 7.5 22.8 7.5 16.8V10L16 7Z" fill="url(#twGrad)"/>
         </svg>
-        <span class="fw-bold tracking-tight">WALLET AGENT</span>
+        <span class="fw-bold tracking-tight" style="font-size: 0.92rem;">WALLET AGENT</span>
         <span class="badge badge-soft-blue ms-1 d-none d-sm-inline" style="font-size: 0.68rem; letter-spacing: 0.4px;">Z3 VERIFIED</span>
       </a>
 
       <!-- Right Header Actions -->
-      <div class="d-flex align-items-center gap-2 gap-md-3">
+      <div class="d-flex align-items-center gap-1 gap-md-2 flex-shrink-0">
         <!-- Live Agent Daemon Status Dot -->
         <div class="d-none d-md-flex align-items-center gap-2 small" id="agentStateHeader">
           <span class="pulse-dot" id="agentStateDot"></span>
@@ -2180,21 +2208,21 @@
           <i class="fa-solid fa-moon" aria-hidden="true"></i>
         </button>
 
-        <!-- Network Pill -->
-        <span class="badge badge-soft-purple py-1 px-2 py-md-2 px-md-3 small d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill);">
+        <!-- Network Pill (hidden on narrow mobile < 576px to keep header on a single row) -->
+        <span class="badge badge-soft-purple py-1 px-2 py-md-2 px-md-3 small d-none d-sm-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill);">
           <i class="fa-brands fa-ethereum text-purple"></i>
-          <span class="d-none d-sm-inline">Base Sepolia</span>
+          <span>Base Sepolia</span>
           <span class="font-monospace text-muted" style="font-size: 0.7rem;">(84532)</span>
         </span>
 
         <!-- Wallet Address Box -->
-        <div class="hash-box py-1 px-2 px-md-3 small d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill); cursor: pointer;" onclick="copyWalletAddress()" title="Click to copy address">
+        <div class="hash-box py-1 px-2 px-md-3 small d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill); cursor: pointer; font-size: 0.72rem;" onclick="copyWalletAddress()" title="Click to copy address">
           <i class="fa-solid fa-wallet text-primary"></i>
           <span id="walletAddress">{{ user.wallet_address[:6] }}...{{ user.wallet_address[-4:] }}</span>
         </div>
 
         <!-- Universal Reset Button (Mobile & Desktop with clear label) -->
-        <button type="button" class="btn btn-danger btn-sm fw-bold d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill); font-size: 0.76rem; padding: 4px 10px;" onclick="confirmResetSimulation()" title="Reset simulation data">
+        <button type="button" class="btn btn-danger btn-sm fw-bold d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill); font-size: 0.72rem; padding: 4px 8px;" onclick="confirmResetSimulation()" title="Reset simulation data">
           <i class="fa-solid fa-arrow-rotate-left"></i>
           <span>Reset</span>
         </button>
@@ -2558,7 +2586,6 @@
                       aria-label="Policy hash hidden for privacy"
                     >****************************************************************</div>
                   </div>
-                </div>
 
                 <!-- Active Constraints -->
                 <div class="mb-3">
@@ -3292,38 +3319,38 @@
   <!-- ======================================================== -->
   <!-- MOBILE BOTTOM NAVIGATION BAR (Trust Wallet App Layout)   -->
   <!-- ======================================================== -->
-  <nav class="tw-mobile-bottom-bar d-md-none" style="overflow-x: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; gap: 4px; padding: 0 8px;">
-    <button type="button" class="tw-bottom-nav-btn active" style="min-width: 58px;" data-tab="tab-market-btn" onclick="openTabPane('pane-market', 'tab-market-btn');">
+  <nav class="tw-mobile-bottom-bar d-md-none">
+    <button type="button" class="tw-bottom-nav-btn active" data-tab="tab-market-btn" onclick="openTabPane('pane-market', 'tab-market-btn');">
       <i class="fa-solid fa-chart-line"></i>
       <span>Market</span>
     </button>
-    <button type="button" class="tw-bottom-nav-btn" style="min-width: 58px;" data-tab="tab-policy-btn" onclick="openTabPane('pane-policy', 'tab-policy-btn');">
+    <button type="button" class="tw-bottom-nav-btn" data-tab="tab-policy-btn" onclick="openTabPane('pane-policy', 'tab-policy-btn');">
       <i class="fa-solid fa-shield-halved"></i>
       <span>Policies</span>
     </button>
-    <button type="button" class="tw-bottom-nav-btn" style="min-width: 58px;" data-tab="tab-agent-btn" onclick="openTabPane('pane-agent', 'tab-agent-btn');">
+    <button type="button" class="tw-bottom-nav-btn" data-tab="tab-agent-btn" onclick="openTabPane('pane-agent', 'tab-agent-btn');">
       <div class="position-relative">
         <i class="fa-solid fa-robot"></i>
         <span class="tw-nav-badge {{ 'd-none' if not cur_task else '' }}" id="mobileAgentBadge">1</span>
       </div>
       <span>Agent</span>
     </button>
-    <button type="button" class="tw-bottom-nav-btn" style="min-width: 58px;" data-tab="tab-wallet-btn" onclick="openTabPane('pane-wallet', 'tab-wallet-btn');">
+    <button type="button" class="tw-bottom-nav-btn" data-tab="tab-wallet-btn" onclick="openTabPane('pane-wallet', 'tab-wallet-btn');">
       <i class="fa-solid fa-wallet"></i>
       <span>Wallet</span>
     </button>
-    <button type="button" class="tw-bottom-nav-btn" style="min-width: 58px;" data-tab="tab-ledger-btn" onclick="openTabPane('pane-ledger', 'tab-ledger-btn');">
+    <button type="button" class="tw-bottom-nav-btn" data-tab="tab-ledger-btn" onclick="openTabPane('pane-ledger', 'tab-ledger-btn');">
       <div class="position-relative">
         <i class="fa-solid fa-clock-rotate-left"></i>
         <span class="tw-nav-badge" id="mobileTxBadge">{{ user.transactions|length }}</span>
       </div>
       <span>Activity</span>
     </button>
-    <button type="button" class="tw-bottom-nav-btn" style="min-width: 58px;" data-tab="tab-security-btn" onclick="openTabPane('pane-security', 'tab-security-btn');">
+    <button type="button" class="tw-bottom-nav-btn" data-tab="tab-security-btn" onclick="openTabPane('pane-security', 'tab-security-btn');">
       <i class="fa-solid fa-lock text-danger"></i>
       <span>Security</span>
     </button>
-    <button type="button" class="tw-bottom-nav-btn" style="min-width: 58px;" data-tab="tab-attack-btn" onclick="openTabPane('pane-attack', 'tab-attack-btn');">
+    <button type="button" class="tw-bottom-nav-btn" data-tab="tab-attack-btn" onclick="openTabPane('pane-attack', 'tab-attack-btn');">
       <i class="fa-solid fa-shield-virus text-warning"></i>
       <span>Attacks</span>
     </button>
