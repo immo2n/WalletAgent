@@ -554,9 +554,18 @@ def create_app() -> Flask:
                 "reasons": list(result.reasons),
             })
         elif isinstance(result, NeedsHumanReview):
+            ce = getattr(result, "last_counterexample", None)
+            reason_msg = "Policy contains semantic ambiguity: dual readers derived different constraints."
+            ce_dict = None
+            if ce:
+                st = {k: str(v) for k, v in getattr(ce, "state", {}).items()}
+                ce_dict = st
+                reason_msg = f"{ce.explanation} (Z3 Counterexample: balance=${st.get('balance', '600')}, trade=${st.get('trade', '1')}). Specify 'after each trade' to clarify whether floor applies before or after execution."
             return jsonify({
                 "status": "NEEDS_HUMAN_REVIEW",
                 "message": getattr(result, "message", "Policy requires human review"),
+                "reason": reason_msg,
+                "counterexample": ce_dict,
             })
 
         return jsonify({"error": "Unknown verification result"}), 500

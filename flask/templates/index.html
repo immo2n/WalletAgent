@@ -4305,10 +4305,15 @@
             $('#statusAlert').attr('class', 'mt-3 alert alert-success small')
               .html('<i class="fa-solid fa-circle-check me-2"></i>Policy formally verified by Z3 SMT solver. Logical equivalence confirmed.')
               .removeClass('d-none');
+          } else if (res.status === 'NEEDS_HUMAN_REVIEW') {
+            $('#activeStatusBadge').text('NEEDS_HUMAN_REVIEW').attr('class', 'badge badge-soft-amber');
+            $('#statusAlert').attr('class', 'mt-3 alert alert-warning small')
+              .html(`<i class="fa-solid fa-triangle-exclamation me-2"></i><b>Semantic Ambiguity Detected:</b> ${res.reason || res.message}`)
+              .removeClass('d-none');
           } else {
-            $('#activeStatusBadge').text(res.status).attr('class', 'badge badge-soft-red');
+            $('#activeStatusBadge').text(res.status || 'REJECTED').attr('class', 'badge badge-soft-red');
             $('#statusAlert').attr('class', 'mt-3 alert alert-danger small')
-              .html(`<i class="fa-solid fa-circle-xmark me-2"></i>Verification failed: ${res.reason || 'Policies not equivalent or rejected.'}`)
+              .html(`<i class="fa-solid fa-circle-xmark me-2"></i>Verification failed: ${res.reason || res.message || 'Policies not equivalent or rejected.'}`)
               .removeClass('d-none');
           }
         },
