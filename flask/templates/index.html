@@ -67,6 +67,11 @@
 
     * { box-sizing: border-box; }
 
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
     body {
       background-color: var(--tw-bg);
       background-image: 
@@ -90,7 +95,8 @@
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none !important;
       -ms-overflow-style: none !important;
-      padding-bottom: 2px;
+      padding-bottom: 4px;
+      scroll-snap-type: x proximity;
     }
     .scenario-scroll-wrap::-webkit-scrollbar,
     .prompt-scroll-wrap::-webkit-scrollbar,
@@ -98,6 +104,11 @@
       display: none !important;
       width: 0 !important;
       height: 0 !important;
+    }
+    .scenario-scroll-wrap .scenario-btn,
+    .prompt-scroll-wrap .prompt-pill {
+      scroll-snap-align: start;
+      flex-shrink: 0;
     }
 
     /* White Cards */
@@ -680,19 +691,38 @@
     /* Custom Mobile Responsiveness & Bottom Sheet */
     @media (max-width: 768px) {
       .navbar {
-        padding-top: 8px !important;
-        padding-bottom: 8px !important;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
       }
       .tw-hero-card {
         padding: 16px 14px;
+        border-radius: 16px;
+      }
+      .tw-hero-card .display-6 {
+        font-size: 1.85rem !important;
       }
       .white-card, .tw-card {
-        padding: 14px !important;
+        padding: 12px 14px !important;
         border-radius: 14px;
       }
+      .chart-canvas-container {
+        height: 240px !important;
+      }
       .thought-terminal {
-        height: 220px;
+        height: 200px;
         font-size: 0.74rem;
+      }
+      /* Action circle buttons */
+      .tw-action-circle-btn {
+        gap: 3px;
+      }
+      .tw-action-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.05rem;
+      }
+      .tw-action-circle-btn span {
+        font-size: 0.72rem;
       }
       /* Modal Mobile Bottom-Sheet */
       .modal-dialog {
@@ -2169,11 +2199,11 @@
 <body>
 
   <!-- Top Navigation (Trust Wallet Brand Bar) -->
-  <nav class="navbar navbar-expand-lg py-2 mb-3 sticky-top">
-    <div class="container-fluid px-2 px-md-4 flex-nowrap">
+  <nav class="navbar navbar-expand py-2 mb-3 sticky-top">
+    <div class="container-fluid px-2 px-md-3 flex-nowrap justify-content-between">
       <a class="navbar-brand m-0 d-flex align-items-center flex-shrink-0" href="#">
         <!-- Trust Wallet Beveled Shield SVG -->
-        <svg width="24" height="28" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="tw-shield-icon me-1">
+        <svg width="22" height="26" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="tw-shield-icon me-1">
           <defs>
             <linearGradient id="twGrad" x1="0" y1="0" x2="32" y2="36" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stop-color="#0500FF"/>
@@ -2184,8 +2214,8 @@
           <path d="M16 4.2L28 8.4V16.8C28 24.5 22.8 30.6 16 32.8C9.2 30.6 4 24.5 4 16.8V8.4L16 4.2Z" fill="#ffffff"/>
           <path d="M16 7L24.5 10V16.8C24.5 22.8 20.8 27.6 16 29.5C11.2 27.6 7.5 22.8 7.5 16.8V10L16 7Z" fill="url(#twGrad)"/>
         </svg>
-        <span class="fw-bold tracking-tight" style="font-size: 0.92rem;">WALLET AGENT</span>
-        <span class="badge badge-soft-blue ms-1 d-none d-sm-inline" style="font-size: 0.68rem; letter-spacing: 0.4px;">Z3 VERIFIED</span>
+        <span class="fw-bold tracking-tight" style="font-size: 0.9rem;">WALLET AGENT</span>
+        <span class="badge badge-soft-blue ms-1 d-none d-lg-inline" style="font-size: 0.65rem; letter-spacing: 0.4px;">Z3 VERIFIED</span>
       </a>
 
       <!-- Right Header Actions -->
@@ -2208,23 +2238,23 @@
           <i class="fa-solid fa-moon" aria-hidden="true"></i>
         </button>
 
-        <!-- Network Pill (hidden on narrow mobile < 576px to keep header on a single row) -->
-        <span class="badge badge-soft-purple py-1 px-2 py-md-2 px-md-3 small d-none d-sm-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill);">
+        <!-- Network Pill -->
+        <span class="badge badge-soft-purple py-1 px-2 small d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill);" title="Base Sepolia (84532)">
           <i class="fa-brands fa-ethereum text-purple"></i>
-          <span>Base Sepolia</span>
-          <span class="font-monospace text-muted" style="font-size: 0.7rem;">(84532)</span>
+          <span class="d-none d-md-inline">Base Sepolia</span>
+          <span class="font-monospace text-muted d-none d-lg-inline" style="font-size: 0.7rem;">(84532)</span>
         </span>
 
         <!-- Wallet Address Box -->
-        <div class="hash-box py-1 px-2 px-md-3 small d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill); cursor: pointer; font-size: 0.72rem;" onclick="copyWalletAddress()" title="Click to copy address">
+        <div class="hash-box py-1 px-2 small d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill); cursor: pointer; font-size: 0.72rem;" onclick="copyWalletAddress()" title="Click to copy address">
           <i class="fa-solid fa-wallet text-primary"></i>
           <span id="walletAddress">{{ user.wallet_address[:6] }}...{{ user.wallet_address[-4:] }}</span>
         </div>
 
-        <!-- Universal Reset Button (Mobile & Desktop with clear label) -->
+        <!-- Universal Reset Button -->
         <button type="button" class="btn btn-danger btn-sm fw-bold d-flex align-items-center gap-1" style="border-radius: var(--tw-radius-pill); font-size: 0.72rem; padding: 4px 8px;" onclick="confirmResetSimulation()" title="Reset simulation data">
           <i class="fa-solid fa-arrow-rotate-left"></i>
-          <span>Reset</span>
+          <span class="d-none d-sm-inline">Reset</span>
         </button>
       </div>
     </div>
@@ -2425,7 +2455,7 @@
               </div>
 
               <!-- Chart Canvas Container -->
-              <div style="position: relative; height: 320px; width: 100%;">
+              <div class="chart-canvas-container" style="position: relative; height: 320px; width: 100%;">
                 <canvas id="marketChart"></canvas>
               </div>
             </div>
@@ -2849,30 +2879,30 @@
                 Configure future or periodic on-chain executions. The agent continuously checks schedule timestamps alongside gas triggers and verifies all balance floors before broadcast.
               </p>
 
-              <div class="row g-3 align-items-end">
-                <div class="col-md-4">
+              <div class="row g-2 g-md-3 align-items-end">
+                <div class="col-12 col-md-4">
                   <label class="form-label text-muted small fw-semibold">Recipient Address (Checksum 0x...)</label>
                   <input type="text" id="schedRecipientInput" class="form-control white-input font-monospace" placeholder="0x71C8366420A096207E90B01D252431792349039A" value="0x71C8366420A096207E90B01D252431792349039A">
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2">
                   <label class="form-label text-muted small fw-semibold">Amount (USD)</label>
                   <input type="number" id="schedAmountInput" class="form-control white-input" value="100">
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2">
                   <label class="form-label text-muted small fw-semibold">Asset</label>
                   <select id="schedTokenInput" class="form-select white-input">
                     <option value="USDC" selected>USDC</option>
                     <option value="ETH">ETH</option>
                   </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-12 col-md-2">
                   <label class="form-label text-muted small fw-semibold">Schedule Model</label>
                   <select id="schedTypeInput" class="form-select white-input">
                     <option value="ONE_TIME_SCHEDULE">Delayed (In 1 Min)</option>
                     <option value="RECURRING_INTERVAL" selected>Recurring DCA (Every 60s)</option>
                   </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-12 col-md-2">
                   <button type="button" class="btn btn-primary w-100 fw-semibold py-2" onclick="scheduleTransferAction()">
                     <i class="fa-solid fa-clock me-1"></i>Schedule
                   </button>
@@ -3715,10 +3745,11 @@
               ticks: { color: '#64748b', maxTicksLimit: 7, font: { family: 'JetBrains Mono', size: 10 } }
             },
             y: {
-              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              grid: { color: 'rgba(226, 232, 240, 0.5)' },
               ticks: {
                 color: '#64748b',
-                callback: function(v) { return '$' + v.toLocaleString(); },
+                maxTicksLimit: 5,
+                callback: function(v) { return '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); },
                 font: { family: 'JetBrains Mono', size: 10 }
               }
             }
