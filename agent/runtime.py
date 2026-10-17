@@ -7,7 +7,7 @@ when formal trigger and invariant conditions are satisfied.
 from __future__ import annotations
 
 from collections import deque
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 import threading
 import time
@@ -18,6 +18,8 @@ from agent.task import AgentTask, task_manager
 from exchange import exchange_service
 from reasoning import reasoning_engine
 from user import user_db
+from contracts.wallet_client import policy_wallet_client
+from contracts.simulator import evm_simulator
 
 logger = logging.getLogger("agent.runtime")
 
@@ -115,6 +117,16 @@ class AutonomousAgent:
             return
 
         # Task is RUNNING -> state is MONITORING
+        # Check on-chain emergency pause first
+        if policy_wallet_client.is_paused:
+            with self._lock:
+                self.state = "GUARD_BLOCKED"
+            block_msg = "Contract Emergency Paused on-chain: All autonomous agent actions halted."
+            self.add_thought("BLOCKED", block_msg)
+            task_manager.update_check(task.id, block_msg)
+            time.sleep(1.0)
+            return
+
         market = exchange_service.get_market_state()
         user_state = user_db.get_state()
 
@@ -123,7 +135,7 @@ class AutonomousAgent:
         available_usdc = user_state.balances.USDC
         current_eth = user_state.balances.ETH
 
-        # Check triggers
+        # Check triggers (market or schedule)
         trigger_passed, trigger_reason = self._evaluate_triggers(task, current_gas, market)
 
         if not trigger_passed:
@@ -138,7 +150,7 @@ class AutonomousAgent:
                 self._last_logged_gas = current_gas
                 self.add_thought(
                     "MONITOR",
-                    f"Observing Market: Gas={current_gas} gwei, ETH=${current_price:,.2f}. {trigger_reason}"
+                    f"Observing: Gas={current_gas} gwei, ETH=${current_price:,.2f}. {trigger_reason}"
                 )
             return
 
@@ -147,10 +159,13 @@ class AutonomousAgent:
             self.state = "TRIGGER_MET"
         self.add_thought(
             "TRIGGER",
-            f"Trigger condition satisfied! Gas is {current_gas:.1f} gwei. Initiating fragmented cognitive reasoning pipeline...",
+            f"Trigger condition satisfied! Initiating fragmented cognitive reasoning pipeline...",
         )
 
         trade_usd = float(task.trade_action.get("amount_usd", 200.0))
+        action_type = task.trade_action.get("type", "SWAP")
+        token = task.trade_action.get("to_token", "ETH")
+        recipient = task.trade_action.get("recipient")
 
         # Run cognitive pipeline: RAG -> Intent -> Dry Run -> Z3 Gate
         report = reasoning_engine.execute_reasoning_pipeline(
@@ -174,10 +189,10 @@ class AutonomousAgent:
             task_manager.update_check(task.id, abort_reason)
             user_db.add_transaction(
                 actor="AGENT",
-                action="SWAP",
-                details=f"Aborted Autonomous Swap: ${trade_usd:.2f} USDC for ETH (High Risk)",
+                action=action_type,
+                details=f"Aborted Autonomous Action: ${trade_usd:.2f} USDC for {token} (High Risk)",
                 amount=0.0,
-                token="ETH",
+                token=token,
                 status="BLOCKED_BY_GUARD",
                 price_usd=current_price,
                 reason=report.dry_run.simulation_notes,
@@ -195,10 +210,10 @@ class AutonomousAgent:
             task_manager.update_check(task.id, block_reason)
             user_db.add_transaction(
                 actor="AGENT",
-                action="SWAP",
-                details=f"Blocked Autonomous Swap: ${trade_usd:.2f} USDC for ETH",
+                action=action_type,
+                details=f"Blocked Autonomous Action: ${trade_usd:.2f} USDC for {token}",
                 amount=0.0,
-                token="ETH",
+                token=token,
                 status="BLOCKED_BY_GUARD",
                 price_usd=current_price,
                 reason=report.gate_data.summary,
@@ -207,54 +222,115 @@ class AutonomousAgent:
             time.sleep(2.0)
             return
 
-        # Both RAG dry-run risk and Z3 invariant guards passed -> EXECUTE!
+        # Pre-flight EVM simulation on smart contract
+        balance_after = available_usdc - trade_usd
+        guards = {
+            "trade_amount_usd": trade_usd,
+            "balance_after_usd": balance_after,
+            "min_balance_floor_usd": policy_wallet_client.min_balance_floor_usd,
+            "per_tx_cap_usd": policy_wallet_client.per_tx_cap_usd,
+            "daily_cap_usd": policy_wallet_client.daily_cap_usd,
+            "spent_today_usd": policy_wallet_client.spent_today_usd,
+            "token": token,
+            "allowed_tokens": policy_wallet_client.allowed_tokens,
+            "recipient": recipient or "",
+            "allowed_recipients": policy_wallet_client.allowed_recipients,
+            "is_paused": policy_wallet_client.is_paused,
+        }
+        sim_res = evm_simulator.simulate_transaction(
+            from_address="0x71C8366420A096207E90B01D252431792349039A",
+            to_address=policy_wallet_client.contract_address,
+            guards=guards,
+        )
+        if not sim_res["success"]:
+            with self._lock:
+                self.state = "GUARD_BLOCKED"
+            sim_block = f"EVM Pre-Flight Reverted: {sim_res['revert_reason']}"
+            self.add_thought("BLOCKED", sim_block)
+            task_manager.update_check(task.id, sim_block)
+            time.sleep(2.0)
+            return
+
+        # Both RAG dry-run risk, Z3 invariant guards, and EVM pre-flight passed -> EXECUTE!
         with self._lock:
             self.state = "EXECUTING"
 
-        eth_purchased = report.dry_run.estimated_eth_received
-        new_usdc = report.dry_run.post_swap_usdc
-        new_eth = report.dry_run.post_swap_eth
-
         # 1. Update persistent balances
-        user_db.update_balances(eth=new_eth, usdc=new_usdc)
+        if action_type == "TRANSFER":
+            if token == "USDC":
+                user_db.update_balances(usdc=max(0.0, available_usdc - trade_usd))
+            else:
+                user_db.update_balances(eth=max(0.0, current_eth - (trade_usd / current_price)))
+        else:
+            eth_purchased = report.dry_run.estimated_eth_received
+            new_usdc = report.dry_run.post_swap_usdc
+            new_eth = report.dry_run.post_swap_eth
+            user_db.update_balances(eth=new_eth, usdc=new_usdc)
 
-        # 2. Record on-chain transaction with full reasoning report attached
+        # 2. Execute on-chain transaction via client
+        onchain_res = policy_wallet_client.execute_onchain_transaction(
+            action=action_type,
+            token=token,
+            amount=trade_usd / current_price if token == "ETH" else trade_usd,
+            price_usd=current_price,
+            balance_after_usd=balance_after,
+            policy_hash=task.policy_hash,
+            recipient=recipient,
+        )
+
+        # 3. Record on-chain transaction with full reasoning report attached
+        eth_purchased = report.dry_run.estimated_eth_received if action_type == "SWAP" else (trade_usd / current_price)
         tx = user_db.add_transaction(
             actor="AGENT",
-            action="SWAP",
-            details=f"Autonomous Guarded Swap: Sold ${trade_usd:.2f} USDC for +{eth_purchased:.5f} ETH @ ${current_price:,.2f}",
+            action=action_type,
+            details=f"Autonomous Guarded {action_type}: ${trade_usd:.2f} USDC for {token} (Base Sepolia #{onchain_res['block_number']})",
             amount=eth_purchased,
-            token="ETH",
+            token=token,
             status="CONFIRMED",
             price_usd=current_price,
-            reason=f"RAG '{report.rag_context.regime_name}' favorable ({report.rag_context.historical_win_rate*100:.0f}% win-rate). Floor preserved (${new_usdc:.2f} >= $500).",
+            reason=f"Verified On-Chain Policy: RAG regime validated ({report.rag_context.historical_win_rate*100:.0f}% win-rate). Floor preserved (${balance_after:.2f} >= $500). EVM Gas: {onchain_res['gas_used']}",
             reasoning_report=report.to_dict(),
         )
 
-        # 3. Mark task as FINISHED with comprehensive reason
-        finished_reason = (
-            f"Finished successfully: Gas dropped to {current_gas:.1f} gwei (trigger <= 20 gwei passed). "
-            f"RAG regime '{report.rag_context.regime_name}' validated (Risk: {report.dry_run.risk_level} {report.dry_run.risk_score}/10). "
-            f"Floor preserved (${new_usdc:.2f} >= $500). "
-            f"Swapped ${trade_usd:.2f} USDC for +{eth_purchased:.5f} ETH @ ${current_price:,.2f} on Base Sepolia. "
-            f"Tx: {tx.tx_hash[:10]}...{tx.tx_hash[-6:]}"
-        )
-        task_manager.mark_finished(
-            task.id,
-            tx_hash=tx.tx_hash,
-            reason=finished_reason,
-        )
-
-        with self._lock:
-            self.state = "FINISHED"
-
-        self.add_thought(
-            "EXECUTE",
-            f"SUCCESS! Autonomous swap executed: {eth_purchased} ETH bought for ${trade_usd:.2f} USDC on Base Sepolia. Hash: {tx.tx_hash[:14]}..."
-        )
+        # 4. Handle recurring interval vs single-shot finished
+        task.execution_count = getattr(task, "execution_count", 0) + 1
+        if getattr(task, "schedule_type", "MARKET_TRIGGER") == "RECURRING_INTERVAL" and (task.max_executions is None or task.execution_count < task.max_executions):
+            interval = task.interval_seconds or 60
+            next_run = (datetime.now(timezone.utc) + timedelta(seconds=interval)).isoformat()
+            task.next_run_at = next_run
+            reason = f"Recurring execution #{task.execution_count} verified on-chain. Next run at {next_run[:19].replace('T', ' ')} UTC. Tx: {onchain_res['tx_hash'][:10]}..."
+            task_manager.update_check(task.id, reason)
+            with self._lock:
+                self.state = "MONITORING"
+            self.add_thought("EXECUTE", reason)
+        else:
+            finished_reason = (
+                f"Finished successfully: {action_type} executed on Base Sepolia (Block #{onchain_res['block_number']}). "
+                f"RAG regime '{report.rag_context.regime_name}' validated. Floor preserved (${balance_after:.2f} >= $500). "
+                f"Tx: {onchain_res['tx_hash'][:10]}...{onchain_res['tx_hash'][-6:]}"
+            )
+            task_manager.mark_finished(
+                task.id,
+                tx_hash=onchain_res["tx_hash"],
+                reason=finished_reason,
+            )
+            with self._lock:
+                self.state = "FINISHED"
+            self.add_thought(
+                "EXECUTE",
+                f"SUCCESS! Autonomous {action_type} executed & verified on Base Sepolia. Hash: {onchain_res['tx_hash'][:14]}..."
+            )
 
     def _evaluate_triggers(self, task: AgentTask, current_gas: float, market: Dict[str, Any]) -> tuple[bool, str]:
-        """Check if market feed fulfills task trigger condition."""
+        """Check if market feed or time schedule fulfills task trigger condition."""
+        # Scheduled or Recurring triggers
+        if getattr(task, "schedule_type", "MARKET_TRIGGER") in ("ONE_TIME_SCHEDULE", "DELAYED", "RECURRING_INTERVAL"):
+            now_iso = datetime.now(timezone.utc).isoformat()
+            next_run = getattr(task, "next_run_at", None) or getattr(task, "execute_at", None)
+            if next_run and now_iso < next_run:
+                return False, f"Scheduled execution pending: Next run at {next_run[:19].replace('T', ' ')} UTC"
+            return True, f"Scheduled execution time reached ({getattr(task, 'schedule_type', 'SCHEDULED')})."
+
         if not task.triggers:
             return False, "Active Invariant Guard: Monitoring wallet solvency. No trigger registered to initiate buy/swap."
 

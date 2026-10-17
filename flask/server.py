@@ -43,6 +43,10 @@ from policy.readers.mock import MockLLMClient
 from policy.readers.rule_reader import RuleReader
 from policy.typecheck import resolve, typecheck
 from user import user_db
+from policy.workflow import policy_workflow
+from contracts.wallet_client import policy_wallet_client
+from contracts.simulator import evm_simulator
+from contracts.attack_tester import attack_simulator
 
 # Policy engine runtime cache
 POLICY_ENGINE_STATE = {
@@ -75,6 +79,13 @@ def set_default_policy(prompt: str = "Buy ETH when gas is under 20 gwei, and nev
     if isinstance(result, VerifiedPolicy):
         POLICY_ENGINE_STATE["active_policy"] = result.policy
         POLICY_ENGINE_STATE["active_verified_result"] = result
+        policy_workflow.create_proposal(
+            prompt=prompt,
+            policy_obj=result.policy,
+            canonical_readback=result.readback,
+            hash_val=result.hash,
+            auto_promote_if_default=True,
+        )
         if not task_manager.get_current_task():
             task_manager.register_task(
                 prompt=prompt,
@@ -109,12 +120,18 @@ def create_app() -> Flask:
         market_state = exchange_service.get_market_state()
         vp = POLICY_ENGINE_STATE["active_verified_result"]
         agent_status = autonomous_agent.get_status()
+        security_status = policy_wallet_client.get_security_status()
+        workflow_data = policy_workflow.get_current_workflow()
+        attack_vectors = attack_simulator.get_attack_vectors()
         return render_template(
             "index.html",
             user=user_state,
             market=market_state,
             active_result=vp,
             agent=agent_status,
+            security=security_status,
+            workflow=workflow_data,
+            attack_vectors=attack_vectors,
         )
 
     # ---------------------------------------------------------
@@ -511,6 +528,13 @@ def create_app() -> Flask:
         if isinstance(result, VerifiedPolicy):
             POLICY_ENGINE_STATE["active_policy"] = result.policy
             POLICY_ENGINE_STATE["active_verified_result"] = result
+            proposal = policy_workflow.create_proposal(
+                prompt=text,
+                policy_obj=result.policy,
+                canonical_readback=result.readback,
+                hash_val=result.hash,
+                auto_promote_if_default=False,
+            )
             return jsonify({
                 "status": "VERIFIED",
                 "readback": result.readback,
@@ -520,6 +544,8 @@ def create_app() -> Flask:
                 "onchain": result.onchain,
                 "constraints": constraint_names(result.policy),
                 "ignored_clauses": list(getattr(result, "ignored_clauses", [])),
+                "proposal_id": proposal.proposal_id,
+                "workflow_status": proposal.status,
             })
         elif isinstance(result, Rejected):
             return jsonify({
@@ -631,6 +657,174 @@ def create_app() -> Flask:
         }
         POLICY_ENGINE_STATE["last_trade_check"] = res
         return jsonify(res)
+
+    # ---------------------------------------------------------
+    # Explicit Policy Approval Workflow (DRAFT -> REVIEWED -> APPROVED -> DEPLOYABLE -> ACTIVE)
+    # ---------------------------------------------------------
+
+    @app.route("/api/policy/workflow", methods=["GET"])
+    def api_get_policy_workflow():
+        return jsonify(policy_workflow.get_current_workflow())
+
+    @app.route("/api/policy/review", methods=["POST"])
+    def api_review_policy():
+        data = request.get_json() or {}
+        pid = data.get("proposal_id")
+        reviewer = data.get("reviewer", "User (Security Auditor)")
+        try:
+            prop = policy_workflow.review_policy(pid, reviewer=reviewer)
+            return jsonify({"success": True, "proposal": prop.to_dict()})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+
+    @app.route("/api/policy/approve", methods=["POST"])
+    def api_approve_policy():
+        data = request.get_json() or {}
+        pid = data.get("proposal_id")
+        approver = data.get("approver", "Owner (0x71C8366420A096207E90B01D252431792349039A)")
+        signature = data.get("signature")
+        try:
+            prop = policy_workflow.approve_policy(pid, approver=approver, signature=signature)
+            return jsonify({"success": True, "proposal": prop.to_dict()})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+
+    @app.route("/api/policy/deploy", methods=["POST"])
+    def api_deploy_policy():
+        data = request.get_json() or {}
+        pid = data.get("proposal_id")
+        try:
+            prop = policy_workflow.deploy_policy(pid)
+            POLICY_ENGINE_STATE["active_policy"] = prop.policy_obj
+            trade_usd = float(prop.onchain_data.get("perTxCapUsd", 200.0))
+            task_manager.register_task(
+                prompt=prop.prompt,
+                policy_hash=prop.hash_val,
+                canonical_readback=prop.canonical_readback,
+                triggers=[{"field": "gas", "op": "lte", "val": 20.0}],
+                invariants=[{"field": "balance", "op": "sub", "val": prop.onchain_data.get("minBalanceAfterUsd", 500.0)}],
+                trade_amount_usd=trade_usd,
+            )
+            return jsonify({"success": True, "proposal": prop.to_dict(), "message": "Policy deployed to on-chain smart contract and agent runtime."})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+
+    # ---------------------------------------------------------
+    # Scheduled Transfers & Recurring Tasks
+    # ---------------------------------------------------------
+
+    @app.route("/api/agent/schedule", methods=["POST"])
+    def api_agent_schedule():
+        data = request.get_json() or {}
+        recipient = data.get("recipient", "0x71C8366420A096207E90B01D252431792349039A")
+        amount_usd = float(data.get("amount_usd", 100.0))
+        token = data.get("token", "USDC")
+        schedule_type = data.get("schedule_type", "ONE_TIME_SCHEDULE")
+        execute_at = data.get("execute_at")
+        interval_seconds = int(data.get("interval_seconds", 60)) if data.get("interval_seconds") else None
+
+        task = task_manager.schedule_transfer_task(
+            recipient=recipient,
+            amount_usd=amount_usd,
+            token=token,
+            schedule_type=schedule_type,
+            execute_at=execute_at,
+            interval_seconds=interval_seconds,
+        )
+        return jsonify({"success": True, "task": task.to_dict()}), 201
+
+    # ---------------------------------------------------------
+    # On-Chain Smart Contract Security, Emergency Pause & Permission Revocation
+    # ---------------------------------------------------------
+
+    @app.route("/api/contract/security-status", methods=["GET"])
+    def api_contract_security_status():
+        return jsonify(policy_wallet_client.get_security_status())
+
+    @app.route("/api/contract/pause", methods=["POST"])
+    def api_contract_pause():
+        res = policy_wallet_client.emergency_pause()
+        return jsonify(res)
+
+    @app.route("/api/contract/unpause", methods=["POST"])
+    def api_contract_unpause():
+        res = policy_wallet_client.emergency_unpause()
+        return jsonify(res)
+
+    @app.route("/api/contract/revoke-operator", methods=["POST"])
+    def api_contract_revoke_operator():
+        data = request.get_json() or {}
+        op = data.get("operator", "0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF")
+        res = policy_wallet_client.revoke_operator(op)
+        return jsonify(res)
+
+    @app.route("/api/contract/revoke-allowance", methods=["POST"])
+    def api_contract_revoke_allowance():
+        data = request.get_json() or {}
+        token = data.get("token", "0x0b2C639c533813f4Aa9D7837CA6262d0839793E")
+        spender = data.get("spender", "0x111111125421cA6dc452d289314280a0f8842A65")
+        res = policy_wallet_client.revoke_allowance(token, spender)
+        return jsonify(res)
+
+    @app.route("/api/contract/invalidate-policy", methods=["POST"])
+    def api_contract_invalidate_policy():
+        res = policy_wallet_client.invalidate_policy()
+        return jsonify(res)
+
+    # ---------------------------------------------------------
+    # Pre-Flight EVM Simulation & Gas Estimation
+    # ---------------------------------------------------------
+
+    @app.route("/api/simulation/simulate", methods=["POST"])
+    def api_simulate_transaction():
+        data = request.get_json() or {}
+        trade_usd = float(data.get("trade_usd", 200.0))
+        token = data.get("token", "ETH")
+        recipient = data.get("recipient", "")
+
+        user_state = user_db.get_state()
+        curr_usdc = user_state.balances.USDC
+        balance_after = curr_usdc - trade_usd
+
+        guards = {
+            "trade_amount_usd": trade_usd,
+            "balance_after_usd": balance_after,
+            "min_balance_floor_usd": policy_wallet_client.min_balance_floor_usd,
+            "per_tx_cap_usd": policy_wallet_client.per_tx_cap_usd,
+            "daily_cap_usd": policy_wallet_client.daily_cap_usd,
+            "spent_today_usd": policy_wallet_client.spent_today_usd,
+            "token": token,
+            "allowed_tokens": policy_wallet_client.allowed_tokens,
+            "recipient": recipient,
+            "allowed_recipients": policy_wallet_client.allowed_recipients,
+            "is_paused": policy_wallet_client.is_paused,
+        }
+
+        sim = evm_simulator.simulate_transaction(
+            from_address="0x71C8366420A096207E90B01D252431792349039A",
+            to_address=policy_wallet_client.contract_address,
+            guards=guards,
+        )
+        return jsonify(sim)
+
+    # ---------------------------------------------------------
+    # Attack Simulation & Contract Rejection Tester
+    # ---------------------------------------------------------
+
+    @app.route("/api/contract/attack-test/vectors", methods=["GET"])
+    def api_attack_vectors():
+        return jsonify(attack_simulator.get_attack_vectors())
+
+    @app.route("/api/contract/attack-test/run", methods=["POST"])
+    def api_run_attack_test():
+        data = request.get_json() or {}
+        attack_id = data.get("attack_id")
+        if attack_id:
+            res = attack_simulator.run_attack_test(attack_id)
+            return jsonify(res)
+        else:
+            all_res = attack_simulator.run_all_attacks()
+            return jsonify({"results": all_res})
 
     return app
 

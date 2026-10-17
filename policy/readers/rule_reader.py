@@ -111,43 +111,53 @@ class RuleReader(Reader):
         doc = self.nlp(text_clean)
         tokens_lower = [t.text.lower() for t in doc]
 
-        # 1. Allowlist rule: "Only trade WETH and USDC"
-        if "only" in tokens_lower and "trade" in tokens_lower:
-            tokens_found = []
+        # Check for recipient addresses (e.g. 0x71C8...)
+        recipients_found = re.findall(r"0x[a-fA-F0-9]{40}", text_clean)
+
+        # 1. Allowlist rule: "Only trade WETH and USDC" or embedded tokens
+        tokens_found = []
+        if ("only" in tokens_lower and "trade" in tokens_lower) or "allow" in tokens_lower or "token" in tokens_lower:
             for t in doc:
-                # Symbols like WETH, USDC, ETH, etc.
-                if t.text.isupper() and len(t.text) >= 2 and t.text not in ("ETH", "USD"):
-                    tokens_found.append(t.text)
-                elif t.text in ("WETH", "USDC", "WBTC", "DAI"):
-                    tokens_found.append(t.text)
-            if tokens_found:
-                return Policy(
-                    action="swap_buy",
-                    allow_tokens=tuple(tokens_found),
-                )
+                if t.text in ("WETH", "USDC", "WBTC", "DAI", "USDT") or (t.text.isupper() and len(t.text) >= 2 and t.text not in ("ETH", "USD", "EUR")):
+                    if t.text not in tokens_found:
+                        tokens_found.append(t.text)
 
         # 2. Approval threshold rule: "Ask me before anything over 500 dollars."
+        approval_found = None
         if "ask" in tokens_lower and ("over" in tokens_lower or "above" in tokens_lower):
-            # Find the numeral
-            const_found = None
             for i, t in enumerate(doc):
                 if t.like_num or NUMERAL_UNIT_RE.match(t.text):
-                    # Check next token for unit
                     unit_text = doc[i + 1].text if i + 1 < len(doc) else ""
                     try:
                         val, s = parse_numeral_unit(f"{t.text} {unit_text}")
-                        const_found = Const(val, s or Sort.USD)
+                        approval_found = Const(val, s or Sort.USD)
                         break
                     except ValueError:
                         continue
-            if const_found is not None:
-                return Policy(
-                    action="swap_buy",
-                    approval_above_usd=const_found,
-                )
 
-        # Split clauses by "and" or punctuation if coordinating conjunction joins clauses
-        clauses = self._split_clauses(text_clean)
+        # Separate sentence-level allowlist and approval rules so coordinating conjunctions ('and') don't break token lists
+        sentences = [s.strip().rstrip(".") for s in re.split(r"[.;]\s*", text_clean) if s.strip().rstrip(".")]
+        remaining_sentences = []
+        for s in sentences:
+            s_lower = s.lower()
+            if "only" in s_lower and "trade" in s_lower and not any(k in s_lower for k in ("gas", "balance", "under", "below", "dollar", "$")):
+                continue
+            if "ask" in s_lower and ("over" in s_lower or "above" in s_lower) and not any(k in s_lower for k in ("gas", "balance", "under", "below")):
+                continue
+            remaining_sentences.append(s)
+
+        if not remaining_sentences and (tokens_found or recipients_found or approval_found):
+            return Policy(
+                action="swap_buy",
+                allow_tokens=tuple(tokens_found),
+                allow_recipients=tuple(recipients_found),
+                approval_above_usd=approval_found,
+            )
+
+        # Split remaining sentences into clauses
+        clauses = []
+        for s in remaining_sentences:
+            clauses.extend(self._split_clauses(s))
 
         self.last_ignored_clauses = []
         triggers: list[Cmp] = []
@@ -161,18 +171,21 @@ class RuleReader(Reader):
             if trig is None and inv is None:
                 self.last_ignored_clauses.append(classify_ignored_clause(clause))
 
-        if not triggers and not invariants:
+        if not triggers and not invariants and not tokens_found and not recipients_found and not approval_found:
             raise Unreadable(f"No valid policy rules recognized in instruction: {text!r}", raw_text=text)
 
         return Policy(
             action="swap_buy",
             triggers=tuple(triggers),
             invariants=tuple(invariants),
+            allow_tokens=tuple(tokens_found),
+            allow_recipients=tuple(recipients_found),
+            approval_above_usd=approval_found,
         )
 
     def _split_clauses(self, text: str) -> list[str]:
-        # Split on sentence boundaries or coordinating conjunctions
-        parts = re.split(r"\.\s+|\;\s+|,?\s+and\s+", text)
+        # Split on coordinating conjunctions inside a sentence
+        parts = re.split(r",?\s+and\s+", text)
         return [p.strip().rstrip(".") for p in parts if p.strip().rstrip(".")]
 
     def _parse_clause(self, clause_text: str) -> tuple[Cmp | None, Cmp | None]:
@@ -198,9 +211,9 @@ class RuleReader(Reader):
                 )
                 return None, cmp_node
 
-        # Check for per-tx cap: "Don't spend more than 300 dollars in one transaction"
-        if ("one transaction" in lower_text or "single transaction" in lower_text or "per trade" in lower_text) and (
-            "spend" in lower_text or "trade" in lower_text
+        # Check for per-tx cap: "Don't spend more than 300 dollars in one transaction", "Limit single trades to $300"
+        if ("one transaction" in lower_text or "single transaction" in lower_text or "per trade" in lower_text or "single trade" in lower_text or "limit single" in lower_text) and (
+            "spend" in lower_text or "trade" in lower_text or "limit" in lower_text
         ):
             const_node = self._extract_const(doc, expected_sort=Sort.USD)
             if const_node is not None:

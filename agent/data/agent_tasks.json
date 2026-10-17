@@ -1,1 +1,110 @@
-[]
+[
+  {
+    "id": "task-a6bef5",
+    "prompt": "Scheduled transfer of $100.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+    "policy_hash": "scheduled-policy",
+    "status": "RUNNING",
+    "created_at": "2026-10-17T09:48:22.305600+00:00",
+    "triggers": [],
+    "invariants": [
+      {
+        "field": "balance",
+        "op": "sub",
+        "val": 500.0
+      }
+    ],
+    "trade_action": {
+      "type": "TRANSFER",
+      "from_token": "USDC",
+      "to_token": "USDC",
+      "amount_usd": 100.0,
+      "recipient": "0x71C8366420A096207E90B01D252431792349039A"
+    },
+    "canonical_readback": "Scheduled transfer of $100.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+    "last_checked_at": "2026-10-17T09:48:29.036372+00:00",
+    "last_reason": "Recurring execution #1 verified on-chain. Next run at 2026-10-17 09:49:29 UTC. Tx: 0xb0573cda...",
+    "execution_tx_hash": null,
+    "executed_at": null,
+    "schedule_type": "RECURRING_INTERVAL",
+    "execute_at": "2026-10-17T09:48:22.305600+00:00",
+    "interval_seconds": 60,
+    "next_run_at": "2026-10-17T09:49:29.036349+00:00",
+    "execution_count": 1,
+    "max_executions": null,
+    "recipient": "0x71C8366420A096207E90B01D252431792349039A"
+  },
+  {
+    "id": "task-511ebd",
+    "prompt": "Scheduled transfer of $150.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+    "policy_hash": "scheduled-policy",
+    "status": "STOPPED",
+    "created_at": "2026-10-17T09:48:22.292187+00:00",
+    "triggers": [],
+    "invariants": [
+      {
+        "field": "balance",
+        "op": "sub",
+        "val": 500.0
+      }
+    ],
+    "trade_action": {
+      "type": "TRANSFER",
+      "from_token": "USDC",
+      "to_token": "USDC",
+      "amount_usd": 150.0,
+      "recipient": "0x71C8366420A096207E90B01D252431792349039A"
+    },
+    "canonical_readback": "Scheduled transfer of $150.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+    "last_checked_at": "2026-10-17T09:48:22.292187+00:00",
+    "last_reason": "Superseded by new policy deployment",
+    "execution_tx_hash": null,
+    "executed_at": null,
+    "schedule_type": "RECURRING_INTERVAL",
+    "execute_at": "2026-10-17T09:48:22.292187+00:00",
+    "interval_seconds": 60,
+    "next_run_at": "2026-10-17T09:48:22.292187+00:00",
+    "execution_count": 0,
+    "max_executions": null,
+    "recipient": "0x71C8366420A096207E90B01D252431792349039A"
+  },
+  {
+    "id": "task-bed88c",
+    "prompt": "Only trade ETH and USDC. Keep the balance after each trade at least $500. Limit single trades to $300.",
+    "policy_hash": "d6a163f4be44b70b90efecc4b333839490b7aab8925d55998162d48932462b95",
+    "status": "STOPPED",
+    "created_at": "2026-10-17T09:48:22.290667+00:00",
+    "triggers": [
+      {
+        "field": "gas",
+        "op": "lte",
+        "val": 20.0
+      }
+    ],
+    "invariants": [
+      {
+        "field": "balance",
+        "op": "sub",
+        "val": 500
+      }
+    ],
+    "trade_action": {
+      "type": "SWAP",
+      "from_token": "USDC",
+      "to_token": "ETH",
+      "amount_usd": 300.0,
+      "recipient": null
+    },
+    "canonical_readback": "Keep the balance after each trade at least $500. Don't spend more than $300 in one transaction. Only trade USDC.",
+    "last_checked_at": "2026-10-17T09:48:22.290667+00:00",
+    "last_reason": "Superseded by new policy deployment",
+    "execution_tx_hash": null,
+    "executed_at": null,
+    "schedule_type": "MARKET_TRIGGER",
+    "execute_at": "2026-10-17T09:48:22.290667+00:00",
+    "interval_seconds": null,
+    "next_run_at": "2026-10-17T09:48:22.290667+00:00",
+    "execution_count": 0,
+    "max_executions": 1,
+    "recipient": null
+  }
+]

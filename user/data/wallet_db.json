@@ -3,13 +3,90 @@
   "network": "Base Sepolia (84532)",
   "balances": {
     "ETH": 1.5,
-    "USDC": 1500.0,
+    "USDC": 1400.0,
     "WETH": 0.0
   },
   "transactions": [
     {
+      "id": "tx-1792230509034-28f0",
+      "timestamp": "2026-10-17T09:48:29.034597+00:00",
+      "actor": "AGENT",
+      "action": "TRANSFER",
+      "details": "Autonomous Guarded TRANSFER: $100.00 USDC for USDC (Base Sepolia #19482874)",
+      "amount": 0.041129582863770595,
+      "token": "USDC",
+      "status": "CONFIRMED",
+      "tx_hash": "0xd93a14176243405683a93bc80f51bd6f65762c9d",
+      "price_usd": 2431.34,
+      "reason": "Verified On-Chain Policy: RAG regime validated (85% win-rate). Floor preserved ($1400.00 >= $500). EVM Gas: 45000",
+      "reasoning_report": {
+        "report_id": "rep-57dbab13",
+        "timestamp": "2026-10-17T09:48:22.863954+00:00",
+        "prompt": "Scheduled transfer of $100.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+        "live_market": {
+          "eth_price_usd": 2431.34,
+          "gas_gwei": 0.5,
+          "scenario": "REAL_MARKET"
+        },
+        "rag_context": {
+          "regime_id": "REGIME-001",
+          "regime_name": "Post-Dip Mean Reversion (Low Gas)",
+          "similarity_score": 0.49,
+          "historical_win_rate": 0.85,
+          "expected_return_24h_pct": 5.2,
+          "risk_level": "LOW",
+          "risk_score": 2.0,
+          "max_drawdown_pct": 1.5,
+          "context_summary": "Ethereum gas dropped under 20 gwei following minor retracement. Historically, low-gas periods after minor selloffs yield positive 24-48h rebounds.",
+          "strategy_recommendation": "ACCUMULATE"
+        },
+        "intent": {
+          "intent_type": "SWAP",
+          "target_token": "ETH",
+          "amount_usd": 100.0,
+          "thesis": "Accumulate ETH: Gas at 0.5 gwei satisfies entry trigger. RAG pattern matches historical ACCUMULATE regime.",
+          "profitability_outlook": "Favorable: Historical regime 'Post-Dip Mean Reversion (Low Gas)' demonstrates 85% win-rate with +5.2% expected 24h return. Low gas (0.5 gwei) minimizes overhead.",
+          "confidence_score": 0.52
+        },
+        "dry_run": {
+          "estimated_eth_received": 0.04111,
+          "estimated_slippage_pct": 0.05,
+          "post_swap_usdc": 1400.0,
+          "post_swap_eth": 1.54111,
+          "expected_24h_value_delta_usd": 5.2,
+          "max_drawdown_risk_usd": 1.5,
+          "risk_score": 2.0,
+          "risk_level": "LOW",
+          "decision": "PROCEED_TO_GATES",
+          "simulation_notes": "Dry-run simulation favorable: Low risk (2.0/10) in 'Post-Dip Mean Reversion (Low Gas)'. Simulated swap: +0.04111 ETH at $2,431.34. Historical win-rate: 85%, Expected 24h gain: +5.20 USD."
+        },
+        "gate_data": {
+          "solver_status": "SAT",
+          "is_formally_verified": true,
+          "invariant_checks": [
+            {
+              "name": "INVARIANT_FLOOR_GE_500",
+              "expression": "balance_after ($1400.00) >= $500.00",
+              "passed": true
+            }
+          ],
+          "trigger_checks": [
+            {
+              "name": "TRIGGER_GAS_LTE_20",
+              "expression": "gas (0.5) <= 20.0 gwei",
+              "passed": true
+            }
+          ],
+          "passed": true,
+          "summary": "Formal Z3 Verification: SAT. Invariants: ALL_SATISFIED. Triggers: ALL_SATISFIED."
+        },
+        "final_decision": "EXECUTED",
+        "executive_summary": "Autonomous trade authorized: RAG matched 'Post-Dip Mean Reversion (Low Gas)' (49% similarity, 85% win-rate). Dry-run simulated +0.04111 ETH with low risk (2.0/10). Deterministic Z3 gate formally verified invariants and floor preservation."
+      }
+    },
+    {
       "id": "tx-init-001",
-      "timestamp": "2026-10-15T23:20:35.277676+00:00",
+      "timestamp": "2026-10-17T09:48:20.411991+00:00",
       "actor": "USER",
       "action": "DEPOSIT",
       "details": "Initial Demo Wallet Funding (Base Sepolia Faucet)",
@@ -23,7 +100,7 @@
     },
     {
       "id": "tx-init-002",
-      "timestamp": "2026-10-15T23:20:35.277676+00:00",
+      "timestamp": "2026-10-17T09:48:20.411991+00:00",
       "actor": "USER",
       "action": "DEPOSIT",
       "details": "Initial Demo USDC Reserve Allocation",
@@ -36,6 +113,6 @@
       "reasoning_report": null
     }
   ],
-  "created_at": "2026-10-15T23:20:35.277676+00:00",
-  "last_reset": "2026-10-15T23:20:35.277676+00:00"
+  "created_at": "2026-10-17T09:48:20.411991+00:00",
+  "last_reset": "2026-10-17T09:48:20.411991+00:00"
 }

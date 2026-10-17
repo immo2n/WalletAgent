@@ -34,6 +34,13 @@ class AgentTask:
     last_reason: Optional[str] = None
     execution_tx_hash: Optional[str] = None
     executed_at: Optional[str] = None
+    schedule_type: str = "MARKET_TRIGGER"
+    execute_at: Optional[str] = None
+    interval_seconds: Optional[int] = None
+    next_run_at: Optional[str] = None
+    execution_count: int = 0
+    max_executions: Optional[int] = 1
+    recipient: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -53,6 +60,13 @@ class AgentTask:
 
         data_copy = dict(data)
         data_copy["status"] = status
+        data_copy.setdefault("schedule_type", "MARKET_TRIGGER")
+        data_copy.setdefault("execute_at", None)
+        data_copy.setdefault("interval_seconds", None)
+        data_copy.setdefault("next_run_at", None)
+        data_copy.setdefault("execution_count", 0)
+        data_copy.setdefault("max_executions", 1)
+        data_copy.setdefault("recipient", None)
         return cls(**data_copy)
 
 
@@ -110,6 +124,13 @@ class TaskManager:
         triggers: List[Dict[str, Any]],
         invariants: List[Dict[str, Any]],
         trade_amount_usd: float = 200.0,
+        schedule_type: str = "MARKET_TRIGGER",
+        execute_at: Optional[str] = None,
+        interval_seconds: Optional[int] = None,
+        recipient: Optional[str] = None,
+        action_type: str = "SWAP",
+        token: str = "ETH",
+        max_executions: Optional[int] = 1,
     ) -> AgentTask:
         """Register a new autonomous task (replaces any previous task)."""
         with self._lock:
@@ -128,20 +149,58 @@ class TaskManager:
                 triggers=triggers,
                 invariants=invariants,
                 trade_action={
-                    "type": "SWAP",
-                    "from_token": "USDC",
-                    "to_token": "ETH",
+                    "type": action_type,
+                    "from_token": "USDC" if action_type == "SWAP" else token,
+                    "to_token": token,
                     "amount_usd": float(trade_amount_usd),
+                    "recipient": recipient,
                 },
                 canonical_readback=canonical_readback,
                 last_checked_at=now_iso,
-                last_reason="Task started. Watching market feed for trigger conditions.",
+                last_reason="Task started. Watching schedule or market feed." if schedule_type != "MARKET_TRIGGER" else "Task started. Watching market feed for trigger conditions.",
+                schedule_type=schedule_type,
+                execute_at=execute_at or now_iso,
+                interval_seconds=interval_seconds,
+                next_run_at=execute_at or now_iso,
+                execution_count=0,
+                max_executions=max_executions,
+                recipient=recipient,
             )
             # Insert at top (current task)
             self._tasks.insert(0, new_task)
             self._tasks = self._tasks[:5]
             self._save()
             return new_task
+
+    def schedule_transfer_task(
+        self,
+        recipient: str,
+        amount_usd: float,
+        token: str = "USDC",
+        schedule_type: str = "ONE_TIME_SCHEDULE",
+        execute_at: Optional[str] = None,
+        interval_seconds: Optional[int] = None,
+        policy_hash: str = "scheduled-policy",
+        invariants: Optional[List[Dict[str, Any]]] = None,
+    ) -> AgentTask:
+        """Convenience method to register a scheduled or recurring transfer task."""
+        invariants = invariants or [{"field": "balance", "op": "sub", "val": 500.0}]
+        desc = f"Scheduled transfer of ${amount_usd:.2f} {token} to {recipient[:10]}... ({schedule_type})"
+        return self.register_task(
+            prompt=desc,
+            policy_hash=policy_hash,
+            canonical_readback=desc,
+            triggers=[],
+            invariants=invariants,
+            trade_amount_usd=amount_usd,
+            schedule_type=schedule_type,
+            execute_at=execute_at,
+            interval_seconds=interval_seconds,
+            recipient=recipient,
+            action_type="TRANSFER",
+            token=token,
+            max_executions=None if schedule_type == "RECURRING_INTERVAL" else 1,
+        )
 
     def stop_task(self, task_id: str, reason: str = "Manually stopped by user") -> bool:
         """User manual stopping/pausing of the task."""
