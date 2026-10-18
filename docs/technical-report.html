@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Orvilo: User-Defined On-Chain Guardrails for Autonomous AI Wallets</title>
+<style>
+@page { size: A4; margin: 17mm 16mm 18mm; @bottom-right { content: "Orvilo • " counter(page); color:#64748b; font-size:9pt; } }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; color:#1e293b; line-height:1.45; font-size:10pt; }
+h1,h2,h3 { color:#12213f; margin:0 0 7pt; line-height:1.2; }
+h1 { font-size:29pt; letter-spacing:-.5pt; }
+h2 { font-size:18pt; margin-top:17pt; border-bottom:2px solid #315ef5; padding-bottom:4pt; }
+h3 { font-size:12.5pt; margin-top:12pt; color:#315ef5; }
+p { margin:5pt 0 8pt; }
+.cover { min-height:235mm; display:flex; flex-direction:column; justify-content:center; page-break-after:always; }
+.eyebrow { color:#315ef5; font-weight:700; text-transform:uppercase; letter-spacing:1.5pt; font-size:9pt; }
+.subtitle { font-size:15pt; color:#475569; max-width:145mm; }
+.meta { margin-top:22mm; border-left:4px solid #315ef5; padding:7pt 12pt; color:#475569; }
+.page { page-break-before:always; }
+.figure { margin:10pt 0 14pt; text-align:center; page-break-inside:avoid; }
+.figure img { width:100%; max-height:86mm; object-fit:contain; }
+.caption { font-size:8.5pt; color:#64748b; margin-top:3pt; }
+table { width:100%; border-collapse:collapse; margin:7pt 0 11pt; font-size:9pt; page-break-inside:avoid; }
+th { background:#12213f; color:#fff; text-align:left; padding:6pt; }
+td { border:1px solid #cbd5e1; padding:5pt 6pt; vertical-align:top; }
+tr:nth-child(even) td { background:#f8fafc; }
+code { font-family: "SFMono-Regular", Consolas, monospace; font-size:8.5pt; background:#eef2ff; padding:1pt 3pt; border-radius:2pt; }
+.callout { border-left:4px solid #16a394; background:#ecfdf5; padding:8pt 10pt; margin:8pt 0; page-break-inside:avoid; }
+.warn { border-left-color:#f59e0b; background:#fffbeb; }
+ul,ol { margin-top:4pt; padding-left:18pt; }
+li { margin:3pt 0; }
+.small { color:#64748b; font-size:8.5pt; }
+.cols { display:grid; grid-template-columns:1fr 1fr; gap:10pt; }
+</style>
+</head>
+<body>
+<section class="cover">
+  <div class="eyebrow">Engineering dossier · verified against source tree</div>
+  <h1>Orvilo</h1>
+    <p class="subtitle">User-Defined On-Chain Guardrails for Autonomous AI Wallets</p>
+    <p class="subtitle">Complete technical documentation: architecture, data flow, calculations, APIs, operations, testing evidence, and implementation boundaries.</p>
+  <div class="meta">
+    <strong>Document title:</strong> Orvilo Technical Documentation<br>
+    <strong>Version:</strong> 1.0 · <strong>Prepared:</strong> 19 October 2026<br>
+    <strong>Organization:</strong> Orvilo engineering team<br>
+    <strong>Repository:</strong> Flask modular monolith with local JSON persistence
+  </div>
+  <p class="small">This document describes the software that is present in the repository. It distinguishes deterministic local simulation from live blockchain execution.</p>
+</section>
+
+<h2>1. Document control and contents</h2>
+<table><tr><th>Version</th><th>Date</th><th>Change</th><th>Owner</th></tr>
+<tr><td>1.0</td><td>2026-10-19</td><td>Initial complete Orvilo technical baseline derived from source inspection and executed tests.</td><td>Orvilo engineering</td></tr></table>
+<p><strong>Scope.</strong> This document describes the current repository, including implemented behavior, local simulation boundaries, APIs, UI behavior, operations, and test evidence. It is intended for developers, reviewers, operators, security assessors, and technical evaluators.</p>
+<h3>Table of contents</h3>
+<ol><li>Document control and contents</li><li>Executive summary</li><li>System overview</li><li>Technology stack</li><li>System architecture and data flow</li><li>Codebase structure</li><li>Functional modules</li><li>End-to-end workflows</li><li>Database and data architecture</li><li>API documentation</li><li>Business rules, algorithms, and calculations</li><li>External integrations</li><li>Frontend and UI behavior</li><li>Authentication and authorization</li><li>Installation and local development</li><li>Configuration and deployment</li><li>Testing and validation</li><li>Performance and reliability</li><li>Operations, maintenance, and troubleshooting</li><li>Known limitations and future development</li><li>Appendices and source references</li></ol>
+<p><strong>List of figures:</strong> system context; policy verification; runtime safety; contract guard path; logical data relationships; desktop UI; mobile UI.</p>
+<p><strong>List of tables:</strong> revision history; technology stack; codebase structure; logical entities; API catalog; integrations; troubleshooting; limitations; source map.</p>
+
+<h2>2. Executive summary</h2>
+<p>Orvilo lets a user express wallet guardrails in natural language, such as “buy ETH when gas is under 20 gwei and never let the balance fall below $500.” A deterministic reader and an untrusted schema-constrained reader produce typed policy trees. The policy package type-checks and compares them with Z3, generates a canonical readback and SHA-256 identifier, and exports guard parameters. The agent then observes market state, retrieves historical regimes, proposes intent, performs a dry run, and applies deterministic gates before changing the local wallet ledger.</p>
+<div class="callout"><strong>Security boundary.</strong> The language model is an untrusted proposer. Approval, type checking, formal equivalence, dry-run calculations, operator checks, caps, allowlists, reserve floors, pause state, and audit persistence remain deterministic application or contract-model controls.</div>
+
+<h2>3. System overview</h2>
+<p><strong>Users and roles:</strong> the wallet owner edits balances, reviews policies, approves deployment, controls pause/resume, and inspects audit records. The autonomous agent evaluates one active task. A security reviewer can mark a proposal reviewed. The default mock reader and optional Groq reader are untrusted proposers, never authorities.</p>
+<p><strong>System boundary:</strong> the default application is a local Flask simulation. It uses JSON files, in-memory policy and security state, optional Coinbase and Ethereum RPC observations, and a Python contract model. The default flow does not sign or broadcast transactions. The Solidity contract is a deployable reference, not evidence of a deployed contract.</p>
+<p><strong>Example:</strong> the owner submits a policy, reviews its readback, approves it, and deploys it through the dashboard. The agent watches gas. If gas satisfies the trigger, the reasoning pipeline retrieves a regime, simulates a swap, checks the reserve floor, and either records a local confirmed swap or records a blocked attempt with the reason.</p>
+<div class="figure"><img src="../visuals/rendered/system-context.png"><div class="caption">Figure 1. Orvilo system context.</div></div>
+
+<h2>4. Technology stack</h2>
+<table><tr><th>Layer</th><th>Implementation verified in repository</th><th>Role</th></tr>
+<tr><td>Runtime</td><td>Python; Flask 3.x compatible; <code>main.py</code></td><td>Startup orchestration, CLI verification, HTTP server.</td></tr>
+<tr><td>Policy</td><td>Python AST/readers, JSON Schema, Z3 Solver</td><td>Parse, type-check, normalize, compare, and approve policies.</td></tr>
+<tr><td>Agent</td><td>Background loop, task store, scheduler</td><td>Evaluate schedules, retrieve market context, simulate, and record outcomes.</td></tr>
+<tr><td>Market</td><td>Coinbase WebSocket adapter plus deterministic scenarios</td><td>Live-compatible feed boundary and reproducible test data.</td></tr>
+<tr><td>Contract model</td><td>Solidity source, ABI/client boundary, Python simulator</td><td>Policy guards, emergency controls, typed rejection vectors.</td></tr>
+<tr><td>Persistence</td><td>Local JSON files</td><td>Wallet ledger, agent tasks, and reasoning/market history.</td></tr>
+<tr><td>UI</td><td>Server-rendered HTML, CSS, browser JavaScript, SSE</td><td>Responsive dashboard, dark mode, timezone selection, assistant.</td></tr>
+<tr><td>Testing</td><td>pytest; 90 tests collected</td><td>Policy, agent, contract, API, assistant, and scorecard coverage.</td></tr></table>
+
+<h2>5. System architecture and data flow</h2>
+<p>The application is a modular monolith. Flask routes coordinate policy, agent, reasoning, exchange, contract, and user modules in one Python process. This keeps local demonstrations simple while preserving explicit boundaries that can later be deployed behind a WSGI server and a production persistence layer.</p>
+<ol><li>The browser requests dashboard state and sends user actions to JSON endpoints.</li><li>The server validates inputs and delegates to the relevant domain module.</li><li>Domain modules update local state and return a structured result.</li><li>The UI refreshes panels or consumes market updates through server-sent events.</li><li>Assistant requests use the same action surface; confirmation is required for pause operations.</li></ol>
+
+<h2>4. Policy verification and approval</h2>
+<p>Policy construction has two readers: a deterministic rule reader and an optional schema-constrained LLM reader. Both produce a normalized representation. Type checks reject incompatible units and invalid values before formal comparison. Z3 checks whether the interpretations are equivalent and can expose a counterexample when they are not.</p>
+<div class="figure"><img src="../visuals/rendered/policy-verification.png"><div class="caption">Figure 2. Policy interpretation, formal comparison, and approval workflow.</div></div>
+<table><tr><th>State</th><th>Meaning</th><th>Required transition</th></tr>
+<tr><td>DRAFT</td><td>Candidate policy exists but is not approved.</td><td>Review</td></tr>
+<tr><td>REVIEWED</td><td>Human or workflow review completed.</td><td>Sign and approve</td></tr>
+<tr><td>APPROVED</td><td>Policy is approved for deployment.</td><td>Deploy</td></tr>
+<tr><td>ACTIVE</td><td>Hash and guard parameters are active in the model.</td><td>Pause, invalidate, or replace</td></tr></table>
+
+<h2>6. Codebase structure</h2>
+<table><tr><th>Path</th><th>Responsibility</th><th>Important symbols</th></tr>
+<tr><td><code>main.py</code></td><td>CLI policy discovery and Flask startup.</td><td><code>discover_and_print_policy()</code>, <code>main()</code></td></tr>
+<tr><td><code>flask/server.py</code></td><td>HTML route, JSON APIs, SSE stream, assistant actions.</td><td><code>create_app()</code>, route handlers</td></tr>
+<tr><td><code>policy/</code></td><td>Typed AST, readers, type checks, Z3 comparison, hashing, workflow.</td><td><code>verify_policy</code>, <code>PolicyWorkflowManager</code></td></tr>
+<tr><td><code>agent/</code></td><td>One-task registry and background daemon.</td><td><code>AutonomousAgent</code>, <code>TaskManager</code></td></tr>
+<tr><td><code>reasoning/</code></td><td>RAG, intent, dry-run, gate and report assembly.</td><td><code>ReasoningEngine</code>, <code>RiskSimulator</code></td></tr>
+<tr><td><code>exchange/</code></td><td>Coinbase snapshot, synthetic fallback, scenarios, gas oracle.</td><td><code>ExchangeService</code></td></tr>
+<tr><td><code>contracts/</code></td><td>Solidity reference, Python simulator, client, attack vectors.</td><td><code>PolicyWalletClient</code>, <code>EVMSimulator</code></td></tr>
+<tr><td><code>user/</code></td><td>Wallet state and transaction JSON persistence.</td><td><code>UserDatabase</code></td></tr>
+<tr><td><code>tests/</code></td><td>Policy, agent, exchange, reasoning, scorecard, and user tests.</td><td>90 collected tests</td></tr></table>
+
+<h2>7. Functional modules</h2>
+<h3>7.1 Policy compilation and verification</h3>
+<p><strong>Purpose:</strong> convert language into a verified typed policy. <strong>Trigger:</strong> startup discovery or <code>POST /api/verify</code>. <strong>Inputs:</strong> prompt, rule reader, and the configured mock reader by default; Groq is optional. <strong>Processing:</strong> parse both readers; type-check; ask clarification for unresolved coercions; compare formulas in both directions with Z3; run sanity checks; build readback, hash, and on-chain parameters. <strong>Data:</strong> proposal is held in the workflow manager; no policy database is used. <strong>Output:</strong> <code>VerifiedPolicy</code>, human-review result, or rejection. <strong>Failure:</strong> parse, type, timeout, mismatch, or sanity failures fail closed or return human review. <strong>References:</strong> <code>policy/loop.py</code>, <code>policy/typecheck.py</code>, <code>policy/compare.py</code>.</p>
+<h3>7.2 Approval and deployment</h3>
+<p><strong>Purpose:</strong> move a proposal through review and deployment. <strong>Trigger:</strong> review, approve, or deploy API calls. <strong>Processing:</strong> the manager changes status and the deploy step copies exported limits into the in-memory wallet client, then registers an agent task. <strong>Important boundary:</strong> the default approval signature is a generated placeholder when omitted; no EIP-712 signing is implemented.</p>
+<h3>7.3 Agent and reasoning</h3>
+<p><strong>Purpose:</strong> continuously evaluate one active task. <strong>Processing:</strong> pause check → market snapshot → trigger evaluation → RAG retrieval → intent proposal → dry run → deterministic gates → local balance and transaction update. <strong>Outputs:</strong> thought stream, task status, transaction record, reasoning report. <strong>Failure:</strong> blocked and high-risk attempts are recorded; unexpected loop exceptions are logged.</p>
+<div class="figure"><img src="../visuals/rendered/runtime-safety.png"><div class="caption">Figure 3. Agent runtime and safety gates.</div></div>
+<h3>7.4 Contract security and attack tester</h3>
+<p><strong>Purpose:</strong> model policy enforcement and repeat six adversarial cases. <strong>Inputs:</strong> token, recipient, amount, balance-after, caps, pause flag. <strong>Outputs:</strong> named modeled revert, gas estimate, status, and no local state mutation. The result is simulator evidence, not a chain receipt.</p>
+<div class="figure"><img src="../visuals/rendered/security-controls.png"><div class="caption">Figure 4. Contract guard decision path.</div></div>
+<h3>7.5 Wallet, market, and assistant modules</h3>
+<p>The wallet module stores balances and actor-attributed transactions. The market module combines Coinbase data, synthetic ticks, scenario offsets, and gas oracle state. The assistant answers state questions and dispatches bounded UI actions through the same Flask process; confirmation is used for agent pause/resume actions.</p>
+
+<h2>8. End-to-end workflows</h2>
+<p>Each scheduled tick evaluates task state and market inputs. A triggered task retrieves relevant regime context, forms an intent, computes a dry-run result, evaluates deterministic safety gates, performs EVM-style preflight decoding, and persists either an execution record or a blocked explanation.</p>
+<div class="figure"><img src="../visuals/rendered/runtime-safety.png"><div class="caption">Figure 3. Agent runtime with explicit safety gates and audit outcomes.</div></div>
+<p>Dry-run calculations include balance impact, slippage, gas cost, reserve floor, transaction cap, daily cap, and allowlist checks. Local attack-test results represent modeled contract rejections; they are not live Base Sepolia transaction receipts.</p>
+
+<h2>9. Database and data architecture</h2>
+<p>Orvilo has no SQL database, migrations, indexes, or relational transactions. It uses three JSON stores: <code>user/data/wallet_db.json</code>, <code>agent/data/agent_tasks.json</code>, and <code>reasoning/data/market_history.json</code>. Each service uses a re-entrant lock around read/write operations. Malformed wallet or task JSON falls back to initialized/default state; market-history load failures log an error and use an empty list, which activates a baseline regime.</p>
+<div class="figure"><img src="../visuals/rendered/data-model.png"><div class="caption">Figure 5. Logical data relationships; records are JSON, not relational tables.</div></div>
+<table><tr><th>Entity</th><th>Key fields</th><th>Operations</th></tr>
+<tr><td>UserState</td><td>wallet address, network, balances, transactions, timestamps</td><td>initialize, read, reset, update</td></tr>
+<tr><td>TransactionRecord</td><td>id, actor, action, amount, token, status, hash, reason, report</td><td>prepend; lookup by id or hash</td></tr>
+<tr><td>AgentTask</td><td>policy hash, status, triggers, invariants, schedule, count</td><td>register, stop, rerun, delete, persist</td></tr>
+<tr><td>HistoricalRegime</td><td>conditions, metrics, recommendation</td><td>load, overwrite, retrieve</td></tr></table>
+
+<h2>10. API documentation</h2>
+<p>There is no authentication, version prefix, pagination, webhook, or CORS policy in the Flask routes. JSON errors generally return HTTP 400 for workflow exceptions; many action routes return the domain result directly.</p>
+<table><tr><th>Method and path</th><th>Purpose and input</th><th>Response / status</th></tr>
+<tr><td>GET <code>/</code></td><td>Render dashboard.</td><td>HTML 200.</td></tr>
+<tr><td>GET <code>/api/market/live</code></td><td>Market snapshot and chart history.</td><td>JSON 200.</td></tr>
+<tr><td>POST <code>/api/market/scenario</code></td><td><code>scenario</code>.</td><td>Scenario result.</td></tr>
+<tr><td>GET <code>/api/market/stream</code></td><td>One SSE event per second.</td><td>Open <code>text/event-stream</code>.</td></tr>
+<tr><td>GET/POST <code>/api/user/wallet</code></td><td>Read or set ETH/USDC/WETH; optional <code>log_transaction</code>.</td><td>User state JSON.</td></tr>
+<tr><td>GET <code>/api/wallet/balances</code></td><td>Read balances.</td><td>Balance object.</td></tr>
+<tr><td>GET/POST <code>/api/user/transactions</code></td><td>Read or add transaction records.</td><td>Ledger JSON.</td></tr>
+<tr><td>POST <code>/api/user/reset</code>, <code>/api/simulation/reset</code></td><td>Reset local state.</td><td>Reset result.</td></tr>
+<tr><td>POST <code>/api/verify</code></td><td><code>prompt</code>; run policy verification.</td><td>Verified/review/rejected JSON.</td></tr>
+<tr><td>POST <code>/api/validate_intent</code></td><td><code>trade_usd</code>, <code>gas_gwei</code>, <code>execute</code>.</td><td>Guard result; execution mutates local JSON only.</td></tr>
+<tr><td>GET <code>/api/policy/workflow</code></td><td>Current and recent in-memory proposals.</td><td>Workflow JSON.</td></tr>
+<tr><td>POST <code>/api/policy/review|approve|deploy</code></td><td><code>proposal_id</code> plus reviewer/approver/signature where applicable.</td><td>Proposal or HTTP 400 error.</td></tr>
+<tr><td>GET <code>/api/agent/status</code></td><td>Agent state, task, thoughts.</td><td>Status JSON.</td></tr>
+<tr><td>GET/POST/DELETE <code>/api/agent/task</code></td><td>Read/register/delete task.</td><td>Task JSON.</td></tr>
+<tr><td>POST <code>/api/agent/task/stop|rerun|deploy|delete</code></td><td>Task id/action control.</td><td>Task action result.</td></tr>
+<tr><td>POST <code>/api/agent/pause|resume|schedule</code></td><td>Agent control or scheduled transfer fields.</td><td>Control/task result.</td></tr>
+<tr><td>GET/POST <code>/api/contract/security-status</code>, controls</td><td>Pause, unpause, revoke operator/allowance, invalidate policy.</td><td>In-memory security result.</td></tr>
+<tr><td>POST <code>/api/simulation/simulate</code></td><td>Trade, token, recipient.</td><td>Simulation guards and result.</td></tr>
+<tr><td>GET/POST <code>/api/contract/attack-test/*</code></td><td>List or run vector id.</td><td>Modeled attack verdict.</td></tr>
+<tr><td>POST <code>/api/assistant/chat</code></td><td><code>message</code> and optional confirmation.</td><td>Natural-language reply plus bounded action result.</td></tr></table>
+
+<h2>11. Business rules, algorithms, and calculations</h2>
+<h3>11.1 Reserve and cap guards</h3>
+<p>For a proposed USD trade <code>T</code>, current USDC <code>B</code>, reserve floor <code>F</code>, per-transaction cap <code>C</code>, daily spend <code>S</code>, and daily cap <code>D</code>, the local checks are: <code>B - T ≥ F</code>; <code>T ≤ C</code>; and <code>S + T ≤ D</code>. Inputs come from wallet JSON, policy parameters, and the proposed task. Example: <code>B=$1,500</code>, <code>T=$200</code>, <code>F=$500</code> gives <code>$1,300 ≥ $500</code>, so the floor passes. Values use Python floats in the wallet/simulator layers; policy compilation itself uses exact <code>Fraction</code> and Z3 reals.</p>
+<h3>11.2 Dry-run swap</h3>
+<p>Base slippage is <code>0.05%</code>; if gas exceeds <code>40 gwei</code>, <code>0.15 percentage points</code> is added. Effective price is <code>P × (1 + slippage/100)</code>; estimated ETH is <code>T / effective_price</code>; post-swap USDC is <code>B - T</code>. The simulator rounds ETH to five decimals, USDC to two, and report fields to their model precision. A high-risk regime is risk score ≥ 7, expected return &lt; -2%, HIGH risk, or HALT_TRADING.</p>
+<h3>11.3 RAG scoring</h3>
+<p>Each historical regime receives a weighted score: gas compatibility × <code>0.45</code> + price-range score × <code>0.35</code> + scenario/trend score × <code>0.20</code>. The highest score is returned. If no regimes exist, a baseline result with similarity <code>0.75</code>, win rate <code>0.70</code>, expected return <code>2.0%</code>, and risk score <code>3.0</code> is used.</p>
+<h3>11.4 Daily contract accounting</h3>
+<p>The Solidity reference computes <code>dayIndex = block.timestamp / 1 days</code>. When the day changes, it resets <code>spentTodayUsd</code>; it then rejects if the proposed cumulative total exceeds <code>dailyCapUsd</code>. This behavior is represented locally by the simulator inputs, not by a deployed chain in the default run.</p>
+
+<h2>12. External integrations</h2>
+<table><tr><th>Integration</th><th>Connection and data</th><th>Fallback / limits</th></tr>
+<tr><td>Coinbase Exchange</td><td>WebSocket <code>wss://ws-feed.exchange.coinbase.com</code>, ETH-USD ticker.</td><td>Reconnect backoff; synthetic ticks while disconnected.</td></tr>
+<tr><td>Ethereum/Base RPC</td><td>Web3 HTTP provider; optional <code>BASE_SEPOLIA_RPC</code>; <code>eth_call</code> and gas estimate.</td><td>Offline deterministic simulator fallback; no transaction submission.</td></tr>
+<tr><td>LLM reader</td><td>Offline mock by default; optional Groq HTTP JSON completion using <code>LLM_BASE_URL</code>, API key, model, and schema guide.</td><td>Mock requires no network; Groq retries 429 and non-200 responses.</td></tr>
+<tr><td>spaCy model</td><td>Local deterministic dependency parsing.</td><td>Required dependency for rule reader.</td></tr></table>
+
+<h2>13. Frontend and UI behavior</h2>
+<p>The server renders <code>flask/templates/index.html</code>. JavaScript calls the APIs above, updates dashboard panels, consumes SSE chart events, stores theme and timezone preferences in local storage, and displays policy, security, attack, activity, and reasoning surfaces. Beijing time (<code>Asia/Shanghai</code>) is the default. The floating assistant is fixed above the mobile bottom navigation. Dark-mode semantic surfaces cover policy, contract, and attack sections. UI screenshots are included below.</p>
+<div class="figure"><img src="dashboard-desktop-dark.png"><div class="caption">Figure 6. Desktop UI evidence.</div></div>
+<div class="figure"><img src="dashboard-mobile-dark.png"><div class="caption">Figure 7. Mobile UI evidence.</div></div>
+
+<h2>14. Authentication and authorization</h2>
+<p>No login, session, bearer token, CSRF protection, or route authentication is implemented. The UI is intended for local demonstration. Application-level labels identify owner, reviewer, and agent, while contract reference code has owner/operator modifiers. The Python client does not cryptographically authenticate requests. Do not expose the default server to an untrusted network or use it with real funds.</p>
+
+<h2>15. Installation and local development</h2>
+<pre><code>cd "/Users/dipro/Bangla Rag/Hack/WalletAgent"
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+cp .env.example .env
+PYTHONPATH=. .venv/bin/python main.py --cli-only
+PYTHONPATH=. .venv/bin/python main.py --host 127.0.0.1 --port 5001</code></pre>
+<p>Verify with <code>curl -fsS http://127.0.0.1:5001/api/market/live</code> and <code>curl -fsS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5001/</code>. The application initializes local JSON files when absent. There are no migrations.</p>
+
+<h2>16. Configuration and deployment</h2>
+<p>Implemented configuration includes <code>LLM_PROVIDER=mock</code> by default, optional Groq variables (<code>GROQ_API_KEY</code>, <code>LLM_MODEL</code>, <code>LLM_BASE_URL</code>), and <code>BASE_SEPOLIA_RPC</code>. Other blockchain values in <code>.env.example</code> are reference settings unless explicitly read by a module. Docker support and GitHub Actions CI are now present; there is still no production WSGI manifest, backup job, migration order, or rollback automation. A production topology requires TLS, process supervision, authenticated access, durable storage, signer custody, observability, and chain reconciliation.</p>
+
+<h2>17. Testing and validation</h2>
+<p>Executed verification for this documentation baseline: <code>.venv/bin/python -m pytest -q</code> returned <strong>90 passed</strong>. Tests cover policy AST/typechecking/reader/loop behavior, agent lifecycle, exchange behavior, reasoning, scorecard features, and user database operations. They do not prove deployed bytecode, production security, or live receipts.</p>
+
+<h2>18. Performance and reliability</h2>
+<p>The agent, Coinbase listener, and gas oracle use daemon threads; locks protect shared state. The market stream emits once per second. Coinbase reconnects with bounded exponential backoff and generates synthetic ticks while disconnected. The optional Groq adapter retries transient HTTP failures. JSON writes are whole-file rewrites under locks. No queue, cache, database transaction, rate limiter, resource quota, or measured throughput benchmark is implemented.</p>
+
+<h2>19. Operations, maintenance, and troubleshooting</h2>
+<table><tr><th>Symptom</th><th>Diagnosis</th><th>Resolution</th></tr>
+<tr><td>Port unavailable</td><td>Another process owns the port.</td><td>Use another port such as 5001 and verify with the printed URL.</td></tr>
+<tr><td>Market says disconnected</td><td>Coinbase WebSocket unavailable.</td><td>Expected fallback behavior; inspect logs and network, or use a scenario.</td></tr>
+<tr><td>Groq failure</td><td>Missing key, provider response, or timeout.</td><td>Use <code>LLM_PROVIDER=mock</code> for offline operation; check key and endpoint.</td></tr>
+<tr><td>Task not executing</td><td>Trigger, pause flag, risk, or invariant blocked it.</td><td>Inspect <code>/api/agent/status</code> and the transaction reason.</td></tr>
+<tr><td>State reset needed</td><td>Demo data is stale.</td><td>POST to <code>/api/user/reset</code> or <code>/api/simulation/reset</code>.</td></tr>
+<tr><td>Corrupt JSON</td><td>File cannot be decoded.</td><td>Back up the file, then allow the service’s default initialization behavior.</td></tr></table>
+
+<h2>20. Known limitations and future development</h2>
+<table><tr><th>Implemented now</th><th>Incomplete or absent</th><th>Practical effect</th></tr>
+<tr><td>Typed policy verification and local guard model.</td><td>Live policy deployment and receipt reconciliation.</td><td>No proof that local results match deployed state.</td></tr>
+<tr><td>JSON wallet/task/history stores.</td><td>Transactional database, migrations, backups.</td><td>Single-process demo only; concurrent durability is limited.</td></tr>
+<tr><td>Mock and Groq readers.</td><td>Other named providers and production model governance.</td><td>Provider choice is narrow.</td></tr>
+<tr><td>Owner/operator concepts in model.</td><td>HTTP authentication and cryptographic request authorization.</td><td>Unsafe for public deployment.</td></tr>
+<tr><td>Six modeled attack vectors.</td><td>Independent audit and live penetration evidence.</td><td>Modeled reverts are not security certification.</td></tr></table>
+
+<h2>21. Appendices and source references</h2>
+<h3>Glossary</h3><p><strong>AST:</strong> typed abstract syntax tree. <strong>RAG:</strong> retrieval of historical market regimes. <strong>SSE:</strong> server-sent events. <strong>Guard:</strong> deterministic rule that can block an action. <strong>Modeled revert:</strong> simulator rejection, not a mined transaction result.</p>
+<h3>Source map</h3>
+<table><tr><th>Claim</th><th>Evidence</th></tr>
+<tr><td>Startup and route registration</td><td><code>main.py</code>, <code>flask/server.py</code></td></tr>
+<tr><td>Policy verification</td><td><code>policy/loop.py</code>, <code>policy/compare.py</code>, <code>policy/typecheck.py</code></td></tr>
+<tr><td>Agent execution</td><td><code>agent/runtime.py</code>, <code>agent/task.py</code></td></tr>
+<tr><td>Calculations and RAG</td><td><code>reasoning/dry_run.py</code>, <code>reasoning/rag.py</code>, <code>reasoning/engine.py</code></td></tr>
+<tr><td>Contract reference and modeled attacks</td><td><code>contracts/PolicyWallet.sol</code>, <code>contracts/simulator.py</code>, <code>contracts/attack_tester.py</code></td></tr>
+<tr><td>Persistence</td><td><code>user/db.py</code>, <code>user/models.py</code>, <code>agent/task.py</code></td></tr>
+<tr><td>Tests</td><td><code>tests/</code>; 90 passed in the executed local run</td></tr></table>
+</body>
+</html>
