@@ -315,23 +315,103 @@ Stop the local server with `Ctrl+C`.
 
 ### 5. Run with Docker
 
-Build and start the complete local simulation in a container:
+Build and start the complete local simulation in a container. The image runs
+as the non-root `orvilo` user and uses the offline mock LLM by default, so no
+API key is required:
 
 ```bash
-docker build --tag orvilo:local .
-docker run --rm --publish 5000:5000 --name orvilo orvilo:local
+docker build --tag orvilo:latest .
+docker run --detach \
+  --name orvilo \
+  --publish 5000:5000 \
+  orvilo:latest
 ```
 
-Open `http://127.0.0.1:5000`. The image starts with `LLM_PROVIDER=mock`,
-binds Flask to `0.0.0.0`, and includes a health check at
-`/api/market/live`. The default container uses ephemeral JSON state; stop and
-restart it to start with the repository seed state.
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000). The image binds Flask to
+`0.0.0.0` and includes a Docker health check backed by
+`/api/market/live`. Verify the container and health state with:
+
+```bash
+docker ps
+docker inspect --format '{{.State.Health.Status}}' orvilo
+curl http://127.0.0.1:5000/api/market/live
+```
+
+The expected Docker health status is `healthy`. Container JSON state is
+ephemeral by default; stopping and recreating the container starts from the
+repository seed state. Stop and remove the container with:
+
+```bash
+docker stop orvilo
+docker rm orvilo
+```
 
 Docker Compose is also supported:
 
 ```bash
 docker compose up --build
 docker compose down
+```
+
+#### Docker configuration
+
+The default container configuration is:
+
+```env
+LLM_PROVIDER=mock
+LLM_MODEL=mock
+CHAIN_ID=84532
+RPC_URL=https://sepolia.base.org
+PORT=5000
+```
+
+To provide optional runtime configuration, use a local, untracked environment
+file. Never commit credentials or put API keys in the Dockerfile:
+
+```bash
+docker run --detach \
+  --name orvilo \
+  --publish 5000:5000 \
+  --env-file .env \
+  orvilo:latest
+```
+
+#### Validate all Docker functionality
+
+The repository includes a bounded API smoke test at
+[scripts/docker_smoke.py](scripts/docker_smoke.py). With the container
+running, execute:
+
+```bash
+docker exec orvilo \
+  python scripts/docker_smoke.py http://127.0.0.1:5000
+```
+
+It verifies the dashboard, market API and SSE stream, wallet, transactions,
+reasoning, policy verification and deployment, agent controls and scheduling,
+intent validation, simulation, contract security, all six attack vectors,
+assistant chat, and reset flows. A successful run prints:
+
+```text
+Docker smoke test passed: dashboard, market, wallet, policy, agent, simulation, contract, attacks, assistant.
+```
+
+#### Export and share the Docker image
+
+Export the image as a compressed archive:
+
+```bash
+docker save orvilo:latest | gzip > orvilo-latest.tar.gz
+```
+
+On another machine, import and run it:
+
+```bash
+docker load < orvilo-latest.tar.gz
+docker run --detach \
+  --name orvilo \
+  --publish 5000:5000 \
+  orvilo:latest
 ```
 
 The CI workflow runs the Python suite, builds the image, starts a temporary
