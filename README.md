@@ -43,7 +43,9 @@ Orvilo is a mathematically verified autonomous trading agent and wallet policy e
 
 ### 1. Dual-Channel Natural Language Policy Compilation
 - **Channel A (Deterministic Parser):** Rule-based semantic dependency parser powered by spaCy and custom grammar rules.
-- **Channel B (LLM Synthesizer):** Schema-constrained LLM support for the implemented `mock` and `groq` providers. The default is offline `mock`; other provider names in older drafts are not implemented adapters.
+- **Channel B (LLM Synthesizer):** Schema-constrained reader with the offline
+  `mock` provider enabled by default. A Groq adapter exists as an optional
+  integration, but the checked-in/local configuration does not use it.
 - **Ambiguity Detection & Resolution:** Proactively detects dimensional and semantic ambiguities (such as ambiguous percentages for gas thresholds) and presents structured mathematical interpretations for user selection.
 
 ### 2. Formal Verification & Z3 Equivalence Checking
@@ -261,16 +263,17 @@ Edit `.env` to configure the implemented LLM provider:
 # Offline development:
 LLM_PROVIDER=mock
 
-# Optional live Groq-compatible policy reader:
+# Optional Groq-compatible policy reader (not required for local operation):
 # LLM_PROVIDER=groq
-# GROQ_API_KEY=your_groq_api_key_here
+# GROQ_API_KEY=replace_with_a_rotated_key
 # LLM_MODEL=llama-3.3-70b-versatile
 
-LLM_MODEL=llama-3.3-70b-versatile
-LLM_BASE_URL=https://api.groq.com/openai/v1/chat/completions
+LLM_MODEL=mock
+# LLM_BASE_URL=https://api.groq.com/openai/v1/chat/completions
 ```
 
-The application currently implements `mock` and `groq` adapters. The
+The application currently implements `mock` and `groq` adapters. The local
+configuration uses `mock`. The
 `gemini`, `openai`, `anthropic`, and `ollama` names are not implemented by the
 current adapters. The `CHAIN_ID`, `RPC_URL`, `EXPLORER_URL`, contract/key,
 market API key, and timeout values in `.env.example` are reference settings
