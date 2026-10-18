@@ -16,9 +16,9 @@ In conventional autonomous agent wallets, Large Language Models (LLMs) are direc
 WalletAgent resolves this by introducing a **Dual-Channel Formal Verification Architecture** where natural language instructions must be independently synthesized by two isolated channels and formally proved mathematically equivalent via the Z3 SMT solver over physical domain bounds.
 
 ### Visual Architecture Flowchart
-Below is the full policy verification pipeline rendered from [`visuals/policy.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/policy.svg):
+Below is the full policy verification pipeline rendered from [`visuals/policy.svg`](../visuals/policy.svg):
 
-![Policy Verification Architecture](file:///home/immo2n/Moon/WalletAgent/visuals/policy.svg)
+![Policy Verification Architecture](../visuals/policy.svg)
 
 ---
 
@@ -127,7 +127,7 @@ $$\text{Sort.USD} \lessgtr \text{Sort.GWEI} \longrightarrow \mathbf{TypeError}\t
 
 ### 4.1 Mathematical Formulation
 Let $\Phi_A(\vec{x})$ represent the first-order logical formula compiled from Reader A (Deterministic Parser), and $\Phi_B(\vec{x})$ represent the formula compiled from Reader B (LLM Synthesizer), where $\vec{x}$ is the vector of system variables:
-$$\vec{x} = \langle \text{gas}, \text{trade\_amount}, \text{balance\_after}, \text{balance\_before}, \text{daily\_spent} \rangle$$
+$$\vec{x} = \langle \text{gas}, \text{trade}, \text{balance after}, \text{balance before}, \text{daily spent} \rangle$$
 
 The Z3 SMT solver seeks to prove semantic equivalence under all valid environmental states:
 $$\forall \vec{x} \in \mathcal{D}_{\text{physical}}, \quad \Phi_A(\vec{x}) \iff \Phi_B(\vec{x})$$
@@ -147,8 +147,8 @@ $$\Psi_{\text{mismatch}} \equiv \mathcal{D}_{\text{physical}} \land \left( (\Phi
 - All arithmetic operations are mapped to Z3's exact `Real` sort, preventing floating-point rounding inaccuracies.
 - Domain constraints $\mathcal{D}_{\text{physical}}$ enforce realistic boundaries:
   $$0 \le \text{gas} \le 10{,}000 \text{ Gwei}$$
-  $$0 \le \text{trade\_amount} \le 1{,}000{,}000 \text{ USD}$$
-  $$0 \le \text{balance\_after} \le 10{,}000{,}000 \text{ USD}$$
+  $$0 \le \text{trade} \le 1{,}000{,}000 \text{ USD}$$
+  $$0 \le \text{balance after} \le 10{,}000{,}000 \text{ USD}$$
 
 ### 4.3 Counterexample Feedback & Auto-Repair Loop
 - **Module**: [`policy/compare.py`](file:///home/immo2n/Moon/WalletAgent/policy/compare.py) and [`policy/loop.py`](file:///home/immo2n/Moon/WalletAgent/policy/loop.py)

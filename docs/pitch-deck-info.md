@@ -54,7 +54,7 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
   2. **Layer 2: Deterministic Preflight & Dry-Run Gate**: Market RAG, Uniswap constant-product slippage calculation, and Z3 invariant checks.
   3. **Layer 3: Base Sepolia Smart Contract (`PolicyWallet.sol`)**: Autonomous execution governed by cryptographic policy hashes and immutable on-chain rules.
 - **Key Visual**:
-  - Rendered graphic from [`visuals/policy.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/policy.svg).
+  - Rendered graphic from [`visuals/policy.svg`](../visuals/policy.svg).
 - **One-Line Invariant**:
   > *"A compromise of any one layer cannot defeat the others."*
 
@@ -86,7 +86,7 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
     - *Gas Spike Congestion*: Win rate 32%, expected return -4.1%, risk 8.5/10.
   - **Dry-Run Risk Simulation**: Pre-calculates slippage, post-swap balances, and drawdown exposure before approaching execution gates.
 - **Key Visual**:
-  - Diagram rendered from [`visuals/reasoning.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/reasoning.svg) and [`visuals/exchange.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/exchange.svg).
+  - Diagram rendered from [`visuals/reasoning.svg`](../visuals/reasoning.svg) and [`visuals/exchange.svg`](../visuals/exchange.svg).
 
 ---
 
@@ -100,7 +100,7 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
     - Recurring DCA queue automatically stops when spending cap or balance floor is approached.
   - **Task Lifecycle Control**: Operator can pause, resume, or dismiss tasks instantly via API or web UI.
 - **Key Visual**:
-  - Task state machine and daemon tick diagram from [`visuals/agent.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/agent.svg).
+  - Task state machine and daemon tick diagram from [`visuals/agent.svg`](../visuals/agent.svg).
 
 ---
 
@@ -250,11 +250,11 @@ When presenting the live demo to the judges, follow this sequence:
 ## Visual Presentation Assets Checklist
 
 Ensure the presentation slide deck includes:
-- [x] [`visuals/policy.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/policy.svg) (Slide 3 & 4)
-- [x] [`visuals/agent.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/agent.svg) (Slide 6)
-- [x] [`visuals/reasoning.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/reasoning.svg) (Slide 5)
-- [x] [`visuals/exchange.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/exchange.svg) (Slide 5)
-- [x] [`visuals/user.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/user.svg) (Slide 9)
+- [x] [`visuals/policy.svg`](../visuals/policy.svg) (Slide 3 & 4)
+- [x] [`visuals/agent.svg`](../visuals/agent.svg) (Slide 6)
+- [x] [`visuals/reasoning.svg`](../visuals/reasoning.svg) (Slide 5)
+- [x] [`visuals/exchange.svg`](../visuals/exchange.svg) (Slide 5)
+- [x] [`visuals/user.svg`](../visuals/user.svg) (Slide 9)
 - [x] Code snippet showing custom Solidity errors in [PolicyWallet.sol](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol#L28-L41)
 - [x] Screenshot of Web Dashboard & Reasoning Introspection Modal
 - [x] Test terminal output showing 90/90 passing tests and 6/6 blocked attacks

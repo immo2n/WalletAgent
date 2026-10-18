@@ -26,11 +26,11 @@ WalletAgent is architected into modular, decoupled subsystems. Detailed technica
 
 | Subsystem Specification | Core Topics & Modules | Visual Flowchart |
 | :--- | :--- | :--- |
-| 📘 [**Policy Engine & Formal Verification**](file:///home/immo2n/Moon/WalletAgent/docs/policy-engine.md) | Dual readers, AST, dimensional sorts, Z3 SMT solver, counterexamples, sanity checks, policy hashing | [`visuals/policy.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/policy.svg) |
-| ⚡ [**Agent Runtime & Cognitive Reasoning**](file:///home/immo2n/Moon/WalletAgent/docs/agent-runtime.md) | Daemon loop, scheduled DCA queue, market perception, RAG historical regimes, dry-run simulation | [`visuals/agent.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/agent.svg), [`visuals/reasoning.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/reasoning.svg) |
-| 🛡️ [**EVM Smart Contracts & Security Controls**](file:///home/immo2n/Moon/WalletAgent/docs/smart-contracts.md) | PolicyWallet.sol, custom errors, preflight `eth_call`, emergency killswitches, 6-vector attack tester | [`visuals/exchange.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/exchange.svg) |
-| 📊 [**User Approval Workflow & Audit Trail**](file:///home/immo2n/Moon/WalletAgent/docs/user-and-audit.md) | DRAFT $\to$ ACTIVE approval workflow, EIP-712 signing, immutable audit ledger, Flask dashboard | [`visuals/user.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/user.svg) |
-| 🎯 [**Pitch Deck & Presentation Blueprint**](file:///home/immo2n/Moon/WalletAgent/docs/pitch-deck-info.md) | 12-slide deck outline, live demo script, anticipated judge Q&A, FinTechathon narrative | [`visuals/policy.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/policy.svg) |
+| 📘 [**Policy Engine & Formal Verification**](policy-engine.md) | Dual readers, AST, dimensional sorts, Z3 SMT solver, counterexamples, sanity checks, policy hashing | [`visuals/policy.svg`](../visuals/policy.svg) |
+| ⚡ [**Agent Runtime & Cognitive Reasoning**](agent-runtime.md) | Daemon loop, scheduled DCA queue, market perception, RAG historical regimes, dry-run simulation | [`visuals/agent.svg`](../visuals/agent.svg), [`visuals/reasoning.svg`](../visuals/reasoning.svg) |
+| 🛡️ [**EVM Smart Contracts & Security Controls**](smart-contracts.md) | PolicyWallet.sol, custom errors, preflight `eth_call`, emergency killswitches, 6-vector attack tester | [`visuals/exchange.svg`](../visuals/exchange.svg) |
+| 📊 [**User Approval Workflow & Audit Trail**](user-and-audit.md) | DRAFT $\to$ ACTIVE approval workflow, EIP-712 signing, immutable audit ledger, Flask dashboard | [`visuals/user.svg`](../visuals/user.svg) |
+| 🎯 [**Pitch Deck & Presentation Blueprint**](pitch-deck-info.md) | 12-slide deck outline, live demo script, anticipated judge Q&A, FinTechathon narrative | [`visuals/policy.svg`](../visuals/policy.svg) |
 
 ---
 
@@ -78,23 +78,23 @@ WalletAgent comprehensively fulfills all 9 core evaluated scorecard requirements
 ## System Architecture Diagrams
 
 ### 1. Master Pipeline Topology
-Below is the system-wide architecture flow rendered from [`visuals/policy.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/policy.svg):
+Below is the system-wide architecture flow rendered from [`visuals/policy.svg`](../visuals/policy.svg):
 
-![Policy Verification Architecture](file:///home/immo2n/Moon/WalletAgent/visuals/policy.svg)
+![Policy Verification Architecture](../visuals/policy.svg)
 
 ### 2. Autonomous Agent & Perception Loop
-Rendered from [`visuals/agent.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/agent.svg) and [`visuals/exchange.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/exchange.svg):
+Rendered from [`visuals/agent.svg`](../visuals/agent.svg) and [`visuals/exchange.svg`](../visuals/exchange.svg):
 
 | Agent Daemon Runtime Flow | Market Perception & Feed Ingestion |
 | :---: | :---: |
-| ![Agent Runtime Flow](file:///home/immo2n/Moon/WalletAgent/visuals/agent.svg) | ![Market Perception](file:///home/immo2n/Moon/WalletAgent/visuals/exchange.svg) |
+| ![Agent Runtime Flow](../visuals/agent.svg) | ![Market Perception](../visuals/exchange.svg) |
 
 ### 3. Cognitive Reasoning & Audit Ledger
-Rendered from [`visuals/reasoning.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/reasoning.svg) and [`visuals/user.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/user.svg):
+Rendered from [`visuals/reasoning.svg`](../visuals/reasoning.svg) and [`visuals/user.svg`](../visuals/user.svg):
 
 | Cognitive Reasoning & Gate Pipeline | User Ledger & Approval State |
 | :---: | :---: |
-| ![Cognitive Reasoning](file:///home/immo2n/Moon/WalletAgent/visuals/reasoning.svg) | ![User Ledger Flow](file:///home/immo2n/Moon/WalletAgent/visuals/user.svg) |
+| ![Cognitive Reasoning](../visuals/reasoning.svg) | ![User Ledger Flow](../visuals/user.svg) |
 
 ---
 
@@ -185,7 +185,7 @@ WalletAgent's formal proof engine proves that two independent natural language i
 
 $$\forall \vec{x} \in \mathcal{D}_{\text{physical}}, \quad \Phi_{\text{RuleReader}}(\vec{x}) \iff \Phi_{\text{LLMReader}}(\vec{x})$$
 
-Where $\vec{x} = \langle \text{gas}, \text{trade\_amount}, \text{balance\_after}, \text{daily\_spent} \rangle$ represents physical blockchain state variables.
+Where $\vec{x} = \langle \text{gas}, \text{trade}, \text{balance after}, \text{daily spent} \rangle$ represents physical blockchain state variables.
 
 ### Refutation & Counterexample Search
 To verify equivalence, the Z3 solver searches for satisfiability of the refutation predicate:
@@ -194,7 +194,7 @@ $$\Psi_{\text{refute}} = \mathcal{D}_{\text{physical}} \land \neg \left( \Phi_A 
 $$\Psi_{\text{refute}} \equiv \mathcal{D}_{\text{physical}} \land \Big( (\Phi_A \land \neg \Phi_B) \lor (\neg \Phi_A \land \Phi_B) \Big)$$
 
 - **`UNSAT` (Unsatisfiable)**: No counterexample exists. The two ASTs are provably equivalent under all possible market conditions.
-- **`SAT` (Satisfiable)**: Z3 extracts a concrete counterexample $\vec{x}^*$ (e.g. $\text{trade} = \$250, \text{balance\_after} = \$450$). This counterexample is serialized and fed back into Channel B for automated repair (max 2 attempts) before human escalation.
+- **`SAT` (Satisfiable)**: Z3 extracts a concrete counterexample $\vec{x}^*$ (e.g. $\text{trade} = \$250, \text{balance after} = \$450$). This counterexample is serialized and fed back into Channel B for automated repair (max 2 attempts) before human escalation.
 
 ---
 
@@ -280,5 +280,5 @@ Open your browser to `http://localhost:5000` to interact with the responsive das
 | [`exchange/`](file:///home/immo2n/Moon/WalletAgent/exchange/) | Market perception, Coinbase WebSocket, Base Sepolia gas oracle | [`service.py`](file:///home/immo2n/Moon/WalletAgent/exchange/service.py), [`client.py`](file:///home/immo2n/Moon/WalletAgent/exchange/client.py), [`gas_oracle.py`](file:///home/immo2n/Moon/WalletAgent/exchange/gas_oracle.py) |
 | [`user/`](file:///home/immo2n/Moon/WalletAgent/user/) | User balances and immutable transaction audit ledger | [`db.py`](file:///home/immo2n/Moon/WalletAgent/user/db.py), [`models.py`](file:///home/immo2n/Moon/WalletAgent/user/models.py) |
 | [`flask/`](file:///home/immo2n/Moon/WalletAgent/flask/) | Web API routes, SSE telemetry streams, responsive UI dashboard | [`server.py`](file:///home/immo2n/Moon/WalletAgent/flask/server.py), `templates/index.html` |
-| [`visuals/`](file:///home/immo2n/Moon/WalletAgent/visuals/) | Architecture diagrams (Graphviz `.dot` and rendered `.svg` files) | `policy.svg`, `agent.svg`, `reasoning.svg`, `exchange.svg`, `user.svg` |
+| [`visuals/`](../visuals/) | Architecture diagrams (Graphviz `.dot` and rendered `.svg` files) | `policy.svg`, `agent.svg`, `reasoning.svg`, `exchange.svg`, `user.svg` |
 | [`docs/`](file:///home/immo2n/Moon/WalletAgent/docs/) | Comprehensive technical documentation and competition specification | [`technical-doc.md`](file:///home/immo2n/Moon/WalletAgent/docs/technical-doc.md), [`policy-engine.md`](file:///home/immo2n/Moon/WalletAgent/docs/policy-engine.md), [`agent-runtime.md`](file:///home/immo2n/Moon/WalletAgent/docs/agent-runtime.md), [`smart-contracts.md`](file:///home/immo2n/Moon/WalletAgent/docs/smart-contracts.md), [`user-and-audit.md`](file:///home/immo2n/Moon/WalletAgent/docs/user-and-audit.md) |

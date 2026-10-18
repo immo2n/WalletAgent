@@ -14,9 +14,9 @@ FinTechathon 2026 Feature 2 requires a formal, multi-stage human-in-the-loop app
 - **Class**: [`PolicyWorkflowManager`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py#L70-L185), [`PolicyProposal`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py#L24-L68)
 
 ### Visual User & State Pipeline Flowchart
-Below is the system flowchart rendered from [`visuals/user.svg`](file:///home/immo2n/Moon/WalletAgent/visuals/user.svg):
+Below is the system flowchart rendered from [`visuals/user.svg`](../visuals/user.svg):
 
-![User and Storage Flow](file:///home/immo2n/Moon/WalletAgent/visuals/user.svg)
+![User and Storage Flow](../visuals/user.svg)
 
 ---
 

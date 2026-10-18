@@ -48,13 +48,13 @@ The WalletAgent runtime coordinates market perception, intent formulation, pre-e
 Below are the architectural diagrams rendered from the project visuals:
 
 #### Agent Runtime Flow
-![Agent Runtime Flow](file:///home/immo2n/Moon/WalletAgent/visuals/agent.svg)
+![Agent Runtime Flow](../visuals/agent.svg)
 
 #### Cognitive Reasoning & Safety Pipeline
-![Cognitive Reasoning Pipeline](file:///home/immo2n/Moon/WalletAgent/visuals/reasoning.svg)
+![Cognitive Reasoning Pipeline](../visuals/reasoning.svg)
 
 #### Market Perception & Feed Ingestion
-![Market Feed Ingestion](file:///home/immo2n/Moon/WalletAgent/visuals/exchange.svg)
+![Market Feed Ingestion](../visuals/exchange.svg)
 
 ---
 
@@ -171,7 +171,7 @@ Traditional agents use monolithic prompts that combine analysis, safety, and tra
 - **Module**: [`reasoning/rag.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/rag.py)
 - **Knowledge Store**: `reasoning/data/market_history.json`
 - Stores indexed historical market regimes characterized by feature vectors:
-  $$\vec{v} = \langle \text{gas\_price}, \text{price\_change\_pct}, \text{volatility\_score} \rangle$$
+  $$\vec{v} = \langle \text{gas price}, \text{price change}, \text{volatility} \rangle$$
 - Given live market telemetry $\vec{v}_{\text{live}}$, the retriever computes normalized Euclidean or Cosine similarity against historical regimes:
   $$\text{Sim}(\vec{v}_{\text{live}}, \vec{v}_k) = \frac{\vec{v}_{\text{live}} \cdot \vec{v}_k}{\|\vec{v}_{\text{live}}\| \|\vec{v}_k\|}$$
 - **Retrieved Regimes Include**:
