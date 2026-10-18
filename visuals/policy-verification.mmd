@@ -1,0 +1,28 @@
+---
+config:
+  theme: neutral
+  themeVariables:
+    primaryColor: "#EAF0FF"
+    primaryBorderColor: "#315EF5"
+    primaryTextColor: "#16213E"
+    lineColor: "#5B677A"
+    secondaryColor: "#E8F7F3"
+    tertiaryColor: "#FFF4DF"
+---
+flowchart TD
+    I["Natural-language instruction"]
+    R["Rule reader<br/>deterministic AST"]
+    L["LLM reader<br/>schema-constrained AST"]
+    T["Type checking<br/>units and coercions"]
+    Z{"Z3 equivalence<br/>and counterexample search"}
+    Q["Clarification or repair<br/>when interpretations differ"]
+    V["Verified policy<br/>hash • readback • guard parameters"]
+    W["Approval workflow<br/>DRAFT → REVIEWED → APPROVED → ACTIVE"]
+
+    I --> R
+    I --> L
+    R --> T
+    L --> T
+    T --> Z
+    Z -->|mismatch| Q --> L
+    Z -->|equivalent| V --> W

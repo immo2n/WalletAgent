@@ -1,4 +1,4 @@
-# Autonomous Agent Runtime & Reasoning Engine Specification
+# Orvilo Autonomous Agent Runtime & Reasoning Engine Specification
 
 > **Subsystem Specification**: Autonomous Daemon Runtime, Fragmented Cognitive Reasoning, Market Perception, and DCA Task Scheduler
 > **Repository Modules**: [`agent/`](../agent/), [`reasoning/`](../reasoning/), [`exchange/`](../exchange/)
@@ -8,7 +8,10 @@
 
 ## 1. Subsystem Architecture & Execution Topology
 
-The WalletAgent runtime coordinates market perception, intent formulation, pre-execution risk modeling, and on-chain execution through isolated subsystems.
+The Orvilo runtime coordinates market perception, intent formulation,
+pre-execution risk modeling, deterministic gates, and local ledger updates
+through isolated subsystems. The default runtime does not broadcast live
+transactions.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -39,8 +42,8 @@ The WalletAgent runtime coordinates market perception, intent formulation, pre-e
                                     │ Clearance Confirmed (SAT)
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│                   EVM PREFLIGHT & BASE SEPOLIA DISPATCH                │
-│  eth_call Simulation  │  PolicyWallet Smart Contract  │  Audit Ledger  │
+│                 EVM PREFLIGHT & LOCAL LEDGER UPDATE                   │
+│  optional eth_call  │  PolicyWallet model  │  JSON audit ledger        │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -48,13 +51,13 @@ The WalletAgent runtime coordinates market perception, intent formulation, pre-e
 Below are the architectural diagrams rendered from the project visuals:
 
 #### Agent Runtime Flow
-![Agent Runtime Flow](../visuals/agent.svg)
+![Agent Runtime Flow](../visuals/rendered/runtime-safety.png)
 
 #### Cognitive Reasoning & Safety Pipeline
-![Cognitive Reasoning Pipeline](../visuals/reasoning.svg)
+![Cognitive Reasoning Pipeline](../visuals/rendered/runtime-safety.png)
 
 #### Market Perception & Feed Ingestion
-![Market Feed Ingestion](../visuals/exchange.svg)
+![Market Feed Ingestion](../visuals/rendered/security-controls.png)
 
 ---
 
@@ -63,14 +66,20 @@ Below are the architectural diagrams rendered from the project visuals:
 - **Module**: [`agent/runtime.py`](../agent/runtime.py)
 - **Class**: [`AutonomousAgent`](../agent/runtime.py#L25-L250)
 
-The runtime daemon executes on a high-frequency asynchronous loop (nominally 1-second ticks). At each tick, the daemon executes the following deterministic sequence:
+The runtime daemon executes on a background thread with nominal one-second
+ticks. `create_app()` starts the singleton daemon. At each tick, it executes
+the following deterministic sequence:
 
 1. **Active Task Inspection**: Queries [`TaskManager`](../agent/task.py#L50-L160) for currently registered tasks.
 2. **Scheduled DCA Evaluation**: Checks the recurring scheduled queue to see if any cron-like interval or scheduled execution timestamp has matured.
-3. **Market Perception Ingestion**: Fetches the latest trusted price ($P_{\text{ETH}}$) and gas fee ($G_{\text{gwei}}$) from [`ExchangeService`](../exchange/service.py#L25-L150).
+3. **Market Perception Ingestion**: Fetches effective ETH price and gas state
+   from [`ExchangeService`](../exchange/service.py#L25-L150), which combines
+   the Coinbase snapshot, scenario offsets, and the L1 gas oracle.
 4. **Trigger Evaluation**: Tests the active task's trigger conditions (e.g., $G_{\text{current}} \le G_{\text{threshold}}$). If unsatisfied, the daemon sleeps until the next tick without consuming LLM inference.
 5. **Reasoning Pipeline Invocation**: Once triggers match, the daemon invokes the cognitive reasoning engine.
-6. **Execution & State Update**: If all safety gates pass, dispatches the transaction to the EVM client and updates the user database.
+6. **Execution & State Update**: If all safety gates pass, records an AGENT
+   transaction and updates the local JSON wallet ledger. Blocked and
+   risk-aborted attempts are also recorded.
 
 ```python
 # Simplified excerpt from agent/runtime.py
@@ -165,7 +174,7 @@ To prevent LLM hallucination of market variables, **all market data originates s
 - **Modules**: [`reasoning/engine.py`](../reasoning/engine.py), [`reasoning/rag.py`](../reasoning/rag.py), [`reasoning/dry_run.py`](../reasoning/dry_run.py)
 - **Coordinator**: [`ReasoningEngine`](../reasoning/engine.py#L20-L130)
 
-Traditional agents use monolithic prompts that combine analysis, safety, and trade execution into a single probabilistic completion. WalletAgent decouples this into **three isolated reasoning fragments**:
+Traditional agents use monolithic prompts that combine analysis, safety, and trade execution into a single probabilistic completion. Orvilo decouples this into **three isolated reasoning fragments**:
 
 ### 5.1 Fragment 1: Market Regime RAG Retrieval
 - **Module**: [`reasoning/rag.py`](../reasoning/rag.py)
@@ -211,7 +220,9 @@ $$\text{Clearance} = \text{AllowlistGate} \land \text{DailyCapGate} \land \text{
    $$\text{BalanceAfter} \ge \text{MinBalanceFloor}$$
 4. **EVM Simulator**: Verifies that the on-chain smart contract does not revert during preflight `eth_call`.
 
-If any gate fails, the trade is rejected, and the failure reason (e.g. `BelowMinimumBalanceFloor: balance after trade $300.00 < floor $500.00`) is logged to the immutable audit ledger.
+If any gate fails, the trade is rejected, and the failure reason (e.g.
+`BelowMinimumBalanceFloor: balance after trade $300.00 < floor $500.00`) is
+stored in the local JSON transaction/reasoning record.
 
 ---
 

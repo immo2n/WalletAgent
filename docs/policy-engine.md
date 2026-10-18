@@ -1,4 +1,4 @@
-# Policy Engine & Formal Verification Specification
+# Orvilo Policy Engine & Formal Verification Specification
 
 > **Subsystem Specification**: Dual-Reader Natural Language Compilation, AST Verification, and Z3 SMT Solver Architecture
 > **Repository Module**: [`policy/`](../policy/)
@@ -8,17 +8,22 @@
 
 ## 1. Architectural Overview & Problem Formulation
 
+> **Verified implementation boundary:** The policy engine is deterministic around
+> parsing, typing, Z3 compilation, comparison, sanity checks, hashing, and
+> on-chain parameter export. The LLM reader is optional and untrusted. The
+> default application uses the mock reader unless a Groq key is configured.
+
 In conventional autonomous agent wallets, Large Language Models (LLMs) are directly entrusted with parsing financial instructions and broadcasting Web3 transactions. This creates severe vulnerability vectors:
 1. **Semantic Hallucinations**: An LLM may misinterpret `"keep balance at least $500"` as checking balance *prior* to a trade rather than *post-execution*.
 2. **Prompt Injection & Jailbreaks**: Adversarial instructions hidden in unverified token metadata, memo fields, or invoice strings can override prompt constraints.
 3. **Dimensional Confusion**: Ambiguous numbers (e.g., `"gas under 5%"`) can cause dangerous execution when interpreted as raw gwei or absolute units.
 
-WalletAgent resolves this by introducing a **Dual-Channel Formal Verification Architecture** where natural language instructions must be independently synthesized by two isolated channels and formally proved mathematically equivalent via the Z3 SMT solver over physical domain bounds.
+Orvilo resolves this by introducing a **Dual-Channel Formal Verification Architecture** where natural language instructions must be independently synthesized by two isolated channels and formally proved mathematically equivalent via the Z3 SMT solver over physical domain bounds.
 
 ### Visual Architecture Flowchart
-Below is the full policy verification pipeline rendered from [`visuals/policy.svg`](../visuals/policy.svg):
+Below is the full policy verification pipeline rendered from [`visuals/rendered/policy-verification.png`](../visuals/rendered/policy-verification.png):
 
-![Policy Verification Architecture](../visuals/policy.svg)
+![Policy Verification Architecture](../visuals/rendered/policy-verification.png)
 
 ---
 
@@ -179,7 +184,10 @@ Before a verified policy is accepted, [`policy/sanity.py`](../policy/sanity.py) 
 - The AST is serialized into a canonical, alphabetically sorted JSON structure.
 - A cryptographic hash is calculated:
   $$\mathcal{H}_{\text{policy}} = \text{SHA-256}(\text{CanonicalJSON}(\text{AST}))$$
-- This 32-byte hash binds all off-chain and on-chain components. The smart contract verifies that incoming trade proposals match this hash before execution.
+- The SHA-256 hash identifies the canonical verified AST. The local wallet
+client stores that hash in its in-memory security state; a deployed Solidity
+contract would need an independently verified policy-hash check before this
+could be called on-chain binding.
 
 ### 6.2 Controlled Natural Language Readback
 - **Module**: [`policy/readback.py`](../policy/readback.py)
