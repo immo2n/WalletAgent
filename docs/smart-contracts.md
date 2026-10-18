@@ -1,9 +1,11 @@
-# EVM Smart Contract & Security Controls Specification
+# Orvilo EVM Smart Contract & Security Controls Specification
 
 > **Subsystem Specification**: PolicyWallet Smart Contract, Pre-Execution EVM Simulation, Security Controls, and Adversarial Attack Testing
 > **Repository Modules**: [`contracts/`](../contracts/)
 > **Target Network**: Base Sepolia (EVM Chain ID: `84532`)
-> **Key Architectural Principle**: *Even if all off-chain layers are completely compromised, the on-chain smart contract deterministically reverts any unauthorized or policy-violating transaction.*
+> **Key Architectural Principle**: *The intended Solidity contract and the local
+> simulator provide an independent guard boundary. The default repository run
+> does not prove that a deployed contract is enforcing these rules.*
 
 > **Local verification boundary:** `PolicyWallet.sol`, `EVMSimulator`, and
 > `AttackSimulator` are included for contract modeling and repeatable tests.
@@ -16,10 +18,12 @@
 
 ## 1. On-Chain Smart Contract Architecture
 
-The intended on-chain enforcement mechanism is implemented in
-[`contracts/PolicyWallet.sol`](../contracts/PolicyWallet.sol). The Solidity
-contract independently evaluates policy invariants when deployed; the local
-dashboard exercises the same guard model through the simulator.
+The intended on-chain enforcement mechanism is described by
+[`contracts/PolicyWallet.sol`](../contracts/PolicyWallet.sol) when that source
+is present in a deployment. The default dashboard exercises the Python
+`PolicyWalletClient`, `EVMSimulator`, and `AttackSimulator`. The client keeps
+pause state, limits, allowlists, and generated transaction-shaped identifiers
+in memory; it does not sign and broadcast the governance calls.
 
 ```
                     ┌────────────────────────────────────────┐
@@ -100,7 +104,11 @@ function setPolicy(
 - **Module**: [`contracts/simulator.py`](../contracts/simulator.py)
 - **Class**: [`EVMSimulator`](../contracts/simulator.py#L15-L120)
 
-Before any transaction is signed or broadcast to the mempool, [`EVMSimulator`](../contracts/simulator.py#L15-L120) executes a preflight simulation via `eth_call` against the RPC node:
+Before a live integration signs or broadcasts a transaction,
+[`EVMSimulator`](../contracts/simulator.py#L15-L120) first evaluates local
+guard inputs and then attempts `eth_call` when its Web3 provider is connected.
+Offline or unavailable RPC execution falls back to deterministic simulated
+gas/state values; the fallback is not a live contract result.
 
 ```
 [ Proposed Action ]
@@ -109,24 +117,19 @@ Before any transaction is signed or broadcast to the mempool, [`EVMSimulator`](.
 [ EVMSimulator.simulate_transaction ]
        │
        ├─► 1. Evaluates all PolicyWallet on-chain guards locally in EVM state
-       ├─► 2. Simulates DEX router calldata execution
-       ├─► 3. Decodes revert data (matching 4-byte custom error selectors)
-       └─► 4. Estimates required gas units + 15% dynamic buffer
+       ├─► 2. Attempts the supplied calldata through Web3 `eth_call`
+       ├─► 3. Converts local guard failures into named simulated errors
+       └─► 4. Estimates gas or uses a deterministic offline fallback
 ```
 
-### Revert Decoding Logic
-If `eth_call` fails, [`EVMSimulator`](../contracts/simulator.py#L15-L120) inspects the return payload:
-```python
-def decode_revert_reason(self, returndata: str) -> Dict[str, Any]:
-    if returndata.startswith("0x3f5b821a"):
-        return {"error": "BelowMinimumBalanceFloor", "reason": "Trade drops balance below $500 floor"}
-    elif returndata.startswith("0xd92e233d"):
-        return {"error": "WalletPaused", "reason": "Emergency pause active"}
-    elif returndata.startswith("0x4e487b71"):
-        return {"error": "RecipientNotAllowed", "reason": "Target address not in verified whitelist"}
-    # ... handles all 10 custom errors
-```
-This guarantees that failing transactions are caught off-chain with zero gas burned on Base Sepolia.
+### Revert result handling
+The current simulator returns a structured dictionary containing
+`success`, `status`, `revert_reason`, `custom_error_name`, gas estimates, and
+policy verification status. The attack tester derives its verdict from this
+result and uses a direct modeled result for the unauthorized-operator vector.
+This lets local tests exercise rejection paths before any submission. It does
+not guarantee that a live Base Sepolia transaction would fail or that no gas
+was spent, because the default application does not submit one.
 
 ---
 
@@ -213,6 +216,9 @@ FINTECHATHON 2026 : ADVERSARIAL PENETRATION SUITE RESULTS
   - Selector: 0x82b42900
 ================================================================================
 SUMMARY: 6/6 ATTACKS BLOCKED BY THE LOCAL CONTRACT MODEL (100% MODELED REVERT RATE)
+
+The six results are simulator assertions. They are not an external audit and
+are not live-chain receipts.
 ================================================================================
 ```
 
@@ -235,8 +241,8 @@ SUMMARY: 6/6 ATTACKS BLOCKED BY THE LOCAL CONTRACT MODEL (100% MODELED REVERT RA
 
 | Component | File Path | Key Functions / Classes |
 | :--- | :--- | :--- |
-| **Smart Contract** | [`contracts/PolicyWallet.sol`](../contracts/PolicyWallet.sol) | `PolicyWallet`, `executeSwap()`, `executeTransfer()`, `setPolicy()` |
+| **Solidity reference** | [`contracts/PolicyWallet.sol`](../contracts/PolicyWallet.sol) | Intended contract interface and custom-error model |
 | **Contract ABI** | [`contracts/abi.py`](../contracts/abi.py) | `POLICY_WALLET_ABI`, `ERC20_ABI` |
 | **Web3 Wallet Client** | [`contracts/wallet_client.py`](../contracts/wallet_client.py) | `PolicyWalletClient`, `emergency_pause()`, `revoke_operator()` |
-| **EVM Simulator** | [`contracts/simulator.py`](../contracts/simulator.py) | `EVMSimulator`, `simulate_transaction()`, `decode_revert_reason()` |
+| **EVM Simulator** | [`contracts/simulator.py`](../contracts/simulator.py) | `EVMSimulator`, `simulate_transaction()` |
 | **Attack Tester** | [`contracts/attack_tester.py`](../contracts/attack_tester.py) | `AttackSimulator`, `run_all_attacks()`, `run_attack()` |

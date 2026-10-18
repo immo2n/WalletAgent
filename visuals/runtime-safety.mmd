@@ -1,0 +1,29 @@
+---
+config:
+  theme: neutral
+  themeVariables:
+    primaryColor: "#EAF0FF"
+    primaryBorderColor: "#315EF5"
+    primaryTextColor: "#16213E"
+    lineColor: "#5B677A"
+    secondaryColor: "#E8F7F3"
+    tertiaryColor: "#FFF4DF"
+---
+flowchart TD
+    K["Daemon tick"]
+    Q["Active task and schedule"]
+    M["Market state<br/>price • gas • scenario"]
+    G{"Trigger satisfied?"}
+    R["RAG regime retrieval"]
+    I["Intent and trade thesis"]
+    D["Dry-run simulation<br/>slippage • balance • risk"]
+    Z{"Deterministic gates pass?"}
+    E["EVM-style preflight<br/>custom-error decoding"]
+    X["Persist local result<br/>ledger • reasoning • task"]
+    H["Block and audit reason"]
+
+    K --> Q --> M --> G
+    G -->|no| K
+    G -->|yes| R --> I --> D --> Z
+    Z -->|no| H --> K
+    Z -->|yes| E --> X --> K

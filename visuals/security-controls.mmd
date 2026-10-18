@@ -1,0 +1,32 @@
+---
+config:
+  theme: neutral
+  themeVariables:
+    primaryColor: "#EAF0FF"
+    primaryBorderColor: "#315EF5"
+    primaryTextColor: "#16213E"
+    lineColor: "#5B677A"
+    secondaryColor: "#E8F7F3"
+    tertiaryColor: "#FFF4DF"
+---
+flowchart LR
+    A["Agent or adversarial caller"]
+    G["PolicyWallet guard model"]
+    P["Paused?"]
+    O["Authorized operator?"]
+    H["Policy hash matches?"]
+    C["Caps, floor, token and recipient allowlists"]
+    Y["Execute / modeled success"]
+    N["Reject with typed custom error"]
+    E["Attack tester<br/>6 invalid-action vectors"]
+
+    A --> G --> P
+    P -->|yes| N
+    P -->|no| O
+    O -->|no| N
+    O -->|yes| H
+    H -->|no| N
+    H -->|yes| C
+    C -->|pass| Y
+    C -->|fail| N
+    E --> G

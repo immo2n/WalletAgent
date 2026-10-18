@@ -1,11 +1,18 @@
-# FinTechathon 2026 Pitch Deck Guide & Blueprint
+# Orvilo FinTechathon 2026 Pitch Deck Guide & Blueprint
 
 > **Competition**: 2026 Shenzhen International FinTech Competition (FinTechathon) — International Track
 > **Hosts**: Tsinghua University PBC School of Finance & WeBank
 > **Theme**: *"AI as a Financial Participant"*
 > **Topic**: **Topic F: Agent Wallet (Autonomous On-Chain Wallet)**
-> **Project**: **WalletAgent — Mathematically Verified Autonomous Web3 Wallet Agent**
+> **Project**: **Orvilo — Mathematically Verified Autonomous Web3 Wallet Agent**
 > **Target Format**: 10–12 Slide Presentation (Pitch Deck) + Live Demo Walkthrough
+
+> **Evidence boundary:** The current repository demonstrates policy
+> verification, a local contract/security model, simulated attack rejections,
+> dashboard behavior, and JSON persistence. It does not by itself provide live
+> Base Sepolia receipts, production authentication, signer custody, or an
+> independently audited deployment. Claims below should be presented as
+> implemented local behavior unless a separate deployment supplies receipts.
 
 ---
 
@@ -13,7 +20,7 @@
 
 When AI transitions from an advisory chatbot into a **financial participant** managing actual capital, probabilistic uncertainty becomes an unacceptable liability. In Web3, an LLM hallucination or prompt injection does not just cause a typo—it can permanently drain user funds through irreversible transactions.
 
-**WalletAgent's winning narrative:**
+**Orvilo's winning narrative:**
 > *"We do not replace the LLM—we encase it in a mathematical cage. The LLM is an untrusted proposer that brings semantic intuition and market adaptation; deterministic Z3 SMT formal verification, invariant gates, and on-chain smart contracts form the unbreachable security boundary."*
 
 ---
@@ -21,7 +28,7 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
 ## Complete Slide-by-Slide Deck Outline
 
 ### Slide 1: Title & Hook
-- **Slide Title**: **WalletAgent**
+- **Slide Title**: **Orvilo**
 - **Subtitle**: *Mathematically Verified Autonomous Web3 Wallet Agent*
 - **Competition Track**: 2026 Shenzhen International FinTech Competition — Topic F: Agent Wallet
 - **Headline / Hook**: *"Transforming AI from an untrusted conversational chatbot into a provably secure financial participant."*
@@ -29,7 +36,7 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
   - High-res project branding / dark glassmorphism aesthetic.
   - Logos: Base Sepolia (`84532`), Z3 SMT Solver, Python, Solidity.
 - **Presenter Script**:
-  > *"Good morning distinguished judges. Today, AI is entering decentralized finance as an autonomous market participant. But how can users entrust capital to probabilistic models that hallucinate and fall prey to prompt injections? Introducing WalletAgent: the first autonomous Web3 wallet where natural language intent is compiled into formally verified first-order logic before a single satoshi can move."*
+  > *"Good morning distinguished judges. Today, AI is entering decentralized finance as an autonomous market participant. But how can users entrust capital to probabilistic models that hallucinate and fall prey to prompt injections? Introducing Orvilo: the first autonomous Web3 wallet where natural language intent is compiled into formally verified first-order logic before a single satoshi can move."*
 
 ---
 
@@ -52,9 +59,9 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
 - **The Three Security Layers**:
   1. **Layer 1: Dual-Channel Formal Verification**: Independent deterministic parser + schema-bound LLM verified via Z3 SMT solver.
   2. **Layer 2: Deterministic Preflight & Dry-Run Gate**: Market RAG, Uniswap constant-product slippage calculation, and Z3 invariant checks.
-  3. **Layer 3: Base Sepolia Smart Contract (`PolicyWallet.sol`)**: Autonomous execution governed by cryptographic policy hashes and immutable on-chain rules.
+  3. **Layer 3: Contract enforcement boundary (`PolicyWallet.sol` reference + Python simulator)**: Intended execution governed by policy hashes and guard rules; live deployment is a separate integration.
 - **Key Visual**:
-  - Rendered graphic from [`visuals/policy.svg`](../visuals/policy.svg).
+  - Mermaid-rendered graphic from [`visuals/rendered/policy-verification.png`](../visuals/rendered/policy-verification.png).
 - **One-Line Invariant**:
   > *"A compromise of any one layer cannot defeat the others."*
 
@@ -86,7 +93,7 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
     - *Gas Spike Congestion*: Win rate 32%, expected return -4.1%, risk 8.5/10.
   - **Dry-Run Risk Simulation**: Pre-calculates slippage, post-swap balances, and drawdown exposure before approaching execution gates.
 - **Key Visual**:
-  - Diagram rendered from [`visuals/reasoning.svg`](../visuals/reasoning.svg) and [`visuals/exchange.svg`](../visuals/exchange.svg).
+  - Mermaid-rendered diagrams from [`visuals/rendered/runtime-safety.png`](../visuals/rendered/runtime-safety.png) and [`visuals/rendered/security-controls.png`](../visuals/rendered/security-controls.png).
 
 ---
 
@@ -100,13 +107,13 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
     - Recurring DCA queue automatically stops when spending cap or balance floor is approached.
   - **Task Lifecycle Control**: Operator can pause, resume, or dismiss tasks instantly via API or web UI.
 - **Key Visual**:
-  - Task state machine and daemon tick diagram from [`visuals/agent.svg`](../visuals/agent.svg).
+  - Task state machine and daemon tick diagram from [`visuals/rendered/runtime-safety.png`](../visuals/rendered/runtime-safety.png).
 
 ---
 
 ### Slide 7: On-Chain Smart Contract Security (`PolicyWallet.sol`)
 - **Slide Title**: **On-Chain Policy Enforcement on Base Sepolia**
-- **Core Message**: *Immutable code on EVM enforces policy invariants even against rogue agent keys.*
+- **Core Message**: *The contract reference and local simulator make the intended invariant boundary explicit, including behavior against rogue agent keys.*
 - **Contract Guard Primitives**:
   - **Cryptographic Hash Binding**: On-chain execution requires proof of `activePolicyHash`.
   - **Token & Recipient Allowlists**: Prevents arbitrary token swaps or unauthorized address exfiltration.
@@ -128,16 +135,16 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
   4. **24-Hour Daily Cap Bypass** $\to$ Reverts with `ExceedsDailyLimit` (`0x892a014d`)
   5. **Emergency Pause Killswitch Breach** $\to$ Reverts with `WalletPaused` (`0xd92e233d`)
   6. **Unauthorized Operator Key Hijack** $\to$ Reverts with `UnauthorizedOperator` (`0x82b42900`)
-- **Key Stat**: **6/6 Attacks Blocked (100% Revert Rate, 0 Assets Siphoned)**.
+- **Key Stat**: **6/6 local attack vectors modeled as blocked; no live assets are involved in the default run**.
 
 ---
 
-### Slide 9: User Workflow & Immutable Audit Trail
+### Slide 9: User Workflow & Reasoning Audit
 - **Slide Title**: **Human-in-the-Loop Governance & Audit Ledger**
 - **Core Message**: *Full transparency and compliance with institutional financial standards.*
 - **Multi-Stage Approval Pipeline**:
   - $\text{User Prompt} \to \text{Z3 SMT} \to \text{DRAFT} \to \text{REVIEWED} \to \text{DEPLOYABLE} \to \text{ACTIVE}$
-  - Governed by EIP-712 / ECDSA owner signatures.
+  - Governed by application-level reviewer and approver metadata in the current demo; production EIP-712/ECDSA signing is not implemented.
 - **Reasoning Introspection Modal**:
   - Clicking any transaction exposes the complete proof trace: trigger status, RAG historical match, win rate, dry-run simulation, and Z3 unsat-core verification.
 - **Emergency Defense Center**:
@@ -157,7 +164,7 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
   - [x] **F4: Scheduled Transfers & Recurring DCA** (1 Hz daemon queue, interval DCA)
   - [x] **F5: Preflight EVM Simulation** (`eth_call` revert decoding & gas buffering)
   - [x] **F6: On-Chain Policy Enforcement** ([PolicyWallet.sol](../contracts/PolicyWallet.sol) on Base Sepolia)
-  - [x] **F7: Transaction History & Explanations** (Immutable audit ledger & RAG modal)
+  - [x] **F7: Transaction History & Explanations** (Local audit records & RAG modal)
   - [x] **F8: Emergency Pause & Revocations** (Instant pause, key & allowance revokes)
   - [x] **F9: Attack Tester Suite** (6/6 attack vectors blocked on-chain)
 - **Empirical Metric**: **90/90 Unit Tests Passing** (`pytest tests/`).
@@ -178,16 +185,16 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
 ---
 
 ### Slide 12: Conclusion & Q&A
-- **Slide Title**: **WalletAgent: Provably Secure Autonomous Finance**
+- **Slide Title**: **Orvilo: Provably Secure Autonomous Finance**
 - **Key Summary Points**:
   1. *The LLM is an untrusted proposer, never the security boundary.*
   2. *First-order logic and Z3 SMT solver guarantee mathematical intent alignment.*
   3. *Base Sepolia smart contract provides unbreachable on-chain defense.*
 - **Contact & Links**:
-  - GitHub Repository: `https://github.com/immo2n/WalletAgent`
+  - GitHub Repository: `https://github.com/immo2n/Orvilo`
   - Documentation: [Master Technical Doc](../docs/technical-doc.md)
   - Network: Base Sepolia (`Chain ID: 84532`)
-  - Team: WalletAgent Team
+  - Team: Orvilo Team
 
 ---
 
@@ -240,21 +247,26 @@ When presenting the live demo to the judges, follow this sequence:
 > **Answer**: Disagreement is handled gracefully and deterministically. Z3 refutes equivalence by generating a concrete mathematical counterexample (e.g. *Trade amount $350 leaves balance $450, violating $500 floor*). This counterexample is fed back to the LLM in an automated repair prompt. The LLM has up to 2 attempts to fix its parse. If they still disagree, the system fails closed and escalates to human review. The wallet never guesses.
 
 ### Q3: *"How is this different from existing account abstraction session keys (ERC-4337)?"*
-> **Answer**: Session keys enforce static boundaries on-chain (e.g., call contract X with value Y), but they do not solve the semantic intent problem—users cannot write complex dynamic policies in plain English. WalletAgent bridges this semantic gap: it compiles English into verified mathematical invariants, projects pre-trade risk using market RAG, and enforces session-key style boundaries on-chain via `PolicyWallet.sol`.
+> **Answer**: Session keys enforce static boundaries on-chain (e.g., call contract X with value Y), but they do not solve the semantic intent problem—users cannot write complex dynamic policies in plain English. Orvilo bridges this semantic gap: it compiles English into verified mathematical invariants, projects pre-trade risk using market RAG, and enforces session-key style boundaries on-chain via `PolicyWallet.sol`.
 
 ### Q4: *"Can a prompt injection in a token name or memo override the wallet limits?"*
-> **Answer**: Absolutely not. In WalletAgent, untrusted external text (token names, invoice memos) is strictly isolated and labeled untrusted. Furthermore, policy limits are enforced by deterministic Python guards and immutable Solidity smart contract modifiers (`_verifyGuards`). Even if an injection tricked the reasoning LLM into proposing a malicious trade, the local Z3 gate and on-chain contract will deterministically revert with `RecipientNotAllowed` or `ExceedsDailyLimit`.
+> **Answer**: Absolutely not. In Orvilo, untrusted external text is
+> handled outside the deterministic policy boundary. Policy limits are
+> evaluated by deterministic Python guards and the local contract model. Even
+> if the reasoning LLM proposes a malicious trade, the local gates can block
+> it; proving the same result on-chain requires a deployed contract and live
+> receipt evidence.
 
 ---
 
 ## Visual Presentation Assets Checklist
 
 Ensure the presentation slide deck includes:
-- [x] [`visuals/policy.svg`](../visuals/policy.svg) (Slide 3 & 4)
-- [x] [`visuals/agent.svg`](../visuals/agent.svg) (Slide 6)
-- [x] [`visuals/reasoning.svg`](../visuals/reasoning.svg) (Slide 5)
-- [x] [`visuals/exchange.svg`](../visuals/exchange.svg) (Slide 5)
-- [x] [`visuals/user.svg`](../visuals/user.svg) (Slide 9)
+- [x] [`visuals/rendered/policy-verification.png`](../visuals/rendered/policy-verification.png) (Slide 3 & 4)
+- [x] [`visuals/rendered/runtime-safety.png`](../visuals/rendered/runtime-safety.png) (Slide 6)
+- [x] [`visuals/rendered/runtime-safety.png`](../visuals/rendered/runtime-safety.png) (Slide 5)
+- [x] [`visuals/rendered/security-controls.png`](../visuals/rendered/security-controls.png) (Slide 5)
+- [x] [`visuals/rendered/data-model.png`](../visuals/rendered/data-model.png) (Slide 9)
 - [x] Code snippet showing custom Solidity errors in [PolicyWallet.sol](../contracts/PolicyWallet.sol#L28-L41)
 - [x] Screenshot of Web Dashboard & Reasoning Introspection Modal
 - [x] Test terminal output showing 90/90 passing tests and 6/6 blocked attacks

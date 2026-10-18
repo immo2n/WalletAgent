@@ -1,0 +1,30 @@
+---
+config:
+  theme: neutral
+  themeVariables:
+    primaryColor: "#EAF0FF"
+    primaryBorderColor: "#315EF5"
+    primaryTextColor: "#16213E"
+    lineColor: "#5B677A"
+    secondaryColor: "#E8F7F3"
+    tertiaryColor: "#FFF4DF"
+---
+flowchart LR
+    U["Wallet owner / reviewer"]
+    B["Responsive Flask dashboard<br/>dark mode • timezone • assistant"]
+    S["Flask server<br/>JSON APIs • SSE"]
+    P["Policy plane<br/>readers • types • Z3 • workflow"]
+    A["Agent plane<br/>tasks • runtime • reasoning"]
+    C["Contract plane<br/>PolicyWallet model • simulator"]
+    D[("Local JSON state<br/>wallet ledger • tasks")]
+    X["External observations<br/>Coinbase WS • Base Sepolia RPC"]
+
+    U --> B --> S
+    S --> P
+    S --> A
+    S --> C
+    P --> D
+    A --> D
+    C --> D
+    X --> A
+    X --> S

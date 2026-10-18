@@ -80,4 +80,15 @@ Keyed by `(lhs_sort, rhs_sort)`:
 - Floating-point representations are forbidden; all numeric values are rational `Fraction` or Z3 `Real`.
 
 ## 6. Architecture Visual
-The package flow is documented in Graphviz DOT format at `visuals/policy.dot`.
+The package flow is authored in Mermaid at
+[`visuals/policy-verification.mmd`](../visuals/policy-verification.mmd) and
+rendered to [`visuals/rendered/policy-verification.png`](../visuals/rendered/policy-verification.png).
+
+## 7. Current runtime boundary
+
+The policy package verifies and exports policy data; it does not itself sign or
+broadcast transactions. The Flask application creates the default proposal at
+startup and auto-promotes that startup proposal to `ACTIVE` for the demo. User
+created proposals use the explicit review, approval, and deployment endpoints.
+The exported parameters are copied into the in-memory `PolicyWalletClient`
+security state and are not durable blockchain state in the default run.

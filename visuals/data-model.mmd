@@ -1,0 +1,52 @@
+---
+config:
+  theme: neutral
+  themeVariables:
+    primaryColor: "#EAF0FF"
+    primaryBorderColor: "#315EF5"
+    primaryTextColor: "#16213E"
+    lineColor: "#5B677A"
+    secondaryColor: "#E8F7F3"
+    tertiaryColor: "#FFF4DF"
+---
+erDiagram
+    WALLET_ACCOUNT ||--o{ TRANSACTION_RECORD : owns
+    TRANSACTION_RECORD ||--o| REASONING_AUDIT : explains
+    WALLET_ACCOUNT ||--o{ AGENT_TASK : schedules
+    AGENT_TASK ||--o{ TRANSACTION_RECORD : produces
+    MARKET_HISTORY }o--o{ REASONING_AUDIT : informs
+
+    WALLET_ACCOUNT {
+        string address
+        float eth_balance
+        float usdc_balance
+        string policy_hash
+    }
+    TRANSACTION_RECORD {
+        string tx_id
+        datetime timestamp
+        string action
+        float amount_usd
+        string status
+        string execution_hash
+    }
+    REASONING_AUDIT {
+        string trigger
+        string rag_regime
+        float risk_score
+        string dry_run_decision
+        string gate_status
+    }
+    AGENT_TASK {
+        string task_id
+        string schedule_type
+        string status
+        int interval_seconds
+        int execution_count
+    }
+    MARKET_HISTORY {
+        string regime
+        float gas_feature
+        float volatility
+        float win_rate
+    }
