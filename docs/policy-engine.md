@@ -1,7 +1,7 @@
 # Policy Engine & Formal Verification Specification
 
-> **Subsystem Specification**: Dual-Reader Natural Language Compilation, AST Verification, and Z3 SMT Solver Architecture  
-> **Repository Module**: [`policy/`](file:///home/immo2n/Moon/WalletAgent/policy/)  
+> **Subsystem Specification**: Dual-Reader Natural Language Compilation, AST Verification, and Z3 SMT Solver Architecture
+> **Repository Module**: [`policy/`](../policy/)
 > **Key Architectural Principle**: *The LLM is an untrusted proposer; deterministic code and formal mathematical proofs form the security boundary.*
 
 ---
@@ -52,8 +52,8 @@ The policy compilation pipeline employs two independent, decoupled readers:
 ```
 
 ### 2.1 Channel A: Deterministic RuleReader
-- **Module**: [`policy/readers/rule_reader.py`](file:///home/immo2n/Moon/WalletAgent/policy/readers/rule_reader.py)
-- **Lexicon**: [`policy/readers/lexicon.py`](file:///home/immo2n/Moon/WalletAgent/policy/readers/lexicon.py)
+- **Module**: [`policy/readers/rule_reader.py`](../policy/readers/rule_reader.py)
+- **Lexicon**: [`policy/readers/lexicon.py`](../policy/readers/lexicon.py)
 - **Implementation**: Uses `spaCy` dependency tree parsing combined with explicit lexical token grammars. It operates deterministically without network calls or probabilistic inference.
 - **Rule Extraction**:
   - Detects action verbs (`buy`, `swap`, `transfer`).
@@ -62,8 +62,8 @@ The policy compilation pipeline employs two independent, decoupled readers:
   - Captures trigger states: gas ceilings (`gas <= 20 gwei`), price triggers, and schedule intervals.
 
 ### 2.2 Channel B: Untrusted LLMReader
-- **Module**: [`policy/readers/llm_reader.py`](file:///home/immo2n/Moon/WalletAgent/policy/readers/llm_reader.py)
-- **JSON Schema**: [`policy/schema.py`](file:///home/immo2n/Moon/WalletAgent/policy/schema.py)
+- **Module**: [`policy/readers/llm_reader.py`](../policy/readers/llm_reader.py)
+- **JSON Schema**: [`policy/schema.py`](../policy/schema.py)
 - **Role**: Handles linguistic variance, conversational phrasing, synonyms, and complex colloquial syntax.
 - **Constraint**: Output is strictly constrained to a Draft-07 JSON Schema. If the LLM generates unparseable JSON or fields outside the schema, the output is rejected immediately before reaching the SMT solver.
 
@@ -72,7 +72,7 @@ The policy compilation pipeline employs two independent, decoupled readers:
 ## 3. Abstract Syntax Tree (AST) & Type System
 
 ### 3.1 Frozen AST Dataclasses
-The formal AST is declared in [`policy/ast.py`](file:///home/immo2n/Moon/WalletAgent/policy/ast.py) using immutable, frozen Python dataclasses with exact arithmetic representations (`fractions.Fraction`):
+The formal AST is declared in [`policy/ast.py`](../policy/ast.py) using immutable, frozen Python dataclasses with exact arithmetic representations (`fractions.Fraction`):
 
 ```python
 @dataclass(frozen=True)
@@ -106,7 +106,7 @@ class Const(Expr):
 ```
 
 ### 3.2 Dimensional Sorts & Type Checking
-- **Module**: [`policy/sorts.py`](file:///home/immo2n/Moon/WalletAgent/policy/sorts.py) and [`policy/typecheck.py`](file:///home/immo2n/Moon/WalletAgent/policy/typecheck.py)
+- **Module**: [`policy/sorts.py`](../policy/sorts.py) and [`policy/typecheck.py`](../policy/typecheck.py)
 - To prevent catastrophic dimensional mismatch (e.g. comparing Gwei to USD or subtracting percentages from raw tokens), the engine implements a static typechecker over physical sorts:
   - `Sort.USD`: Fiat monetary denomination.
   - `Sort.GWEI`: Gas price measurement.
@@ -115,7 +115,7 @@ class Const(Expr):
   - `Sort.BOOL`: Boolean logical propositions.
 
 #### Coercion Matrix
-Defined in [`policy/coercions.py`](file:///home/immo2n/Moon/WalletAgent/policy/coercions.py), scalar arithmetic is restricted to physically sound combinations:
+Defined in [`policy/coercions.py`](../policy/coercions.py), scalar arithmetic is restricted to physically sound combinations:
 $$\text{Sort.USD} \times \text{Sort.PERCENT} \longrightarrow \text{Sort.USD}$$
 $$\text{Sort.USD} + \text{Sort.USD} \longrightarrow \text{Sort.USD}$$
 $$\text{Sort.GWEI} \lessgtr \text{Sort.GWEI} \longrightarrow \text{Sort.BOOL}$$
@@ -143,7 +143,7 @@ $$\Psi_{\text{mismatch}} \equiv \mathcal{D}_{\text{physical}} \land \left( (\Phi
   Z3 discovers a concrete model $\vec{x}^*$ satisfying $\Psi_{\text{mismatch}}$. This model is an exact **counterexample** where one policy allows a trade and the other forbids it.
 
 ### 4.2 Z3 Compilation Engine
-- **Module**: [`policy/z3_compile.py`](file:///home/immo2n/Moon/WalletAgent/policy/z3_compile.py)
+- **Module**: [`policy/z3_compile.py`](../policy/z3_compile.py)
 - All arithmetic operations are mapped to Z3's exact `Real` sort, preventing floating-point rounding inaccuracies.
 - Domain constraints $\mathcal{D}_{\text{physical}}$ enforce realistic boundaries:
   $$0 \le \text{gas} \le 10{,}000 \text{ Gwei}$$
@@ -151,7 +151,7 @@ $$\Psi_{\text{mismatch}} \equiv \mathcal{D}_{\text{physical}} \land \left( (\Phi
   $$0 \le \text{balance after} \le 10{,}000{,}000 \text{ USD}$$
 
 ### 4.3 Counterexample Feedback & Auto-Repair Loop
-- **Module**: [`policy/compare.py`](file:///home/immo2n/Moon/WalletAgent/policy/compare.py) and [`policy/loop.py`](file:///home/immo2n/Moon/WalletAgent/policy/loop.py)
+- **Module**: [`policy/compare.py`](../policy/compare.py) and [`policy/loop.py`](../policy/loop.py)
 - When a counterexample is extracted (e.g. `trade_amount = $350, balance_after = $450`), it is serialized into structured JSON and fed back to Channel B in an automated repair prompt:
   > *"Your parsed policy allows a trade of $350 leaving a balance of $450, but the rule parser forbids this because the balance floor is $500. Fix your constraint formulation."*
 - Channel B is granted up to **2 automated repair attempts**.
@@ -161,7 +161,7 @@ $$\Psi_{\text{mismatch}} \equiv \mathcal{D}_{\text{physical}} \land \left( (\Phi
 
 ## 5. Sanity Verification (Triviality & Vacuity Checking)
 
-Before a verified policy is accepted, [`policy/sanity.py`](file:///home/immo2n/Moon/WalletAgent/policy/sanity.py) runs three formal safety checks:
+Before a verified policy is accepted, [`policy/sanity.py`](../policy/sanity.py) runs three formal safety checks:
 
 1. **Satisfiability Check ($\exists \vec{x} : \Phi(\vec{x})$)**:
    Proves that the policy is not inherently self-contradictory. For example, `"gas < 10 gwei AND gas > 50 gwei"` is unsatisfiable ($UNSAT$) and would deadlock the wallet forever.
@@ -175,14 +175,14 @@ Before a verified policy is accepted, [`policy/sanity.py`](file:///home/immo2n/M
 ## 6. Cryptographic Hashing & Controlled Readback
 
 ### 6.1 Canonical SHA-256 Policy Hashing
-- **Module**: [`policy/hashing.py`](file:///home/immo2n/Moon/WalletAgent/policy/hashing.py)
+- **Module**: [`policy/hashing.py`](../policy/hashing.py)
 - The AST is serialized into a canonical, alphabetically sorted JSON structure.
 - A cryptographic hash is calculated:
   $$\mathcal{H}_{\text{policy}} = \text{SHA-256}(\text{CanonicalJSON}(\text{AST}))$$
 - This 32-byte hash binds all off-chain and on-chain components. The smart contract verifies that incoming trade proposals match this hash before execution.
 
 ### 6.2 Controlled Natural Language Readback
-- **Module**: [`policy/readback.py`](file:///home/immo2n/Moon/WalletAgent/policy/readback.py)
+- **Module**: [`policy/readback.py`](../policy/readback.py)
 - Generates a deterministic, unambiguous English sentence directly from the compiled AST.
 - **Round-Trip Property**: Passing the generated readback string back through Reader A reproduces the exact same AST and hash:
   $$\text{ReaderA}(\text{Readback}(\text{AST})) \equiv \text{AST}$$
@@ -191,7 +191,7 @@ Before a verified policy is accepted, [`policy/sanity.py`](file:///home/immo2n/M
 
 ## 7. Verification Loop State Machine
 
-The complete state transitions managed by [`policy/loop.py`](file:///home/immo2n/Moon/WalletAgent/policy/loop.py) are:
+The complete state transitions managed by [`policy/loop.py`](../policy/loop.py) are:
 
 ```mermaid
 stateDiagram-v2
@@ -218,13 +218,13 @@ stateDiagram-v2
 
 | Component | File Path | Key Functions / Classes |
 | :--- | :--- | :--- |
-| **AST Definitions** | [`policy/ast.py`](file:///home/immo2n/Moon/WalletAgent/policy/ast.py) | `Policy`, `Cmp`, `BinOp`, `Const`, `Var` |
-| **Dimensional Sorts** | [`policy/sorts.py`](file:///home/immo2n/Moon/WalletAgent/policy/sorts.py) | `Sort`, `infer_sort()`, `sort_compatible()` |
-| **Type Checker** | [`policy/typecheck.py`](file:///home/immo2n/Moon/WalletAgent/policy/typecheck.py) | `Typechecker`, `typecheck_policy()` |
-| **Rule Reader** | [`policy/readers/rule_reader.py`](file:///home/immo2n/Moon/WalletAgent/policy/readers/rule_reader.py) | `RuleReader`, `parse_prompt()` |
-| **LLM Reader** | [`policy/readers/llm_reader.py`](file:///home/immo2n/Moon/WalletAgent/policy/readers/llm_reader.py) | `LLMReader`, `parse()` |
-| **Z3 Compiler** | [`policy/z3_compile.py`](file:///home/immo2n/Moon/WalletAgent/policy/z3_compile.py) | `Z3Compiler`, `compile_policy()` |
-| **Equivalence Prover** | [`policy/compare.py`](file:///home/immo2n/Moon/WalletAgent/policy/compare.py) | `compare_policies()`, `extract_counterexample()` |
-| **Sanity Checker** | [`policy/sanity.py`](file:///home/immo2n/Moon/WalletAgent/policy/sanity.py) | `verify_sanity()`, `check_satisfiable()` |
-| **Policy Hashing** | [`policy/hashing.py`](file:///home/immo2n/Moon/WalletAgent/policy/hashing.py) | `policy_hash()`, `canonical_json()` |
-| **Workflow Manager** | [`policy/workflow.py`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py) | `PolicyWorkflowManager`, `PolicyProposal` |
+| **AST Definitions** | [`policy/ast.py`](../policy/ast.py) | `Policy`, `Cmp`, `BinOp`, `Const`, `Var` |
+| **Dimensional Sorts** | [`policy/sorts.py`](../policy/sorts.py) | `Sort`, `infer_sort()`, `sort_compatible()` |
+| **Type Checker** | [`policy/typecheck.py`](../policy/typecheck.py) | `Typechecker`, `typecheck_policy()` |
+| **Rule Reader** | [`policy/readers/rule_reader.py`](../policy/readers/rule_reader.py) | `RuleReader`, `parse_prompt()` |
+| **LLM Reader** | [`policy/readers/llm_reader.py`](../policy/readers/llm_reader.py) | `LLMReader`, `parse()` |
+| **Z3 Compiler** | [`policy/z3_compile.py`](../policy/z3_compile.py) | `Z3Compiler`, `compile_policy()` |
+| **Equivalence Prover** | [`policy/compare.py`](../policy/compare.py) | `compare_policies()`, `extract_counterexample()` |
+| **Sanity Checker** | [`policy/sanity.py`](../policy/sanity.py) | `verify_sanity()`, `check_satisfiable()` |
+| **Policy Hashing** | [`policy/hashing.py`](../policy/hashing.py) | `policy_hash()`, `canonical_json()` |
+| **Workflow Manager** | [`policy/workflow.py`](../policy/workflow.py) | `PolicyWorkflowManager`, `PolicyProposal` |

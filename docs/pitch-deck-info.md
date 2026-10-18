@@ -1,10 +1,10 @@
 # FinTechathon 2026 Pitch Deck Guide & Blueprint
 
-> **Competition**: 2026 Shenzhen International FinTech Competition (FinTechathon) — International Track  
-> **Hosts**: Tsinghua University PBC School of Finance & WeBank  
-> **Theme**: *"AI as a Financial Participant"*  
-> **Topic**: **Topic F: Agent Wallet (Autonomous On-Chain Wallet)**  
-> **Project**: **WalletAgent — Mathematically Verified Autonomous Web3 Wallet Agent**  
+> **Competition**: 2026 Shenzhen International FinTech Competition (FinTechathon) — International Track
+> **Hosts**: Tsinghua University PBC School of Finance & WeBank
+> **Theme**: *"AI as a Financial Participant"*
+> **Topic**: **Topic F: Agent Wallet (Autonomous On-Chain Wallet)**
+> **Project**: **WalletAgent — Mathematically Verified Autonomous Web3 Wallet Agent**
 > **Target Format**: 10–12 Slide Presentation (Pitch Deck) + Live Demo Walkthrough
 
 ---
@@ -114,7 +114,7 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
   - **Minimum Balance Reserve Floor**: Reverts if post-trade reserve drops below specified floor ($500).
   - **Preflight EVM Simulation (`eth_call`)**: Decodes 4-byte custom errors (`BelowMinimumBalanceFloor`, `WalletPaused`) off-chain; zero gas wasted.
 - **Key Visual**:
-  - Architecture breakdown of [`PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol) with custom Solidity error mappings.
+  - Architecture breakdown of [`PolicyWallet.sol`](../contracts/PolicyWallet.sol) with custom Solidity error mappings.
 
 ---
 
@@ -156,7 +156,7 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
   - [x] **F3: On-Chain Invariant Rules & Caps** (Token/recipient whitelists, balance floor)
   - [x] **F4: Scheduled Transfers & Recurring DCA** (1 Hz daemon queue, interval DCA)
   - [x] **F5: Preflight EVM Simulation** (`eth_call` revert decoding & gas buffering)
-  - [x] **F6: On-Chain Policy Enforcement** ([PolicyWallet.sol](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol) on Base Sepolia)
+  - [x] **F6: On-Chain Policy Enforcement** ([PolicyWallet.sol](../contracts/PolicyWallet.sol) on Base Sepolia)
   - [x] **F7: Transaction History & Explanations** (Immutable audit ledger & RAG modal)
   - [x] **F8: Emergency Pause & Revocations** (Instant pause, key & allowance revokes)
   - [x] **F9: Attack Tester Suite** (6/6 attack vectors blocked on-chain)
@@ -185,7 +185,7 @@ When AI transitions from an advisory chatbot into a **financial participant** ma
   3. *Base Sepolia smart contract provides unbreachable on-chain defense.*
 - **Contact & Links**:
   - GitHub Repository: `https://github.com/immo2n/WalletAgent`
-  - Documentation: [Master Technical Doc](file:///home/immo2n/Moon/WalletAgent/docs/technical-doc.md)
+  - Documentation: [Master Technical Doc](../docs/technical-doc.md)
   - Network: Base Sepolia (`Chain ID: 84532`)
   - Team: WalletAgent Team
 
@@ -255,6 +255,6 @@ Ensure the presentation slide deck includes:
 - [x] [`visuals/reasoning.svg`](../visuals/reasoning.svg) (Slide 5)
 - [x] [`visuals/exchange.svg`](../visuals/exchange.svg) (Slide 5)
 - [x] [`visuals/user.svg`](../visuals/user.svg) (Slide 9)
-- [x] Code snippet showing custom Solidity errors in [PolicyWallet.sol](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol#L28-L41)
+- [x] Code snippet showing custom Solidity errors in [PolicyWallet.sol](../contracts/PolicyWallet.sol#L28-L41)
 - [x] Screenshot of Web Dashboard & Reasoning Introspection Modal
 - [x] Test terminal output showing 90/90 passing tests and 6/6 blocked attacks

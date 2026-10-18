@@ -1,8 +1,13 @@
 # User Approval Workflow, Audit Trail & Interface Specification
 
-> **Subsystem Specification**: Policy Review Lifecycle, Cryptographic Signing, Transaction Audit Ledger, and Web Dashboard  
-> **Repository Modules**: [`policy/workflow.py`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py), [`user/`](file:///home/immo2n/Moon/WalletAgent/user/), [`flask/`](file:///home/immo2n/Moon/WalletAgent/flask/)  
+> **Subsystem Specification**: Policy Review Lifecycle, Cryptographic Signing, Transaction Audit Ledger, and Web Dashboard
+> **Repository Modules**: [`policy/workflow.py`](../policy/workflow.py), [`user/`](../user/), [`flask/`](../flask/)
 > **Key Architectural Principle**: *Autonomous operations are authorized solely through explicit, auditable, and cryptographically signed state transitions.*
+
+> **Persistence note:** The default implementation stores the dashboard ledger
+> and task state in local JSON files. An `onchain_tx_hash` field can represent
+> a deployed integration, but local simulation records must not be presented as
+> live blockchain receipts without independent explorer verification.
 
 ---
 
@@ -10,8 +15,8 @@
 
 FinTechathon 2026 Feature 2 requires a formal, multi-stage human-in-the-loop approval workflow before any autonomous trading policy can be deployed or executed on-chain.
 
-- **Module**: [`policy/workflow.py`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py)
-- **Class**: [`PolicyWorkflowManager`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py#L70-L185), [`PolicyProposal`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py#L24-L68)
+- **Module**: [`policy/workflow.py`](../policy/workflow.py)
+- **Class**: [`PolicyWorkflowManager`](../policy/workflow.py#L70-L185), [`PolicyProposal`](../policy/workflow.py#L24-L68)
 
 ### Visual User & State Pipeline Flowchart
 Below is the system flowchart rendered from [`visuals/user.svg`](../visuals/user.svg):
@@ -55,7 +60,7 @@ stateDiagram-v2
 - Sets `is_deployable = True`.
 
 ### Stage 4: `ACTIVE`
-- The policy parameters are broadcast to [`PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol) on Base Sepolia.
+- The policy parameters are broadcast to [`PolicyWallet.sol`](../contracts/PolicyWallet.sol) on Base Sepolia.
 - An on-chain transaction hash (`onchain_tx_hash`) is recorded.
 - The autonomous background daemon immediately adopts this active policy as its primary operational boundary.
 
@@ -63,8 +68,8 @@ stateDiagram-v2
 
 ## 3. Transaction Audit Trail & Reasoning Introspection
 
-- **Module**: [`user/db.py`](file:///home/immo2n/Moon/WalletAgent/user/db.py)
-- **Class**: [`UserDatabase`](file:///home/immo2n/Moon/WalletAgent/user/db.py#L20-L140)
+- **Module**: [`user/db.py`](../user/db.py)
+- **Class**: [`UserDatabase`](../user/db.py#L20-L140)
 - **Data Persistence**: `user/data/wallet_db.json`
 
 Every dry run, gate evaluation, and execution event is recorded in an append-only JSON ledger, satisfying FinTechathon 2026 Feature 7.
@@ -113,7 +118,7 @@ In the web dashboard, clicking any transaction in the ledger opens the **Reasoni
 
 ## 4. Web Dashboard & User Interface Architecture
 
-- **Server**: [`flask/server.py`](file:///home/immo2n/Moon/WalletAgent/flask/server.py)
+- **Server**: [`flask/server.py`](../flask/server.py)
 - **Frontend Template**: `flask/templates/index.html`
 - **Design Philosophy**: Built with Vanilla CSS and modern dark-mode glassmorphism (`#0d1117` background, vibrant `#388bfd` blue, `#7ee787` green, and `#f85149` red highlights), modern typography (Inter), and mobile-responsive flex/grid layouts.
 
@@ -143,7 +148,7 @@ In the web dashboard, clicking any transaction in the ledger opens the **Reasoni
 ```
 
 ### 4.2 Real-Time SSE Event Stream
-The dashboard receives real-time telemetry over a Server-Sent Events (SSE) connection (`/api/stream`):
+The dashboard receives real-time telemetry over a Server-Sent Events (SSE) connection (`/api/market/stream`):
 - `market_tick`: Real-time ETH/USD price, gas price, and rolling 24-hour averages.
 - `agent_log`: Execution steps, Z3 proofs, and trigger activations formatted with color-coded tags (`[TRIGGER]`, `[RAG]`, `[GATE]`, `[EXECUTE]`).
 - `balance_update`: Instant portfolio balance synchronization post-trade.
@@ -166,8 +171,8 @@ To prevent unauthorized tampering from browser sessions:
 
 | Component | File Path | Key Functions / Classes |
 | :--- | :--- | :--- |
-| **Workflow Manager** | [`policy/workflow.py`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py) | `PolicyWorkflowManager`, `create_proposal()`, `approve_policy()` |
-| **Proposal Model** | [`policy/workflow.py`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py) | `PolicyProposal`, `to_dict()` |
-| **User Database** | [`user/db.py`](file:///home/immo2n/Moon/WalletAgent/user/db.py) | `UserDatabase`, `record_transaction()`, `get_history()` |
-| **User Models** | [`user/models.py`](file:///home/immo2n/Moon/WalletAgent/user/models.py) | `WalletAccount`, `TransactionRecord` |
-| **Flask Server** | [`flask/server.py`](file:///home/immo2n/Moon/WalletAgent/flask/server.py) | `create_app()`, `/api/verify`, `/api/policy/*`, `/api/stream` |
+| **Workflow Manager** | [`policy/workflow.py`](../policy/workflow.py) | `PolicyWorkflowManager`, `create_proposal()`, `approve_policy()` |
+| **Proposal Model** | [`policy/workflow.py`](../policy/workflow.py) | `PolicyProposal`, `to_dict()` |
+| **User Database** | [`user/db.py`](../user/db.py) | `UserDatabase`, `record_transaction()`, `get_history()` |
+| **User Models** | [`user/models.py`](../user/models.py) | `WalletAccount`, `TransactionRecord` |
+| **Flask Server** | [`flask/server.py`](../flask/server.py) | `create_app()`, `/api/verify`, `/api/policy/*`, `/api/market/stream` |

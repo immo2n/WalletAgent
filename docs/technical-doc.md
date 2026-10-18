@@ -1,11 +1,18 @@
 # WalletAgent: Technical Documentation & Architecture Specification
 
-> **2026 Shenzhen International FinTech Competition (FinTechathon) — International Track**  
-> **Host**: Tsinghua PBC School of Finance with WeBank  
-> **Theme**: *"AI as a Financial Participant"*  
-> **Topic**: **Topic F: Agent Wallet (Autonomous On-Chain Wallet)**  
-> **Target Network**: Base Sepolia (EVM Chain ID: `84532`)  
+> **2026 Shenzhen International FinTech Competition (FinTechathon) — International Track**
+> **Host**: Tsinghua PBC School of Finance with WeBank
+> **Theme**: *"AI as a Financial Participant"*
+> **Topic**: **Topic F: Agent Wallet (Autonomous On-Chain Wallet)**
+> **Target Network**: Base Sepolia (EVM Chain ID: `84532`)
 > **Test Suite**: 90/90 Automated Tests Passing (100% Invariant & Revert Coverage)
+
+> **Implementation boundary:** This repository provides a local simulation,
+> formal-verification environment, and dashboard. The EVM simulator and wallet
+> client model contract behavior for tests; the default Flask flows persist
+> local JSON state and do not broadcast real transactions. Treat the sample
+> Base Sepolia addresses as configuration references, not proof that the
+> current local run is connected to a live funded deployment.
 
 ---
 
@@ -16,7 +23,7 @@ Autonomous on-chain agent wallets face a fundamental security dilemma: Large Lan
 **WalletAgent resolves this dilemma through a tri-layer defense-in-depth architecture:**
 1. **The LLM is Never the Security Boundary**: The LLM functions exclusively as an *untrusted proposer*. It translates conversational intents into formal draft structures, but cannot authorize, execute, or loosen limits.
 2. **Dual-Reader Z3 SMT Formal Verification**: User instructions are parsed across two independent channels (a deterministic spaCy rule parser and a schema-constrained LLM synthesizer). Semantic equivalence is formally proved using the **Z3 SMT Solver** over physical domain bounds. Disagreements automatically generate concrete counterexamples fed into an automated feedback repair loop.
-3. **Deterministic Multi-Stage On-Chain Enforcement**: All proposed trades pass through deterministic local invariant gates, pre-execution EVM simulations (`eth_call`), and the [`PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol) smart contract on Base Sepolia. Even if all off-chain layers are compromised, the on-chain smart contract deterministically reverts any transaction violating balance floors, daily caps, or allowlists.
+3. **Deterministic Multi-Stage Enforcement**: All proposed trades pass through deterministic local invariant gates and EVM-style pre-execution simulation. The Solidity contract and wallet client define the intended Base Sepolia enforcement boundary; a production deployment must still configure a real RPC, signer, deployment address, monitoring, and transaction submission path.
 
 ---
 
@@ -36,7 +43,10 @@ WalletAgent is architected into modular, decoupled subsystems. Detailed technica
 
 ## FinTechathon 2026 Scorecard: Feature Coverage Matrix
 
-WalletAgent comprehensively fulfills all 9 core evaluated scorecard requirements for Topic F:
+WalletAgent implements the local verification and dashboard surfaces for all
+9 core evaluated scorecard requirements. Live on-chain execution remains an
+integration boundary and must be evidenced with independently verifiable
+Base Sepolia receipts after deployment.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -69,7 +79,7 @@ WalletAgent comprehensively fulfills all 9 core evaluated scorecard requirements
 │    │ Operator Key Revocation              │ contracts/PolicyWallet.sol         │ Access Control Drops │
 ├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
 │ 9  │ Adversarial Attack Testing Suite     │ contracts/attack_tester.py         │ 6/6 Exploits Blocked │
-│    │ (Smart Contract Rejection Evidence)  │ tests/test_scorecard_features.py   │ 100% On-Chain Reverts│
+│    │ (Smart Contract Rejection Evidence)  │ tests/test_scorecard_features.py   │ 100% Modeled Reverts│
 └────┴──────────────────────────────────────┴────────────────────────────────────┴──────────────────────┘
 ```
 
@@ -101,26 +111,26 @@ Rendered from [`visuals/reasoning.svg`](../visuals/reasoning.svg) and [`visuals/
 ## Detailed Technical Walkthrough of Core Features
 
 ### Feature 1: Natural-Language Instruction Parsing & Dual-Channel Synthesis
-- **Modules**: [`policy/readers/rule_reader.py`](file:///home/immo2n/Moon/WalletAgent/policy/readers/rule_reader.py), [`policy/readers/llm_reader.py`](file:///home/immo2n/Moon/WalletAgent/policy/readers/llm_reader.py), [`policy/ast.py`](file:///home/immo2n/Moon/WalletAgent/policy/ast.py)
-- **Mathematical Specification**: See [Policy Engine Specification: Dual-Reader Architecture](file:///home/immo2n/Moon/WalletAgent/docs/policy-engine.md#2-dual-reader-architecture).
+- **Modules**: [`policy/readers/rule_reader.py`](../policy/readers/rule_reader.py), [`policy/readers/llm_reader.py`](../policy/readers/llm_reader.py), [`policy/ast.py`](../policy/ast.py)
+- **Mathematical Specification**: See [Policy Engine Specification: Dual-Reader Architecture](./policy-engine.md#2-dual-reader-architecture).
 - **Core Functionality**:
   - **Deterministic Rule Reader**: Uses `spaCy` dependency tree grammars and explicit keyword registries to extract trigger predicates, action clauses, numeric thresholds, and asset symbols. Operates deterministically without network calls.
   - **Untrusted LLM Synthesizer**: Parses colloquial phrasings, synonyms, and conversational variations into a typed Draft-07 JSON Schema.
-  - **Dimensional Type Checking**: Enforces physical sorts (`Sort.USD`, `Sort.GWEI`, `Sort.PERCENT`, `Sort.TOKEN`). Rejects nonsensical mathematical comparisons (e.g. comparing Gwei to USD) at compile time via [`policy/typecheck.py`](file:///home/immo2n/Moon/WalletAgent/policy/typecheck.py).
+  - **Dimensional Type Checking**: Enforces physical sorts (`Sort.USD`, `Sort.GWEI`, `Sort.PERCENT`, `Sort.TOKEN`). Rejects nonsensical mathematical comparisons (e.g. comparing Gwei to USD) at compile time via [`policy/typecheck.py`](../policy/typecheck.py).
 
 ### Feature 2: Policy Review and Explicit User Approval Workflow
-- **Modules**: [`policy/workflow.py`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py), [`flask/server.py`](file:///home/immo2n/Moon/WalletAgent/flask/server.py)
-- **Detailed Specification**: See [User Approval Workflow Specification](file:///home/immo2n/Moon/WalletAgent/docs/user-and-audit.md#1-explicit-policy-review--approval-workflow).
+- **Modules**: [`policy/workflow.py`](../policy/workflow.py), [`flask/server.py`](../flask/server.py)
+- **Detailed Specification**: See [User Approval Workflow Specification](./user-and-audit.md#1-explicit-policy-review--approval-workflow).
 - **Lifecycle Pipeline**:
   $$\text{User Prompt} \xrightarrow{\text{Z3 SMT}} \text{DRAFT} \xrightarrow{\text{Review}} \text{REVIEWED} \xrightarrow{\text{Owner Sign}} \text{DEPLOYABLE} \xrightarrow{\text{Base Sepolia}} \text{ACTIVE}$$
 - **Key Guarantees**:
   - Autonomous agents cannot trade against a `DRAFT` or `REVIEWED` policy.
   - Explicit owner signature binds the canonical SHA-256 policy hash.
-  - On-chain deployment updates [`PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol) with immutable parameters.
+  - On-chain deployment updates [`PolicyWallet.sol`](../contracts/PolicyWallet.sol) with immutable parameters.
 
 ### Feature 3: On-Chain Rules: Allowlists, Caps, and Balance Invariants
-- **Modules**: [`contracts/PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol), [`policy/onchain.py`](file:///home/immo2n/Moon/WalletAgent/policy/onchain.py)
-- **Detailed Specification**: See [EVM Smart Contracts Specification](file:///home/immo2n/Moon/WalletAgent/docs/smart-contracts.md#2-on-chain-invariants--custom-errors).
+- **Modules**: [`contracts/PolicyWallet.sol`](../contracts/PolicyWallet.sol), [`policy/onchain.py`](../policy/onchain.py)
+- **Detailed Specification**: See [EVM Smart Contracts Specification](./smart-contracts.md#2-on-chain-invariants--custom-errors).
 - **Enforced Invariants**:
   1. **Token Allowlist**: Only whitelisted ERC-20 tokens (`ETH`, `WETH`, `USDC`) can be traded. All other tokens revert with `TokenNotAllowed(address)`.
   2. **Recipient Allowlist**: Outgoing transfers are restricted to approved counterparty addresses.
@@ -129,16 +139,16 @@ Rendered from [`visuals/reasoning.svg`](../visuals/reasoning.svg) and [`visuals/
   5. **Minimum Balance Reserve Floor**: Reverts with `BelowMinimumBalanceFloor` if projected post-execution balance drops below the verified floor (e.g., $500).
 
 ### Feature 4: Scheduled Transfers & Recurring DCA Task Queue
-- **Modules**: [`agent/task.py`](file:///home/immo2n/Moon/WalletAgent/agent/task.py), [`agent/runtime.py`](file:///home/immo2n/Moon/WalletAgent/agent/runtime.py)
-- **Detailed Specification**: See [Agent Runtime Specification: Scheduled DCA Queue](file:///home/immo2n/Moon/WalletAgent/docs/agent-runtime.md#3-scheduled-transfers--recurring-dca-task-queue).
+- **Modules**: [`agent/task.py`](../agent/task.py), [`agent/runtime.py`](../agent/runtime.py)
+- **Detailed Specification**: See [Agent Runtime Specification: Scheduled DCA Queue](./agent-runtime.md#3-scheduled-transfers--recurring-dca-task-queue).
 - **Core Functionality**:
   - Supports `IMMEDIATE`, `CONDITIONAL_TRIGGER`, and `RECURRING_INTERVAL` schedules.
   - Enables recurring Dollar-Cost Averaging (e.g., *Buy $100 USDC of ETH every 60 seconds / 24 hours while gas $\le$ 20 gwei*).
   - Background daemon checks the schedule queue at 1 Hz, automatically firing swaps as interval timestamps mature while strictly honoring all policy caps.
 
 ### Feature 5: Pre-Execution EVM Simulation & Gas Estimation
-- **Modules**: [`contracts/simulator.py`](file:///home/immo2n/Moon/WalletAgent/contracts/simulator.py), [`reasoning/dry_run.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/dry_run.py)
-- **Detailed Specification**: See [EVM Smart Contracts: Pre-Execution Simulation](file:///home/immo2n/Moon/WalletAgent/docs/smart-contracts.md#4-pre-execution-evm-simulation--gas-estimation).
+- **Modules**: [`contracts/simulator.py`](../contracts/simulator.py), [`reasoning/dry_run.py`](../reasoning/dry_run.py)
+- **Detailed Specification**: See [EVM Smart Contracts: Pre-Execution Simulation](./smart-contracts.md#4-pre-execution-evm-simulation--gas-estimation).
 - **Core Functionality**:
   - Evaluates contract state and guards locally via `eth_call`.
   - Catches policy breaches and decodes 4-byte custom error selectors prior to broadcast.
@@ -146,24 +156,24 @@ Rendered from [`visuals/reasoning.svg`](../visuals/reasoning.svg) and [`visuals/
   - Eliminates failed transactions and wasted gas fees on Base Sepolia.
 
 ### Feature 6: Smart Contract On-Chain Policy Enforcement
-- **Modules**: [`contracts/PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol), [`contracts/wallet_client.py`](file:///home/immo2n/Moon/WalletAgent/contracts/wallet_client.py)
-- **Detailed Specification**: See [EVM Smart Contracts Specification](file:///home/immo2n/Moon/WalletAgent/docs/smart-contracts.md#1-on-chain-smart-contract-architecture).
+- **Modules**: [`contracts/PolicyWallet.sol`](../contracts/PolicyWallet.sol), [`contracts/wallet_client.py`](../contracts/wallet_client.py)
+- **Detailed Specification**: See [EVM Smart Contracts Specification](./smart-contracts.md#1-on-chain-smart-contract-architecture).
 - **Core Functionality**:
   - Independent Solidity verification in `_verifyGuards()` modifier.
   - Reverts invalid state changes using typed Solidity custom errors (`error WalletPaused()`, `error BelowMinimumBalanceFloor()`, etc.).
   - Cryptographic policy hash matching guarantees that agent transactions conform exactly to the off-chain verified policy.
 
 ### Feature 7: Transaction History, Explanations & Immutable Audit Trail
-- **Modules**: [`user/db.py`](file:///home/immo2n/Moon/WalletAgent/user/db.py), [`reasoning/engine.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/engine.py)
-- **Detailed Specification**: See [User Workflow Specification: Audit Trail & Reasoning Introspection](file:///home/immo2n/Moon/WalletAgent/docs/user-and-audit.md#3-transaction-audit-trail--reasoning-introspection).
+- **Modules**: [`user/db.py`](../user/db.py), [`reasoning/engine.py`](../reasoning/engine.py)
+- **Detailed Specification**: See [User Workflow Specification: Audit Trail & Reasoning Introspection](./user-and-audit.md#3-transaction-audit-trail--reasoning-introspection).
 - **Core Functionality**:
   - Immutable JSON ledger stores execution hashes, timestamped actions, and dollar amounts.
   - Ingestion of full cognitive reasoning traces: matched historical market regime, RAG similarity score, win rate, risk score, dry-run balance delta, and Z3 SMT solver clearance.
   - Web dashboard provides an interactive **Reasoning Introspection Modal** allowing auditors to inspect the complete formal proof trace for every trade.
 
 ### Feature 8: Emergency Pause & Permission Revocation
-- **Modules**: [`contracts/PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol), [`contracts/wallet_client.py`](file:///home/immo2n/Moon/WalletAgent/contracts/wallet_client.py)
-- **Detailed Specification**: See [EVM Smart Contracts: Security Controls](file:///home/immo2n/Moon/WalletAgent/docs/smart-contracts.md#5-security-controls--emergency-response).
+- **Modules**: [`contracts/PolicyWallet.sol`](../contracts/PolicyWallet.sol), [`contracts/wallet_client.py`](../contracts/wallet_client.py)
+- **Detailed Specification**: See [EVM Smart Contracts: Security Controls](./smart-contracts.md#5-security-controls--emergency-response).
 - **Core Functionality**:
   1. `pause()` / `unpause()`: Master killswitch immediately locks all outgoing transactions.
   2. `revokeOperator(address)`: Drops the autonomous agent's authorization to execute on behalf of the wallet.
@@ -171,11 +181,12 @@ Rendered from [`visuals/reasoning.svg`](../visuals/reasoning.svg) and [`visuals/
   4. `invalidatePolicy()`: Zeros `activePolicyHash`, preventing any further autonomous trading.
 
 ### Feature 9: Adversarial Attack Testing Suite
-- **Modules**: [`contracts/attack_tester.py`](file:///home/immo2n/Moon/WalletAgent/contracts/attack_tester.py), [`tests/test_scorecard_features.py`](file:///home/immo2n/Moon/WalletAgent/tests/test_scorecard_features.py)
-- **Detailed Specification**: See [EVM Smart Contracts: Adversarial Attack Suite](file:///home/immo2n/Moon/WalletAgent/docs/smart-contracts.md#6-adversarial-attack-testing-suite).
+- **Modules**: [`contracts/attack_tester.py`](../contracts/attack_tester.py), [`tests/test_scorecard_features.py`](../tests/test_scorecard_features.py)
+- **Detailed Specification**: See [EVM Smart Contracts: Adversarial Attack Suite](./smart-contracts.md#6-adversarial-attack-testing-suite).
 - **Core Functionality**:
   - Evaluates 6 penetration vectors: unauthorized exfiltration, unwhitelisted token swap, reserve floor drain, daily limit bypass, emergency pause breach, and rogue operator hijack.
-  - Verified 100% on-chain revert rate with exact custom error signatures matching Solidity specifications.
+  - Verified 100% modeled revert rate with exact custom error names matching
+    Solidity specifications; live-chain receipts require a deployed contract.
 
 ---
 
@@ -204,7 +215,7 @@ The WalletAgent repository contains a comprehensive suite of 90 unit and integra
 
 ### Test Execution Command
 ```bash
-PYTHONPATH=. ./venv/bin/pytest tests/ -v
+PYTHONPATH=. .venv/bin/pytest tests/ -v
 ```
 
 ### Test Results Summary
@@ -262,10 +273,16 @@ WALLET_OWNER_ADDRESS=0x71C8366420A096207E90B01D252431792349039A
 
 ### 3. Launching the Server
 ```bash
-source venv/bin/activate
-python main.py
+source .venv/bin/activate
+PYTHONPATH=. python main.py --host 127.0.0.1 --port 5000
 ```
 Open your browser to `http://localhost:5000` to interact with the responsive dashboard, test natural language policies, simulate market spikes, and inspect the real-time reasoning and verification pipeline.
+
+The dashboard also includes a conversational assistant, Beijing timezone
+defaults, dark mode, responsive mobile bottom navigation, contract security
+controls, and the six-vector attack tester. See the root
+[README](../README.md) for the complete API table and current local-versus-live
+execution boundary.
 
 ---
 
@@ -273,12 +290,12 @@ Open your browser to `http://localhost:5000` to interact with the responsive das
 
 | Package / Directory | Purpose | Key Modules |
 | :--- | :--- | :--- |
-| [`policy/`](file:///home/immo2n/Moon/WalletAgent/policy/) | Natural language parsing, AST, dimensional sorts, Z3 SMT solver, workflow manager | [`ast.py`](file:///home/immo2n/Moon/WalletAgent/policy/ast.py), [`z3_compile.py`](file:///home/immo2n/Moon/WalletAgent/policy/z3_compile.py), [`compare.py`](file:///home/immo2n/Moon/WalletAgent/policy/compare.py), [`workflow.py`](file:///home/immo2n/Moon/WalletAgent/policy/workflow.py) |
-| [`agent/`](file:///home/immo2n/Moon/WalletAgent/agent/) | Autonomous daemon loop and DCA task scheduler | [`runtime.py`](file:///home/immo2n/Moon/WalletAgent/agent/runtime.py), [`task.py`](file:///home/immo2n/Moon/WalletAgent/agent/task.py) |
-| [`reasoning/`](file:///home/immo2n/Moon/WalletAgent/reasoning/) | Fragmented cognitive reasoning, historical market RAG, dry-run simulation | [`engine.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/engine.py), [`rag.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/rag.py), [`dry_run.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/dry_run.py) |
-| [`contracts/`](file:///home/immo2n/Moon/WalletAgent/contracts/) | PolicyWallet.sol smart contract, EVM preflight simulator, attack tester | [`PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol), [`simulator.py`](file:///home/immo2n/Moon/WalletAgent/contracts/simulator.py), [`attack_tester.py`](file:///home/immo2n/Moon/WalletAgent/contracts/attack_tester.py) |
-| [`exchange/`](file:///home/immo2n/Moon/WalletAgent/exchange/) | Market perception, Coinbase WebSocket, Base Sepolia gas oracle | [`service.py`](file:///home/immo2n/Moon/WalletAgent/exchange/service.py), [`client.py`](file:///home/immo2n/Moon/WalletAgent/exchange/client.py), [`gas_oracle.py`](file:///home/immo2n/Moon/WalletAgent/exchange/gas_oracle.py) |
-| [`user/`](file:///home/immo2n/Moon/WalletAgent/user/) | User balances and immutable transaction audit ledger | [`db.py`](file:///home/immo2n/Moon/WalletAgent/user/db.py), [`models.py`](file:///home/immo2n/Moon/WalletAgent/user/models.py) |
-| [`flask/`](file:///home/immo2n/Moon/WalletAgent/flask/) | Web API routes, SSE telemetry streams, responsive UI dashboard | [`server.py`](file:///home/immo2n/Moon/WalletAgent/flask/server.py), `templates/index.html` |
+| [`policy/`](../policy/) | Natural language parsing, AST, dimensional sorts, Z3 SMT solver, workflow manager | [`ast.py`](../policy/ast.py), [`z3_compile.py`](../policy/z3_compile.py), [`compare.py`](../policy/compare.py), [`workflow.py`](../policy/workflow.py) |
+| [`agent/`](../agent/) | Autonomous daemon loop and DCA task scheduler | [`runtime.py`](../agent/runtime.py), [`task.py`](../agent/task.py) |
+| [`reasoning/`](../reasoning/) | Fragmented cognitive reasoning, historical market RAG, dry-run simulation | [`engine.py`](../reasoning/engine.py), [`rag.py`](../reasoning/rag.py), [`dry_run.py`](../reasoning/dry_run.py) |
+| [`contracts/`](../contracts/) | PolicyWallet.sol smart contract, EVM preflight simulator, attack tester | [`PolicyWallet.sol`](../contracts/PolicyWallet.sol), [`simulator.py`](../contracts/simulator.py), [`attack_tester.py`](../contracts/attack_tester.py) |
+| [`exchange/`](../exchange/) | Market perception, Coinbase WebSocket, Base Sepolia gas oracle | [`service.py`](../exchange/service.py), [`client.py`](../exchange/client.py), [`gas_oracle.py`](../exchange/gas_oracle.py) |
+| [`user/`](../user/) | User balances and immutable transaction audit ledger | [`db.py`](../user/db.py), [`models.py`](../user/models.py) |
+| [`flask/`](../flask/) | Web API routes, SSE telemetry streams, responsive UI dashboard | [`server.py`](../flask/server.py), `templates/index.html` |
 | [`visuals/`](../visuals/) | Architecture diagrams (Graphviz `.dot` and rendered `.svg` files) | `policy.svg`, `agent.svg`, `reasoning.svg`, `exchange.svg`, `user.svg` |
-| [`docs/`](file:///home/immo2n/Moon/WalletAgent/docs/) | Comprehensive technical documentation and competition specification | [`technical-doc.md`](file:///home/immo2n/Moon/WalletAgent/docs/technical-doc.md), [`policy-engine.md`](file:///home/immo2n/Moon/WalletAgent/docs/policy-engine.md), [`agent-runtime.md`](file:///home/immo2n/Moon/WalletAgent/docs/agent-runtime.md), [`smart-contracts.md`](file:///home/immo2n/Moon/WalletAgent/docs/smart-contracts.md), [`user-and-audit.md`](file:///home/immo2n/Moon/WalletAgent/docs/user-and-audit.md) |
+| [`docs/`](./) | Comprehensive technical documentation and competition specification | [`technical-doc.md`](./technical-doc.md), [`policy-engine.md`](./policy-engine.md), [`agent-runtime.md`](./agent-runtime.md), [`smart-contracts.md`](./smart-contracts.md), [`user-and-audit.md`](./user-and-audit.md) |

@@ -1,7 +1,7 @@
 # Autonomous Agent Runtime & Reasoning Engine Specification
 
-> **Subsystem Specification**: Autonomous Daemon Runtime, Fragmented Cognitive Reasoning, Market Perception, and DCA Task Scheduler  
-> **Repository Modules**: [`agent/`](file:///home/immo2n/Moon/WalletAgent/agent/), [`reasoning/`](file:///home/immo2n/Moon/WalletAgent/reasoning/), [`exchange/`](file:///home/immo2n/Moon/WalletAgent/exchange/)  
+> **Subsystem Specification**: Autonomous Daemon Runtime, Fragmented Cognitive Reasoning, Market Perception, and DCA Task Scheduler
+> **Repository Modules**: [`agent/`](../agent/), [`reasoning/`](../reasoning/), [`exchange/`](../exchange/)
 > **Key Architectural Principle**: *Perception feeds are deterministic; reasoning proposes trades; deterministic safety gates independently enforce all policy limits.*
 
 ---
@@ -60,14 +60,14 @@ Below are the architectural diagrams rendered from the project visuals:
 
 ## 2. Autonomous Daemon Runtime Loop
 
-- **Module**: [`agent/runtime.py`](file:///home/immo2n/Moon/WalletAgent/agent/runtime.py)
-- **Class**: [`AutonomousAgent`](file:///home/immo2n/Moon/WalletAgent/agent/runtime.py#L25-L250)
+- **Module**: [`agent/runtime.py`](../agent/runtime.py)
+- **Class**: [`AutonomousAgent`](../agent/runtime.py#L25-L250)
 
 The runtime daemon executes on a high-frequency asynchronous loop (nominally 1-second ticks). At each tick, the daemon executes the following deterministic sequence:
 
-1. **Active Task Inspection**: Queries [`TaskManager`](file:///home/immo2n/Moon/WalletAgent/agent/task.py#L50-L160) for currently registered tasks.
+1. **Active Task Inspection**: Queries [`TaskManager`](../agent/task.py#L50-L160) for currently registered tasks.
 2. **Scheduled DCA Evaluation**: Checks the recurring scheduled queue to see if any cron-like interval or scheduled execution timestamp has matured.
-3. **Market Perception Ingestion**: Fetches the latest trusted price ($P_{\text{ETH}}$) and gas fee ($G_{\text{gwei}}$) from [`ExchangeService`](file:///home/immo2n/Moon/WalletAgent/exchange/service.py#L25-L150).
+3. **Market Perception Ingestion**: Fetches the latest trusted price ($P_{\text{ETH}}$) and gas fee ($G_{\text{gwei}}$) from [`ExchangeService`](../exchange/service.py#L25-L150).
 4. **Trigger Evaluation**: Tests the active task's trigger conditions (e.g., $G_{\text{current}} \le G_{\text{threshold}}$). If unsatisfied, the daemon sleeps until the next tick without consuming LLM inference.
 5. **Reasoning Pipeline Invocation**: Once triggers match, the daemon invokes the cognitive reasoning engine.
 6. **Execution & State Update**: If all safety gates pass, dispatches the transaction to the EVM client and updates the user database.
@@ -98,8 +98,8 @@ def _tick(self) -> None:
 
 ## 3. Scheduled Transfers & Recurring DCA Task Queue
 
-- **Module**: [`agent/task.py`](file:///home/immo2n/Moon/WalletAgent/agent/task.py)
-- **Classes**: [`AgentTask`](file:///home/immo2n/Moon/WalletAgent/agent/task.py#L18-L48), [`TaskManager`](file:///home/immo2n/Moon/WalletAgent/agent/task.py#L50-L160)
+- **Module**: [`agent/task.py`](../agent/task.py)
+- **Classes**: [`AgentTask`](../agent/task.py#L18-L48), [`TaskManager`](../agent/task.py#L50-L160)
 
 FinTechathon 2026 Feature 4 mandates robust support for scheduled asset transfers and recurring dollar-cost averaging (DCA).
 
@@ -124,7 +124,7 @@ stateDiagram-v2
 ```
 
 ### 3.2 Recurring Interval & DCA Mechanics
-The [`AgentTask`](file:///home/immo2n/Moon/WalletAgent/agent/task.py#L18-L48) schema supports granular scheduling parameters:
+The [`AgentTask`](../agent/task.py#L18-L48) schema supports granular scheduling parameters:
 - `schedule_type`: `"IMMEDIATE"`, `"CONDITIONAL_TRIGGER"`, or `"RECURRING_INTERVAL"`.
 - `interval_seconds`: Period between recurring executions (e.g., 60 seconds for demo DCA, 86,400 seconds for daily DCA).
 - `max_executions`: Maximum number of recurring swaps before automatic task completion.
@@ -135,8 +135,8 @@ The [`AgentTask`](file:///home/immo2n/Moon/WalletAgent/agent/task.py#L18-L48) sc
 
 ## 4. Market Perception Layer
 
-- **Modules**: [`exchange/client.py`](file:///home/immo2n/Moon/WalletAgent/exchange/client.py), [`exchange/gas_oracle.py`](file:///home/immo2n/Moon/WalletAgent/exchange/gas_oracle.py), [`exchange/emitter.py`](file:///home/immo2n/Moon/WalletAgent/exchange/emitter.py)
-- **Coordinator**: [`ExchangeService`](file:///home/immo2n/Moon/WalletAgent/exchange/service.py)
+- **Modules**: [`exchange/client.py`](../exchange/client.py), [`exchange/gas_oracle.py`](../exchange/gas_oracle.py), [`exchange/emitter.py`](../exchange/emitter.py)
+- **Coordinator**: [`ExchangeService`](../exchange/service.py)
 
 To prevent LLM hallucination of market variables, **all market data originates strictly from deterministic feeds**. The LLM never supplies prices, gas estimates, or account balances.
 
@@ -152,7 +152,7 @@ To prevent LLM hallucination of market variables, **all market data originates s
 - Maintains a 24-hour rolling average ($\bar{G}_{24h}$) and percentile distribution ($P_{90}, P_{50}, P_{10}$) to evaluate relative percentage triggers like *"buy when gas is in the lowest 10th percentile"*.
 
 ### 4.3 Deterministic Scenario Emitter
-- **Module**: [`exchange/emitter.py`](file:///home/immo2n/Moon/WalletAgent/exchange/emitter.py)
+- **Module**: [`exchange/emitter.py`](../exchange/emitter.py)
 - Enables zero-latency local testing and reproducible stress scenarios:
   - *Gas Spike Congestion*: Gas surges to 120 Gwei.
   - *Flash Dip*: ETH drops 8% in 3 minutes.
@@ -162,13 +162,13 @@ To prevent LLM hallucination of market variables, **all market data originates s
 
 ## 5. Fragmented Cognitive Reasoning Engine
 
-- **Modules**: [`reasoning/engine.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/engine.py), [`reasoning/rag.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/rag.py), [`reasoning/dry_run.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/dry_run.py)
-- **Coordinator**: [`ReasoningEngine`](file:///home/immo2n/Moon/WalletAgent/reasoning/engine.py#L20-L130)
+- **Modules**: [`reasoning/engine.py`](../reasoning/engine.py), [`reasoning/rag.py`](../reasoning/rag.py), [`reasoning/dry_run.py`](../reasoning/dry_run.py)
+- **Coordinator**: [`ReasoningEngine`](../reasoning/engine.py#L20-L130)
 
 Traditional agents use monolithic prompts that combine analysis, safety, and trade execution into a single probabilistic completion. WalletAgent decouples this into **three isolated reasoning fragments**:
 
 ### 5.1 Fragment 1: Market Regime RAG Retrieval
-- **Module**: [`reasoning/rag.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/rag.py)
+- **Module**: [`reasoning/rag.py`](../reasoning/rag.py)
 - **Knowledge Store**: `reasoning/data/market_history.json`
 - Stores indexed historical market regimes characterized by feature vectors:
   $$\vec{v} = \langle \text{gas price}, \text{price change}, \text{volatility} \rangle$$
@@ -188,8 +188,8 @@ Traditional agents use monolithic prompts that combine analysis, safety, and tra
   - Qualitative investment thesis and confidence score ($0\% - 100\%$).
 
 ### 5.3 Fragment 3: Dry-Run Risk Simulation & Preflight
-- **Module**: [`reasoning/dry_run.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/dry_run.py)
-- Prior to presenting an action to the safety gates, [`RiskSimulator`](file:///home/immo2n/Moon/WalletAgent/reasoning/dry_run.py#L15-L110) simulates:
+- **Module**: [`reasoning/dry_run.py`](../reasoning/dry_run.py)
+- Prior to presenting an action to the safety gates, [`RiskSimulator`](../reasoning/dry_run.py#L15-L110) simulates:
   1. **Slippage Impact**: Calculates post-swap asset balances accounting for Uniswap-style constant product pool depth ($x \cdot y = k$).
   2. **Projected Balance Delta**:
      $$\text{BalanceAfter} = \text{BalanceBefore} - A_{\text{USD}}$$
@@ -219,12 +219,12 @@ If any gate fails, the trade is rejected, and the failure reason (e.g. `BelowMin
 
 | Component | File Path | Key Functions / Classes |
 | :--- | :--- | :--- |
-| **Agent Runtime Daemon** | [`agent/runtime.py`](file:///home/immo2n/Moon/WalletAgent/agent/runtime.py) | `AutonomousAgent`, `_tick()`, `_dispatch_transaction()` |
-| **Task & Schedule Manager** | [`agent/task.py`](file:///home/immo2n/Moon/WalletAgent/agent/task.py) | `AgentTask`, `TaskManager`, `schedule_transfer_task()` |
-| **Exchange Service** | [`exchange/service.py`](file:///home/immo2n/Moon/WalletAgent/exchange/service.py) | `ExchangeService`, `get_state()`, `get_price()` |
-| **Coinbase WebSocket** | [`exchange/client.py`](file:///home/immo2n/Moon/WalletAgent/exchange/client.py) | `CoinbaseWebSocketClient`, `on_message()` |
-| **Gas Oracle** | [`exchange/gas_oracle.py`](file:///home/immo2n/Moon/WalletAgent/exchange/gas_oracle.py) | `EthereumL1GasOracle`, `get_gas_metrics()` |
-| **Scenario Emitter** | [`exchange/emitter.py`](file:///home/immo2n/Moon/WalletAgent/exchange/emitter.py) | `MarketScenarioEmitter`, `emit_scenario()` |
-| **Reasoning Engine** | [`reasoning/engine.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/engine.py) | `ReasoningEngine`, `evaluate()` |
-| **RAG Historical Retriever**| [`reasoning/rag.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/rag.py) | `RAGRetriever`, `find_matching_regime()` |
-| **Dry-Run Risk Simulator** | [`reasoning/dry_run.py`](file:///home/immo2n/Moon/WalletAgent/reasoning/dry_run.py) | `RiskSimulator`, `simulate_swap()` |
+| **Agent Runtime Daemon** | [`agent/runtime.py`](../agent/runtime.py) | `AutonomousAgent`, `_tick()`, `_dispatch_transaction()` |
+| **Task & Schedule Manager** | [`agent/task.py`](../agent/task.py) | `AgentTask`, `TaskManager`, `schedule_transfer_task()` |
+| **Exchange Service** | [`exchange/service.py`](../exchange/service.py) | `ExchangeService`, `get_state()`, `get_price()` |
+| **Coinbase WebSocket** | [`exchange/client.py`](../exchange/client.py) | `CoinbaseWebSocketClient`, `on_message()` |
+| **Gas Oracle** | [`exchange/gas_oracle.py`](../exchange/gas_oracle.py) | `EthereumL1GasOracle`, `get_gas_metrics()` |
+| **Scenario Emitter** | [`exchange/emitter.py`](../exchange/emitter.py) | `MarketScenarioEmitter`, `emit_scenario()` |
+| **Reasoning Engine** | [`reasoning/engine.py`](../reasoning/engine.py) | `ReasoningEngine`, `evaluate()` |
+| **RAG Historical Retriever**| [`reasoning/rag.py`](../reasoning/rag.py) | `RAGRetriever`, `find_matching_regime()` |
+| **Dry-Run Risk Simulator** | [`reasoning/dry_run.py`](../reasoning/dry_run.py) | `RiskSimulator`, `simulate_swap()` |
