@@ -2790,90 +2790,163 @@
       border-color: #526582;
     }
 
-    @media (max-width: 576px) {
-      .assistant-launcher {
-        right: 14px;
-        bottom: 98px;
-      }
-
-      .assistant-panel {
-        right: 10px;
-        bottom: 165px;
-        width: calc(100vw - 20px);
-        height: min(560px, calc(100vh - 180px));
-      }
-    }
-
     @media (max-width: 768px) {
+      body {
+        padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+      }
+
       .assistant-launcher {
-        bottom: 96px !important;
+        width: 44px !important;
+        height: 44px !important;
+        bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+        right: 12px !important;
+        font-size: 1.05rem !important;
+        box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35) !important;
+        z-index: 1050 !important;
       }
 
       .assistant-panel {
-        bottom: 162px !important;
+        bottom: calc(120px + env(safe-area-inset-bottom, 0px)) !important;
+        right: 10px !important;
+        width: calc(100vw - 20px) !important;
+        height: min(540px, calc(100vh - 150px)) !important;
+        z-index: 1055 !important;
       }
 
-      body {
-        padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
-      }
-
+      /* Native-feel Trust Wallet Mobile Bottom Bar */
       .tw-mobile-bottom-bar {
-        height: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
-        align-items: stretch;
-        justify-content: space-around;
-        gap: 0;
-        padding: 5px 6px env(safe-area-inset-bottom, 0px) !important;
-        border-top: 1px solid rgba(148, 163, 184, 0.28);
-        box-shadow: 0 -12px 28px rgba(2, 8, 23, 0.18);
-        overflow: hidden;
+        height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-around !important;
+        gap: 0 !important;
+        padding: 4px 2px env(safe-area-inset-bottom, 0px) !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(226, 232, 240, 0.85) !important;
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06) !important;
+        overflow: hidden !important;
+        z-index: 1040 !important;
+      }
+
+      html.dark-mode .tw-mobile-bottom-bar {
+        background: rgba(15, 23, 42, 0.96) !important;
+        border-top: 1px solid rgba(51, 65, 85, 0.65) !important;
+        box-shadow: 0 -4px 28px rgba(0, 0, 0, 0.45) !important;
       }
 
       .tw-bottom-nav-btn {
-        flex: 1 1 0;
-        min-width: 0;
-        height: 64px;
-        gap: 3px;
-        padding: 6px 2px;
-        border-radius: 12px;
-        color: #94a3b8;
-        font-size: 0.62rem;
-        font-weight: 700;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 2px !important;
+        padding: 4px 1px !important;
+        border-radius: 8px !important;
+        color: #64748b !important;
+        font-size: 0.58rem !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.2px;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        transition: transform 0.12s ease, color 0.12s ease !important;
+      }
+
+      html.dark-mode .tw-bottom-nav-btn {
+        color: #94a3b8 !important;
       }
 
       .tw-bottom-nav-btn i {
-        font-size: 1.08rem;
+        font-size: 1.05rem !important;
+        transition: transform 0.15s ease, color 0.15s ease !important;
+      }
+
+      .tw-bottom-nav-btn span:not(.tw-nav-badge) {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        line-height: 1;
+        display: block;
       }
 
       .tw-bottom-nav-btn > .position-relative {
         line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
 
+      /* Clean active state: Trust Blue in light mode, Sky Blue in dark mode */
       .tw-bottom-nav-btn.active {
-        color: #c7d2fe;
-        background: rgba(99, 102, 241, 0.18);
-        box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.3);
+        color: var(--tw-blue, #0052FE) !important;
+        font-weight: 700 !important;
+        background: transparent !important;
+        box-shadow: none !important;
       }
 
-      .tw-bottom-nav-btn.active i,
-      .tw-bottom-nav-btn.active .text-danger,
+      .tw-bottom-nav-btn.active i {
+        color: var(--tw-blue, #0052FE) !important;
+        transform: translateY(-1px) scale(1.08) !important;
+      }
+
+      html.dark-mode .tw-bottom-nav-btn.active,
+      html.dark-mode .tw-bottom-nav-btn.active i {
+        color: #38bdf8 !important;
+      }
+
+      .tw-bottom-nav-btn.active .text-danger {
+        color: #ef4444 !important;
+      }
+
       .tw-bottom-nav-btn.active .text-warning {
-        color: #a5b4fc !important;
-        transform: none;
+        color: #f59e0b !important;
       }
 
       .tw-bottom-nav-btn:active {
-        transform: scale(0.96);
+        transform: scale(0.92) !important;
       }
 
       .tw-nav-badge {
-        top: -8px;
-        right: -10px;
-        min-width: 18px;
-        height: 18px;
-        padding: 0 4px;
-        font-size: 0.62rem;
-        line-height: 18px;
-        border: 2px solid var(--tw-bg);
+        position: absolute !important;
+        top: -4px !important;
+        right: -7px !important;
+        min-width: 14px !important;
+        height: 14px !important;
+        padding: 0 3px !important;
+        font-size: 0.54rem !important;
+        line-height: 12px !important;
+        border-radius: 9999px !important;
+        border: 1.5px solid #ffffff !important;
+        background: #ef4444 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+
+      html.dark-mode .tw-nav-badge {
+        border-color: #0f172a !important;
+      }
+
+      /* Refined Mobile Hero Card & Chart */
+      .tw-hero-card {
+        padding: 16px 14px !important;
+        border-radius: 18px !important;
+      }
+
+      #netWorthDisplay {
+        font-size: 1.85rem !important;
+      }
+
+      .chart-canvas-container {
+        height: 230px !important;
       }
     }
 
@@ -2897,7 +2970,7 @@
     <div class="container-fluid px-2 px-md-3 flex-nowrap justify-content-between">
       <a class="navbar-brand m-0 d-flex align-items-center flex-shrink-0" href="#">
         <!-- Trust Wallet Beveled Shield SVG -->
-        <svg width="22" height="26" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="tw-shield-icon me-1">
+        <svg width="24" height="28" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="tw-shield-icon me-1">
           <defs>
             <linearGradient id="twGrad" x1="0" y1="0" x2="32" y2="36" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stop-color="#0500FF"/>
@@ -2908,7 +2981,7 @@
           <path d="M16 4.2L28 8.4V16.8C28 24.5 22.8 30.6 16 32.8C9.2 30.6 4 24.5 4 16.8V8.4L16 4.2Z" fill="#ffffff"/>
           <path d="M16 7L24.5 10V16.8C24.5 22.8 20.8 27.6 16 29.5C11.2 27.6 7.5 22.8 7.5 16.8V10L16 7Z" fill="url(#twGrad)"/>
         </svg>
-        <span class="fw-bold tracking-tight" style="font-size: 0.9rem;">WALLET AGENT</span>
+        <span class="fw-bold tracking-tight d-none d-sm-inline ms-1" style="font-size: 0.92rem; letter-spacing: -0.2px;">WalletAgent</span>
         <span class="badge badge-soft-blue ms-1 d-none d-lg-inline" style="font-size: 0.65rem; letter-spacing: 0.4px;">Z3 VERIFIED</span>
       </a>
 
@@ -4099,7 +4172,7 @@
     </button>
     <button type="button" class="tw-bottom-nav-btn" data-tab="tab-policy-btn" onclick="openTabPane('pane-policy', 'tab-policy-btn');">
       <i class="fa-solid fa-shield-halved"></i>
-      <span>Policies</span>
+      <span>Policy</span>
     </button>
     <button type="button" class="tw-bottom-nav-btn" data-tab="tab-agent-btn" onclick="openTabPane('pane-agent', 'tab-agent-btn');">
       <div class="position-relative">
@@ -4117,7 +4190,7 @@
         <i class="fa-solid fa-clock-rotate-left"></i>
         <span class="tw-nav-badge" id="mobileTxBadge">{{ user.transactions|length }}</span>
       </div>
-      <span>Activity</span>
+      <span>History</span>
     </button>
     <button type="button" class="tw-bottom-nav-btn" data-tab="tab-security-btn" onclick="openTabPane('pane-security', 'tab-security-btn');">
       <i class="fa-solid fa-lock text-danger"></i>
