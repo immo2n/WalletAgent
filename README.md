@@ -2,6 +2,23 @@
 
 > **Autonomous Web3 Wallet Agent with Z3 Formal Policy Verification & RAG Cognitive Reasoning**
 
+<p align="left">
+  <a href="docs/technical-doc.md">
+    <img src="https://img.shields.io/badge/📖_Read_Full_Documentation-docs%2Ftechnical--doc.md-0969da?style=for-the-badge&logo=gitbook&logoColor=white" alt="Technical Documentation" />
+  </a>
+  <a href="docs/technical-doc.md#fintechathon-2026-scorecard-feature-coverage-matrix">
+    <img src="https://img.shields.io/badge/FinTechathon_2026-Topic_F_Scorecard-7928ca?style=for-the-badge" alt="FinTechathon 2026" />
+  </a>
+  <a href="docs/technical-doc.md#empirical-test-verification--test-execution">
+    <img src="https://img.shields.io/badge/Tests-90%2F90_Passing-2ea043?style=for-the-badge&logo=pytest&logoColor=white" alt="Tests" />
+  </a>
+  <a href="docs/smart-contracts.md#7-base-sepolia-deployment-configuration">
+    <img src="https://img.shields.io/badge/Network-Base_Sepolia_84532-0052ff?style=for-the-badge&logo=ethereum&logoColor=white" alt="Base Sepolia" />
+  </a>
+</p>
+
+> 📚 **Documentation Hub**: [**Technical Architecture & Competition Specification**](docs/technical-doc.md) • [**Pitch Deck Blueprint**](docs/pitch-deck-info.md) • [**Policy Engine & Z3 SMT**](docs/policy-engine.md) • [**Agent Runtime & RAG**](docs/agent-runtime.md) • [**Smart Contracts & Security**](docs/smart-contracts.md) • [**User Approval & Audit**](docs/user-and-audit.md)
+
 WalletAgent is a mathematically verified autonomous trading agent and wallet policy engine designed for EVM networks (Base Sepolia / Ethereum). It bridges the gap between natural language user intent and provably secure on-chain execution by pairing LLM semantic synthesis with deterministic Z3 SMT solver verification, historical market RAG retrieval, and strict invariant policy guards.
 
 ---
