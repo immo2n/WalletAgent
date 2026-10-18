@@ -1,0 +1,11 @@
+services:
+  orvilo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: orvilo:local
+    environment:
+      LLM_PROVIDER: mock
+    ports:
+      - "5000:5000"
+    restart: unless-stopped

@@ -310,6 +310,30 @@ PYTHONPATH=. python main.py --prompt "Buy ETH when gas is under 20 gwei and keep
 
 Stop the local server with `Ctrl+C`.
 
+### 5. Run with Docker
+
+Build and start the complete local simulation in a container:
+
+```bash
+docker build --tag orvilo:local .
+docker run --rm --publish 5000:5000 --name orvilo orvilo:local
+```
+
+Open `http://127.0.0.1:5000`. The image starts with `LLM_PROVIDER=mock`,
+binds Flask to `0.0.0.0`, and includes a health check at
+`/api/market/live`. The default container uses ephemeral JSON state; stop and
+restart it to start with the repository seed state.
+
+Docker Compose is also supported:
+
+```bash
+docker compose up --build
+docker compose down
+```
+
+The CI workflow runs the Python suite, builds the image, starts a temporary
+container, and verifies both the market API and dashboard route.
+
 ## 🔌 Dashboard API Reference
 
 The Flask dashboard exposes the following local simulation endpoints. All mutating
