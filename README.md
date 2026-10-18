@@ -335,7 +335,10 @@ docker compose down
 ```
 
 The CI workflow runs the Python suite, builds the image, starts a temporary
-container, and verifies both the market API and dashboard route.
+container, waits for its Docker health check, and exercises the complete API
+smoke test in [scripts/docker_smoke.py](scripts/docker_smoke.py), including
+market, wallet, policy, agent, simulation, contract, attack-test, reasoning,
+and assistant functionality.
 
 ## 🔌 Dashboard API Reference
 
