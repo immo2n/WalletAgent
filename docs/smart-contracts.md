@@ -1,15 +1,25 @@
 # EVM Smart Contract & Security Controls Specification
 
-> **Subsystem Specification**: PolicyWallet Smart Contract, Pre-Execution EVM Simulation, Security Controls, and Adversarial Attack Testing  
-> **Repository Modules**: [`contracts/`](file:///home/immo2n/Moon/WalletAgent/contracts/)  
-> **Target Network**: Base Sepolia (EVM Chain ID: `84532`)  
+> **Subsystem Specification**: PolicyWallet Smart Contract, Pre-Execution EVM Simulation, Security Controls, and Adversarial Attack Testing
+> **Repository Modules**: [`contracts/`](../contracts/)
+> **Target Network**: Base Sepolia (EVM Chain ID: `84532`)
 > **Key Architectural Principle**: *Even if all off-chain layers are completely compromised, the on-chain smart contract deterministically reverts any unauthorized or policy-violating transaction.*
+
+> **Local verification boundary:** `PolicyWallet.sol`, `EVMSimulator`, and
+> `AttackSimulator` are included for contract modeling and repeatable tests.
+> The default dashboard uses the simulator and local JSON state; it does not
+> sign or broadcast a live transaction. A real deployment requires a deployed
+> contract, funded signer, RPC configuration, transaction submission, and
+> independent monitoring.
 
 ---
 
 ## 1. On-Chain Smart Contract Architecture
 
-The core on-chain enforcement mechanism is implemented in [`contracts/PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol). It is a production-grade verified-policy smart contract that independently evaluates policy invariants on-chain, regardless of what the off-chain agent proposes.
+The intended on-chain enforcement mechanism is implemented in
+[`contracts/PolicyWallet.sol`](../contracts/PolicyWallet.sol). The Solidity
+contract independently evaluates policy invariants when deployed; the local
+dashboard exercises the same guard model through the simulator.
 
 ```
                     ┌────────────────────────────────────────┐
@@ -42,7 +52,7 @@ The core on-chain enforcement mechanism is implemented in [`contracts/PolicyWall
 
 ## 2. On-Chain Invariants & Custom Errors
 
-To maximize gas efficiency and provide unambiguous debugging metadata to client applications, [`PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol#L28-L41) defines typed custom Solidity errors instead of generic revert strings.
+To maximize gas efficiency and provide unambiguous debugging metadata to client applications, [`PolicyWallet.sol`](../contracts/PolicyWallet.sol#L28-L41) defines typed custom Solidity errors instead of generic revert strings.
 
 ### 2.1 Formal Error Specifications
 
@@ -63,8 +73,8 @@ To maximize gas efficiency and provide unambiguous debugging metadata to client 
 
 ## 3. Policy Binding & Parameter Synchronization
 
-- **Method**: [`setPolicy(...)`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol#L108-L143)
-- **Export Utility**: [`policy/onchain.py`](file:///home/immo2n/Moon/WalletAgent/policy/onchain.py)
+- **Method**: [`setPolicy(...)`](../contracts/PolicyWallet.sol#L108-L143)
+- **Export Utility**: [`policy/onchain.py`](../policy/onchain.py)
 
 When a policy is compiled and approved off-chain, its mathematical constraints are translated into on-chain parameters and cryptographically sealed via its SHA-256 hash:
 
@@ -80,17 +90,17 @@ function setPolicy(
 ```
 
 ### Invalidation Killswitch
-- **Method**: [`invalidatePolicy()`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol#L148-L152)
+- **Method**: [`invalidatePolicy()`](../contracts/PolicyWallet.sol#L148-L152)
 - Calling `invalidatePolicy()` resets `activePolicyHash = bytes32(0)` instantly. This prevents the autonomous agent from broadcasting any subsequent transactions until a new policy is formally verified and signed by the owner.
 
 ---
 
 ## 4. Pre-Execution EVM Simulation & Gas Estimation
 
-- **Module**: [`contracts/simulator.py`](file:///home/immo2n/Moon/WalletAgent/contracts/simulator.py)
-- **Class**: [`EVMSimulator`](file:///home/immo2n/Moon/WalletAgent/contracts/simulator.py#L15-L120)
+- **Module**: [`contracts/simulator.py`](../contracts/simulator.py)
+- **Class**: [`EVMSimulator`](../contracts/simulator.py#L15-L120)
 
-Before any transaction is signed or broadcast to the mempool, [`EVMSimulator`](file:///home/immo2n/Moon/WalletAgent/contracts/simulator.py#L15-L120) executes a preflight simulation via `eth_call` against the RPC node:
+Before any transaction is signed or broadcast to the mempool, [`EVMSimulator`](../contracts/simulator.py#L15-L120) executes a preflight simulation via `eth_call` against the RPC node:
 
 ```
 [ Proposed Action ]
@@ -105,7 +115,7 @@ Before any transaction is signed or broadcast to the mempool, [`EVMSimulator`](f
 ```
 
 ### Revert Decoding Logic
-If `eth_call` fails, [`EVMSimulator`](file:///home/immo2n/Moon/WalletAgent/contracts/simulator.py#L15-L120) inspects the return payload:
+If `eth_call` fails, [`EVMSimulator`](../contracts/simulator.py#L15-L120) inspects the return payload:
 ```python
 def decode_revert_reason(self, returndata: str) -> Dict[str, Any]:
     if returndata.startswith("0x3f5b821a"):
@@ -122,20 +132,20 @@ This guarantees that failing transactions are caught off-chain with zero gas bur
 
 ## 5. Security Controls & Emergency Response
 
-- **Module**: [`contracts/wallet_client.py`](file:///home/immo2n/Moon/WalletAgent/contracts/wallet_client.py)
-- **Class**: [`PolicyWalletClient`](file:///home/immo2n/Moon/WalletAgent/contracts/wallet_client.py#L22-L170)
+- **Module**: [`contracts/wallet_client.py`](../contracts/wallet_client.py)
+- **Class**: [`PolicyWalletClient`](../contracts/wallet_client.py#L22-L170)
 
 The wallet provides four independent emergency defense primitives accessible via the API and UI:
 
 ```mermaid
 graph TD
     Owner[Owner / Admin Key]
-    
+
     Owner -->|1. Emergency Killswitch| Pause[pause / unpause]
     Owner -->|2. Operator Revocation| RevokeOp[revokeOperator]
     Owner -->|3. Allowance Revocation| RevokeApp[revokeAllowance]
     Owner -->|4. Policy Invalidation| Invalidate[invalidatePolicy]
-    
+
     Pause -->|Blocks| AgentExecution[Agent Autonomous Execution]
     RevokeOp -->|Revokes Key| AgentExecution
     RevokeApp -->|Sets Allowance to 0| DEXRouter[Uniswap / External Router]
@@ -155,8 +165,8 @@ graph TD
 
 ## 6. Adversarial Attack Testing Suite
 
-- **Module**: [`contracts/attack_tester.py`](file:///home/immo2n/Moon/WalletAgent/contracts/attack_tester.py)
-- **Class**: [`AttackSimulator`](file:///home/immo2n/Moon/WalletAgent/contracts/attack_tester.py#L100-L200)
+- **Module**: [`contracts/attack_tester.py`](../contracts/attack_tester.py)
+- **Class**: [`AttackSimulator`](../contracts/attack_tester.py#L100-L200)
 
 FinTechathon 2026 Feature 9 requires concrete empirical evidence of smart contract defense against adversarial exploits. The test suite includes 6 penetration attack vectors:
 
@@ -202,7 +212,7 @@ FINTECHATHON 2026 : ADVERSARIAL PENETRATION SUITE RESULTS
   - Custom Error: UnauthorizedOperator(0xAttackerPrivateKey...)
   - Selector: 0x82b42900
 ================================================================================
-SUMMARY: 6/6 ATTACKS BLOCKED ON-CHAIN (100% REVERT RATE)
+SUMMARY: 6/6 ATTACKS BLOCKED BY THE LOCAL CONTRACT MODEL (100% MODELED REVERT RATE)
 ================================================================================
 ```
 
@@ -225,8 +235,8 @@ SUMMARY: 6/6 ATTACKS BLOCKED ON-CHAIN (100% REVERT RATE)
 
 | Component | File Path | Key Functions / Classes |
 | :--- | :--- | :--- |
-| **Smart Contract** | [`contracts/PolicyWallet.sol`](file:///home/immo2n/Moon/WalletAgent/contracts/PolicyWallet.sol) | `PolicyWallet`, `executeSwap()`, `executeTransfer()`, `setPolicy()` |
-| **Contract ABI** | [`contracts/abi.py`](file:///home/immo2n/Moon/WalletAgent/contracts/abi.py) | `POLICY_WALLET_ABI`, `ERC20_ABI` |
-| **Web3 Wallet Client** | [`contracts/wallet_client.py`](file:///home/immo2n/Moon/WalletAgent/contracts/wallet_client.py) | `PolicyWalletClient`, `emergency_pause()`, `revoke_operator()` |
-| **EVM Simulator** | [`contracts/simulator.py`](file:///home/immo2n/Moon/WalletAgent/contracts/simulator.py) | `EVMSimulator`, `simulate_transaction()`, `decode_revert_reason()` |
-| **Attack Tester** | [`contracts/attack_tester.py`](file:///home/immo2n/Moon/WalletAgent/contracts/attack_tester.py) | `AttackSimulator`, `run_all_attacks()`, `run_attack()` |
+| **Smart Contract** | [`contracts/PolicyWallet.sol`](../contracts/PolicyWallet.sol) | `PolicyWallet`, `executeSwap()`, `executeTransfer()`, `setPolicy()` |
+| **Contract ABI** | [`contracts/abi.py`](../contracts/abi.py) | `POLICY_WALLET_ABI`, `ERC20_ABI` |
+| **Web3 Wallet Client** | [`contracts/wallet_client.py`](../contracts/wallet_client.py) | `PolicyWalletClient`, `emergency_pause()`, `revoke_operator()` |
+| **EVM Simulator** | [`contracts/simulator.py`](../contracts/simulator.py) | `EVMSimulator`, `simulate_transaction()`, `decode_revert_reason()` |
+| **Attack Tester** | [`contracts/attack_tester.py`](../contracts/attack_tester.py) | `AttackSimulator`, `run_all_attacks()`, `run_attack()` |

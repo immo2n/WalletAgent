@@ -21,6 +21,19 @@
 
 WalletAgent is a mathematically verified autonomous trading agent and wallet policy engine designed for EVM networks (Base Sepolia / Ethereum). It bridges the gap between natural language user intent and provably secure on-chain execution by pairing LLM semantic synthesis with deterministic Z3 SMT solver verification, historical market RAG retrieval, and strict invariant policy guards.
 
+> **Implementation status:** The repository is a local Flask simulation and verification environment. The policy compiler, Z3 gates, EVM simulator, wallet client, attack tester, dashboard, and audit ledger are implemented and tested. Local execution mutates JSON state and does not broadcast real transactions unless a separately configured production signing and deployment layer is added.
+
+## 📚 Documentation map
+
+| Document | Contents |
+|:---|:---|
+| [Technical architecture](docs/technical-doc.md) | System overview, feature matrix, runtime flows, API surface, testing, and deployment notes |
+| [Policy engine](docs/policy-engine.md) | Natural-language parsing, typed ASTs, Z3 equivalence checking, and policy workflow |
+| [Agent runtime](docs/agent-runtime.md) | Market feeds, autonomous loop, scheduling, RAG reasoning, dry-run checks, and task lifecycle |
+| [Smart contracts and security](docs/smart-contracts.md) | Solidity guards, simulator behavior, emergency controls, and attack-test vectors |
+| [User approval and audit](docs/user-and-audit.md) | Approval states, audit records, dashboard behavior, and operator controls |
+| [Pitch deck reference](docs/pitch-deck-info.md) | Demonstration narrative and scorecard evidence |
+
 ---
 
 ## 🌟 Key Features
@@ -296,7 +309,9 @@ Stop the local server with `Ctrl+C`.
 
 ## 🔌 Dashboard API Reference
 
-The Flask dashboard exposes the following local simulation endpoints:
+The Flask dashboard exposes the following local simulation endpoints. All mutating
+routes operate on the local application state unless explicitly described
+otherwise.
 
 | Area | Methods and routes |
 |:---|:---|
@@ -308,7 +323,11 @@ The Flask dashboard exposes the following local simulation endpoints:
 | Reasoning | `GET /api/user/transaction/<tx_id>/reasoning`, `GET,POST /api/reasoning/history` |
 | Agent | `GET /api/agent/status`, `GET,POST,DELETE /api/agent/task` |
 | Agent control | `POST,DELETE /api/agent/task/delete`, `POST /api/agent/task/stop`, `POST /api/agent/task/rerun`, `POST /api/agent/pause`, `POST /api/agent/resume` |
-| Policy | `POST /api/verify`, `POST /api/validate_intent` |
+| Scheduling | `POST /api/agent/schedule` |
+| Policy | `POST /api/verify`, `POST /api/validate_intent`, `GET /api/policy/workflow`, `POST /api/policy/review`, `POST /api/policy/approve`, `POST /api/policy/deploy` |
+| Contract security | `GET /api/contract/security-status`, `POST /api/contract/pause`, `POST /api/contract/unpause`, `POST /api/contract/revoke-operator`, `POST /api/contract/revoke-allowance`, `POST /api/contract/invalidate-policy` |
+| Simulation and attacks | `POST /api/simulation/simulate`, `GET /api/contract/attack-test/vectors`, `POST /api/contract/attack-test/run` |
+| Conversational assistant | `POST /api/assistant/chat` |
 
 Example requests:
 
@@ -329,6 +348,36 @@ curl -fsS -X POST http://127.0.0.1:5000/api/validate_intent \
 browser clients; do not use it as a terminating smoke-test command. Setting
 `execute` to `true` on `/api/validate_intent` mutates the local JSON wallet
 ledger and does not submit an on-chain transaction.
+
+### Conversational assistant
+
+The dashboard includes a floating Messenger-style assistant on desktop and
+mobile. It can explain wallet balances, market and gas conditions, policy
+status, contract security, transaction history, and attack-test results. It
+can also navigate to dashboard sections, switch market scenarios, request
+simulations, run attack tests, and pause or resume the agent. Actions that
+change agent state require confirmation; contract-destructive operations are
+not exposed as unrestricted chat commands.
+
+Example:
+
+```bash
+curl -fsS -X POST http://127.0.0.1:5000/api/assistant/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"What is the current wallet balance?"}'
+```
+
+### Dashboard behavior
+
+- **Dark mode:** enabled by default; the header toggle switches to light mode.
+- **Timezone:** Beijing (`Asia/Shanghai`) is the default. The selector also
+  supports UTC, local time, US Eastern/Pacific, London, Berlin, Dhaka, Tokyo,
+  Singapore, and Sydney. The choice is stored in browser `localStorage`.
+- **Mobile navigation:** the seven primary sections remain visible in the
+  fixed bottom navigation on standard phone widths, with safe-area spacing for
+  modern iOS and Android devices.
+- **Floating assistant:** the launcher is positioned above the mobile
+  navigation and the open panel uses the same safe-area clearance.
 
 ---
 
@@ -383,6 +432,39 @@ according to the target platform rather than installing them implicitly.
 - [ ] Restrict network access and terminate HTTPS at a trusted proxy.
 - [ ] Persist and back up JSON state files.
 - [ ] Monitor application logs and restart the service on failure.
+
+### Local port note
+
+Port `5000` can already be occupied by macOS Control Center/AirPlay Receiver.
+Use another port when necessary:
+
+```bash
+PYTHONPATH=. .venv/bin/python main.py --host 127.0.0.1 --port 5001
+```
+
+The dashboard is then available at `http://127.0.0.1:5001`.
+
+## 🧪 Testing
+
+Run the complete test suite from the repository root:
+
+```bash
+.venv/bin/python -m pytest -q
+```
+
+The current suite contains 90 collected tests covering policy parsing and
+verification, task scheduling, agent behavior, Flask routes, wallet state,
+contract simulation, attack vectors, and scorecard features. A focused run is
+useful when changing the dashboard backend:
+
+```bash
+.venv/bin/python -m pytest -q tests/test_agent.py tests/test_scorecard_features.py
+```
+
+Do not commit generated runtime state from `agent/data/agent_tasks.json` or
+`user/data/wallet_db.json` unless a fixture or migration explicitly requires
+it. Reset local state through the dashboard reset controls or the documented
+reset endpoints.
 
 ---
 

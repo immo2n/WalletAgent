@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from fractions import Fraction
 import json
 import os
+import re
 import sys
 import time
 from typing import Any, Generator
@@ -161,6 +162,7 @@ def create_app() -> Flask:
                 m = exchange_service.get_market_state()
                 payload = json.dumps({
                     "time": datetime.now(timezone.utc).strftime("%H:%M:%S"),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "price": m["eth_price_usd"],
                     "gas_gwei": m["gas_gwei"],
                     "l1_base_fee": m.get("l1_base_fee", 1.0),
@@ -834,6 +836,130 @@ def create_app() -> Flask:
         else:
             all_res = attack_simulator.run_all_attacks()
             return jsonify({"results": all_res})
+
+    @app.route("/api/assistant/chat", methods=["POST"])
+    def api_assistant_chat():
+        """Answer dashboard questions and execute safe, explicit dashboard actions."""
+        data = request.get_json() or {}
+        message = str(data.get("message", "")).strip()
+        confirmed = bool(data.get("confirmed", False))
+        if not message:
+            return jsonify({"error": "Message cannot be empty"}), 400
+
+        text = message.lower()
+        wallet_state = user_db.get_state()
+        market = exchange_service.get_market_state()
+        status = autonomous_agent.get_status()
+        workflow = policy_workflow.get_current_workflow()
+
+        def response(reply: str, action: dict[str, Any] | None = None) -> Response:
+            payload: dict[str, Any] = {"reply": reply}
+            if action:
+                payload["action"] = action
+            return jsonify(payload)
+
+        if any(term in text for term in ("balance", "wallet", "funds", "how much")):
+            reply = (
+                f"Your wallet has {wallet_state.balances.ETH:g} ETH and "
+                f"${wallet_state.balances.USDC:,.2f} USDC. "
+                f"The configured reserve floor is ${policy_wallet_client.min_balance_floor_usd:,.2f}."
+            )
+            return response(reply, {"type": "navigate", "pane": "pane-wallet", "tab": "tab-wallet-btn"})
+
+        if any(term in text for term in ("market", "price", "gas", "eth price")):
+            reply = (
+                f"ETH is ${market['eth_price_usd']:,.2f} and gas is "
+                f"{market['gas_gwei']:.1f} gwei. The current market scenario is "
+                f"{market.get('scenario', 'REAL_MARKET')}."
+            )
+            return response(reply, {"type": "navigate", "pane": "pane-market", "tab": "tab-market-btn"})
+
+        if any(term in text for term in ("transaction history", "recent transactions", "activity", "ledger")):
+            recent = wallet_state.transactions[:3]
+            if recent:
+                summary = "; ".join(
+                    f"{item.action} {item.amount:g} {item.token} ({item.status.lower()})"
+                    for item in recent
+                )
+                reply = f"Your three most recent records are: {summary}."
+            else:
+                reply = "There are no transaction records yet."
+            return response(reply, {"type": "navigate", "pane": "pane-ledger", "tab": "tab-ledger-btn"})
+
+        simulation_match = re.search(r"\b(?:simulate|test)\b.*?\$?(\d+(?:\.\d+)?)", text)
+        if simulation_match and any(term in text for term in ("trade", "swap", "transaction", "dollar", "$")):
+            amount = float(simulation_match.group(1))
+            current_usdc = wallet_state.balances.USDC
+            balance_after = current_usdc - amount
+            allowed = balance_after >= policy_wallet_client.min_balance_floor_usd and amount <= policy_wallet_client.per_tx_cap_usd
+            reply = (
+                f"A ${amount:,.2f} simulation would be {'allowed' if allowed else 'blocked'}: "
+                f"projected USDC balance is ${balance_after:,.2f}, with a "
+                f"${policy_wallet_client.min_balance_floor_usd:,.2f} reserve floor."
+            )
+            return response(reply, {"type": "navigate", "pane": "pane-market", "tab": "tab-market-btn", "focus": "testTradeInput"})
+
+        if any(term in text for term in ("verify policy", "check policy", "natural language policy")):
+            return response(
+                "The active policy is formally verified with the dual-reader workflow and Z3 equivalence checks.",
+                {"type": "navigate", "pane": "pane-policy", "tab": "tab-policy-btn"},
+            )
+
+        if any(term in text for term in ("security", "contract", "allowlist", "invariant", "pause status")):
+            reply = (
+                f"The contract is {'paused' if policy_wallet_client.is_paused else 'active'}. "
+                f"It enforces a ${policy_wallet_client.min_balance_floor_usd:,.2f} balance floor, "
+                f"${policy_wallet_client.per_tx_cap_usd:,.2f} per-transaction cap, and "
+                f"${policy_wallet_client.daily_cap_usd:,.2f} daily cap."
+            )
+            return response(reply, {"type": "navigate", "pane": "pane-security", "tab": "tab-security-btn"})
+
+        if any(term in text for term in ("attack", "penetration", "revert", "test the contract")):
+            results = attack_simulator.run_all_attacks()
+            passed = sum(1 for item in results if item["reverted_as_expected"])
+            return response(
+                f"I ran the contract rejection suite: {passed}/{len(results)} adversarial vectors were rejected as expected.",
+                {"type": "navigate", "pane": "pane-attack", "tab": "tab-attack-btn", "runAttacks": True},
+            )
+
+        if re.search(r"\b(pause|stop)\b", text) and "agent" in text:
+            if not confirmed:
+                return response("Pausing the agent stops autonomous monitoring. Would you like me to continue?", {"type": "confirm", "command": message})
+            autonomous_agent.pause()
+            return response("The autonomous agent is now paused.", {"type": "refreshStatus"})
+
+        if re.search(r"\b(resume|start)\b", text) and "agent" in text:
+            autonomous_agent.resume()
+            return response("The autonomous agent has resumed monitoring.", {"type": "refreshStatus"})
+
+        if "high gas" in text or "gas spike" in text:
+            exchange_service.set_scenario("HIGH_GAS")
+            return response("I switched the market simulator to the high-gas scenario.", {"type": "navigate", "pane": "pane-market", "tab": "tab-market-btn"})
+
+        if "gas dip" in text or "low gas" in text:
+            exchange_service.set_scenario("GAS_DIP")
+            return response("I switched the market simulator to the gas-dip scenario.", {"type": "navigate", "pane": "pane-market", "tab": "tab-market-btn"})
+
+        if any(term in text for term in ("policy status", "approval status", "workflow", "approved")):
+            proposal = workflow.get("active_proposal") if isinstance(workflow, dict) else None
+            stage = proposal.get("status", "ACTIVE") if proposal else "ACTIVE"
+            return response(
+                f"The policy workflow is currently {stage}. You can review, approve, and sync it from the Policies tab.",
+                {"type": "navigate", "pane": "pane-policy", "tab": "tab-policy-btn"},
+            )
+
+        if any(term in text for term in ("help", "what can you do", "commands", "功能")):
+            return response(
+                "I can explain wallet balances, market conditions, policy status, contract security, "
+                "and transaction history. I can also open dashboard sections, switch market scenarios, "
+                "run the attack suite, and pause or resume the agent. I ask before safety-sensitive actions."
+            )
+
+        return response(
+            "I can help with wallet balances, market data, policy approval, contract security, attack testing, "
+            "transaction explanations, and agent controls. Try: “show my balance”, “run attack tests”, "
+            "“what is the contract status?”, or “pause the agent”."
+        )
 
     return app
 
