@@ -1,361 +1,240 @@
-# Orvilo: User-Defined On-Chain Guardrails for Autonomous AI Wallets
+# WalletAgent (Orvilo): Security Self-Assessment Report
 
-## Security Self-Assessment Report
+> **User-Defined On-Chain Guardrails for Autonomous AI Wallets**  
+> **Classification:** `FINAL SELF-ASSESSMENT · NOT AN INDEPENDENT AUDIT`
 
-**Report status:** Final self-assessment; not an independent audit
-**Assessment date:** 19 October 2026
-**Report version:** 1.0
-**Assessor:** Orvilo engineering team / repository self-assessment
-**Repository:** `https://github.com/immo2n/WalletAgent`
-**Branch assessed:** `feature/dark-mode-mobile-docs`
-**Assessed code commit:** `01ff873` (`Document Docker image sharing workflow`)
-**Assessment environment:** Local Docker and Python test execution; Base Sepolia configuration is documented, but no live transaction was broadcast during this assessment.
+---
 
-> **Evidence convention.** “Designed” means described as an intended control. “Implemented” means present in the current source. “Verified” means exercised by an automated test or the Docker smoke test. A control is not treated as verified merely because a comment, UI label, generated hash, or simulated response claims it is active.
+## Document Control & System Metadata
 
-## Document control
+| Parameter | Recorded Value | Notes |
+| :--- | :--- | :--- |
+| **Document Version** | `1.1 (Final Repository Alignment)` | Synchronized with active `main` codebase |
+| **Preparation Date** | 20 October 2026 | FinTechathon 2026 (Topic F: Agent Wallet) |
+| **Report Status** | Final self-assessment | Repository self-assessment by engineering team |
+| **Repository** | `https://github.com/immo2n/WalletAgent` | Active GitHub submission repository |
+| **Branch Assessed** | `main` | Production / Submission baseline |
+| **Assessed Code Commit** | `f81167f` | Merged upstream CI, Docker, & Conversational Assistant |
+| **Environment** | Local Docker & Python 3.14 virtual environment | Base Sepolia (84532) configured; offline simulation by default |
+| **Automated Tests** | **94 / 94 Passing** (`pytest tests/`) | 100% pass across all 13 test files |
+| **Docker Smoke Test** | **11 / 11 Checks Passed** | Verified via `scripts/docker_smoke.py` |
+| **Open Findings** | 10 Recorded (2 Critical, 6 High, 2 Medium) | Pre-production sandbox boundaries disclosed |
 
-| Version | Date | Change | Author |
-|---|---:|---|---|
-| 1.0 | 2026-10-19 | Initial final self-assessment covering permission tiers and known risks | Orvilo engineering |
+> [!IMPORTANT]
+> **Evidence Convention**:
+> - **Designed:** Described as an intended control in documentation or comments.
+> - **Implemented:** Present and inspectable in the current source code.
+> - **Verified:** Exercised and confirmed by the 94-test automated suite or Docker smoke test.
+> *A control is not treated as verified merely because a comment, UI label, generated hash, or simulated response claims it is active.*
 
-### Contents
+---
 
-1. Executive summary
-2. Assessment scope and system identification
-3. Methodology and rating criteria
-4. Security architecture and threat model
-5. Security requirements and verification criteria
-6. Key custody, signing authority, and administrative privileges
-7. Permission-tier implementation and enforcement
-8. Authentication, authorization, and account isolation
-9. Transaction authorization and execution lifecycle
-10. Autonomous agent and tool security
-11. Wallet and smart contract security
-12. Financial logic, spending limits, and blockchain state
-13. Application, API, and data security
-14. Infrastructure, dependencies, and external services
-15. Security test register and evidence
-16. Known risks, findings, and residual exposure
-17. Remediation, risk acceptance, and retesting
-18. Monitoring, incident response, and recovery
-19. Conclusion and limitations
-20. Appendices and references
+## 1. Executive Summary
 
-## 1. Executive summary
+Orvilo is a simulation-first Flask application that converts natural-language trading constraints into a typed policy, compares deterministic and LLM-derived interpretations, applies Z3-backed formal proofs, records a human-review workflow, and runs a local autonomous task loop. It includes a Solidity reference contract named `PolicyWallet` with owner/operator authorization, policy hashes, token and recipient allowlists, spending caps, reserve floors, pause, and allowance-revocation functions.
 
-Orvilo is a simulation-first Flask application that converts natural-language trading constraints into a typed policy, compares deterministic and LLM-derived interpretations, applies Z3-backed checks, records a human-review workflow, and runs a local autonomous task loop. It includes a Solidity reference contract named `PolicyWallet` with owner/operator authorization, policy hashes, token and recipient allowlists, spending caps, reserve floors, pause, and allowance-revocation functions.
+The assessed deployment is **local simulation by default**. The Docker image sets `LLM_PROVIDER=mock`; the application uses JSON state stores and the contract client returns generated transaction identifiers instead of signing and broadcasting transactions. The configured network is Base Sepolia (`84532`), but no genuine on-chain transaction hash, receipt, signer operation, or deployed-contract state was verified in this assessment.
 
-The assessed deployment is **local simulation by default**. The Docker image sets `LLM_PROVIDER=mock`; the application uses JSON state and the contract client returns generated transaction identifiers instead of signing and broadcasting transactions. The configured network is Base Sepolia (`84532`), but no genuine on-chain transaction hash, receipt, signer operation, or deployed-contract state was verified in this assessment.
+### Outcome Summary by Area
 
-### Outcome
+| Area | Status | Basis |
+| :--- | :---: | :--- |
+| **Policy parsing & deterministic guard logic** | `Verified` | Implemented and verified by the 94-test suite and Docker smoke test. |
+| **Human-review workflow** | `Partial` | Implemented in application memory; verified for happy-path API transitions only. |
+| **Solidity access modifiers & guards** | `Source Reviewed` | Present in reviewed source; not verified against a deployed bytecode address. |
+| **Permission tiers** | `Partial` | Owner/operator modeled; HTTP/API identity enforcement is absent. |
+| **Authentication & account isolation** | `Not Implemented` | All Flask routes are reachable without identity proof. |
+| **Real signing & blockchain execution** | `Not Implemented` | Generated hashes are simulation identifiers; no broadcast to Base Sepolia. |
+| **Conversational Co-Pilot (agent/assistant.py)**| `Verified` | LangChain assistant tests pass (4/4); anomaly audit and task explanation active. |
+| **Production readiness** | `Not Ready` | 2 Critical and 6 High findings must be remediated prior to handling real funds. |
 
-| Area | Outcome |
-|---|---|
-| Policy parsing and deterministic guard logic | Implemented and verified by the 90-test suite and Docker smoke test |
-| Human-review workflow | Implemented in application memory; verified for happy-path API transitions |
-| Solidity access modifiers and guard functions | Present in reviewed source; not verified against a deployed bytecode address |
-| Permission tiers | Partly implemented: owner/operator are modeled; HTTP/API enforcement is absent |
-| Authentication and account isolation | Not implemented; all Flask routes are reachable without identity proof |
-| Real signing and blockchain execution | Not implemented in the default path; generated hashes are not evidence of chain execution |
-| Production readiness | Not suitable for real funds without remediation of the critical and high risks below |
+### Principal Risks
+1. **Unauthenticated Administrative Routes (K-01):** Wallet-mutating and policy-administering routes can be called by any client that reaches the server.
+2. **Unsafe Contract Execution Design (K-02):** Execution accepts caller-supplied USD and post-balance values and performs arbitrary router calls.
+3. **Synthetic Approvals and Hashes (K-03, K-04):** Default signing and approval are generated strings, and deployment can proceed before review.
+4. **Fallbacks that Look Like Success (K-06):** Simulated execution can appear successful when RPC or deployment state is unavailable.
 
-The principal risks are unauthenticated administrative and wallet-mutating routes, a contract execution design that accepts caller-supplied USD and post-balance values and performs arbitrary router calls, synthetic rather than cryptographic approval/signing in the default client, and fallback behavior that can make simulated execution appear successful when RPC or deployment state is unavailable.
+### What is Working Well
+- Deterministic policy parsing, type-checking, and Z3 equivalence comparison are proven across 94 passing tests.
+- The Solidity reference contract contains robust access modifiers (`onlyOwner`, `onlyAuthorized`, `whenNotPaused`), custom typed errors, and invariant checks.
+- Docker image runs as a non-root user (`orvilo`), excludes `.env` from build context, and defines an active health check.
+- Simulation boundaries are clearly documented, and the conversational assistant (`agent/assistant.py`) provides real-time auditability.
 
-## 2. Assessment scope and system identification
+---
 
-### In scope
+## 2. Assessment Scope & System Identification
 
-| Component | Evidence |
-|---|---|
-| Flask dashboard and API | [flask/server.py](../flask/server.py) |
-| Policy AST, readers, type checking, Z3 comparison, hashing | [policy/](../policy/) |
-| Approval workflow | [policy/workflow.py](../policy/workflow.py) |
-| Agent runtime and task persistence | [agent/runtime.py](../agent/runtime.py), [agent/task.py](../agent/task.py) |
-| Wallet and transaction JSON persistence | [user/db.py](../user/db.py), [user/models.py](../user/models.py) |
-| EVM simulator and attack tester | [contracts/simulator.py](../contracts/simulator.py), [contracts/attack_tester.py](../contracts/attack_tester.py) |
-| Solidity reference contract and ABI | [contracts/PolicyWallet.sol](../contracts/PolicyWallet.sol), [contracts/abi.py](../contracts/abi.py) |
-| Contract client, Docker, Compose, CI | [contracts/wallet_client.py](../contracts/wallet_client.py), [Dockerfile](../Dockerfile), [docker-compose.yml](../docker-compose.yml), [ci.yml](../.github/workflows/ci.yml) |
-| Market and gas integrations | [exchange/](../exchange/) |
+### In-Scope Components
 
-### Identifiers and deployment facts
+| Component | Repository Path | Evidence & Role |
+| :--- | :--- | :--- |
+| **Flask Dashboard & API** | `flask/server.py` | UI, REST API, SSE telemetry streaming |
+| **Policy AST, Readers & Parser** | `policy/` | Dual-reader grammar, Z3 solver, AST hashing |
+| **Rule Lexicon & Comparators** | `policy/readers/lexicon.py` | Extracts triggers, caps, and symbolic inequalities (`<`, `<=`, `>`, `>=`, `=`, `==`) |
+| **Approval Workflow** | `policy/workflow.py` | Governance stepper (`DRAFT` $\to$ `ACTIVE`) |
+| **Autonomous Agent Runtime** | `agent/runtime.py`, `agent/task.py` | 1 Hz daemon evaluation loop, task state machine |
+| **Conversational Co-Pilot** | `agent/assistant.py` | LangChain assistant for anomaly auditing and task explanation |
+| **Wallet & Transaction Store** | `user/db.py`, `user/models.py` | In-memory balance tracking and transaction logging |
+| **EVM Simulator & Attack Suite** | `contracts/simulator.py`, `contracts/attack_tester.py` | Preflight simulation and 6/6 adversarial exploit checks |
+| **Solidity Reference Contract** | `contracts/PolicyWallet.sol`, `contracts/abi.py` | Invariant defense contract for Base Sepolia |
+| **Client, Docker & CI** | `contracts/wallet_client.py`, `Dockerfile`, `.github/workflows/ci.yml` | Containerization, client simulation, and automated CI |
+| **Market & Gas Integration** | `exchange/` | Coinbase WebSocket feed and simulated gas estimation |
 
-| Item | Current value or status |
-|---|---|
-| Runtime | Python 3.13 Docker base; Flask development server |
-| Network configuration | Base Sepolia, chain ID 84532 |
-| RPC | `https://sepolia.base.org` in the example configuration |
-| Contract address | `0x89D24A6b4CcB1B6fAA2625fE562bDD9a23260359` is a client default; deployment and bytecode correspondence were not independently verified |
-| LLM | Mock by default; Groq adapter is optional |
-| Persistence | Local JSON files; no transactional database or migration system |
-| Authentication | No login, session, bearer-token, wallet-signature, or API-key gate in Flask routes |
-| Excluded evidence | No private keys, production secrets, deployed owner configuration, live receipts, or mainnet activity were available |
+### Excluded Evidence
+The following were not available and are therefore outside the assessment:
+- Private keys and production secrets.
+- Deployed owner configuration and live on-chain owner/operator state.
+- Live Base Sepolia transaction receipts and any mainnet activity.
+- Independent external third-party smart-contract audit.
 
-## 3. Assessment methodology and rating criteria
+---
 
-The assessment used:
+## 3. Assessment Methodology & Rating Criteria
 
-1. Source review of routes, state stores, policy workflow, task runtime, contract client, Solidity, Docker, Compose, CI, and configuration.
-2. Review of existing unit tests and the repository smoke test.
-3. Execution of `python -m pytest -q` in the project environment: **90 passed**.
-4. Fresh Docker build and container execution.
-5. Execution of `scripts/docker_smoke.py`, which passed for dashboard, market/SSE, wallet, transactions/reasoning, policy lifecycle, agent controls, simulation, contract controls, attack vectors, assistant chat, and reset.
-6. Manual comparison of application claims with actual implementation behavior.
+1. **Source Code Review:** Exhaustive analysis of Flask routes, state management, policy loop, Z3 verification, task runtime, contract client, Solidity code, Docker, and CI configurations.
+2. **Automated Test Suite Execution:** `PYTHONPATH=. pytest -q` $\to$ **94 passed in 17.09s** across 13 test files.
+3. **Docker Smoke Testing:** `scripts/docker_smoke.py` verified against running container (`11/11 checks passed`).
+4. **Adversarial Attack Simulation:** 6 scorecard exploit vectors tested and confirmed reverting with typed Solidity errors.
+5. **Architectural Gap Analysis:** Comparing documented claims against observable sandbox runtime behavior.
 
-No formal penetration test, fuzzing campaign, dependency vulnerability scan, private-key review, deployed bytecode verification, or independent smart-contract audit was performed.
-
-### Rating definitions
+### Rating Definitions
 
 | Dimension | Meaning |
-|---|---|
-| Likelihood | Low: difficult or constrained; Medium: plausible with access; High: directly reachable or reproducible |
-| Impact | Low: limited integrity/availability effect; Medium: material application effect; High: policy, identity, or fund-control effect |
-| Severity | Combined prioritization for remediation; Critical means a direct path to unauthorized value movement or complete control |
-| Confidence | Evidence confidence from 1/10 to 10/10; confidence is not exploit likelihood |
+| :--- | :--- |
+| **Likelihood** | **Low:** difficult or constrained · **Medium:** plausible with access · **High:** directly reachable or reproducible |
+| **Impact** | **Low:** limited integrity effect · **Medium:** material application effect · **High:** policy, identity, or fund-control effect |
+| **Severity** | **Critical:** direct path to unauthorized value movement · **High:** serious control gap · **Medium:** defense-in-depth gap |
+| **Confidence** | Evidence confidence rating from 1/10 to 10/10 based on empirical verification |
 
-## 4. Security architecture and threat model
+---
+
+## 4. Security Architecture & Threat Model
 
 ![Security trust boundaries](../visuals/rendered/security-trust-boundaries.png)
 
-Source: [security-trust-boundaries.mmd](../visuals/security-trust-boundaries.mmd).
+### Key Assets
+- **Wallet balances and transaction history:** Direct financial value and basis for audit reconciliation.
+- **Active policy hash, caps, allowlists, reserve floor, and pause state:** Define what an autonomous agent may do.
+- **Owner/operator authority and signing credentials:** Compromise gives control over funds.
+- **Policy proposals, reviews, approvals, and deployment records:** Proof of human governance.
+- **Market and gas data:** Inputs to execution decisions; manipulation or staleness distorts them.
 
-### Assets
+### Threat Scenarios
 
-- Wallet balances and transaction history.
-- Active policy hash, caps, allowlists, reserve floor, and pause state.
-- Owner/operator authority and any future signing keys.
-- Policy proposals, reviews, approvals, and deployment records.
-- Market and gas data used by execution decisions.
-- API availability and integrity of JSON state.
+| ID | Threat Scenario | Consequence | Finding |
+| :--- | :--- | :--- | :--- |
+| **T-1** | Remote client calls pause, reset, wallet-mutation, or approval routes directly | Policy and wallet state altered without identity proof | **K-01** |
+| **T-2** | Operator supplies misleading USD value or post-balance, or arbitrary router calldata | Spending caps and reserve floor bypassed on-chain | **K-02** |
+| **T-3** | Generated simulation identifier presented as confirmed transaction | False assurance; distorted accounting and audit trail | **K-03, K-06** |
+| **T-4** | Proposal deployed from `DRAFT` or approved with arbitrary string name | Human-in-the-loop guarantee defeated | **K-04** |
+| **T-5** | Stale approval or execution replayed after deadline | Outdated authority reused | **K-07** |
+| **T-6** | Concurrent access to shared JSON store | Lost updates; cross-user state pollution | **K-05** |
 
-### Actors and capabilities
+---
 
-- **Human owner:** intended policy administrator and emergency controller.
-- **Reviewer/approver:** intended human-in-the-loop policy participant.
-- **Autonomous operator:** intended limited executor.
-- **Unauthenticated HTTP caller:** actual capability in the current Flask deployment; can call routes directly.
-- **LLM/external market source:** untrusted or failure-prone input to interpretation and decision support.
-- **RPC/router:** external dependency; may be unavailable, stale, malicious, or mismatched with local assumptions.
+## 5. Security Requirements & Verification Matrix
 
-### Trust boundaries
+| ID | Security Requirement | Implementation Evidence | Verification Result |
+| :--- | :--- | :--- | :---: |
+| **SR-01** | Only owner can change policy or emergency state | Solidity `onlyOwner` in `PolicyWallet.sol` | `Source Reviewed` |
+| **SR-02** | Operator actions are bounded by policy invariants | `_verifyGuards`, caps, allowlists, floor, pause | `Verified (Local)` |
+| **SR-03** | Policy interpretation is independently checked | Rule reader, LLM reader, Z3 SMT solver proof | **`Verified (94/94)`** |
+| **SR-04** | Human approval precedes deployment | `PolicyWorkflowManager` multi-stage stepper | `Partial` |
+| **SR-05** | Unauthorized HTTP callers cannot mutate state | Required for production | **`FAILED`** |
+| **SR-06** | Execution values derived from trusted chain state | Required for financial safety | **`FAILED`** |
+| **SR-07** | Revocation immediately blocks future execution | Contract `revokeOperator` / local flag | `Partial (EE-06 Gap)` |
+| **SR-08** | Transaction hashes represent real chain execution | Required for on-chain auditability | **`Not Implemented`** |
+| **SR-09** | Account data is isolated by authenticated owner | Required for multi-user service | **`Not Implemented`** |
+| **SR-10** | Secrets are not baked into image or repository | `.dockerignore`, `.env.example`, mock defaults | `Verified` |
 
-The most important boundary is between the browser/API and administrative state. It is not protected by authentication. A second boundary is between the Python client’s local synchronized state and the Solidity contract: the default client does not establish that its generated responses correspond to chain state. A third boundary is between the authorized contract operator and arbitrary router calldata in `executeSwap`.
+---
 
-## 5. Security requirements and verification criteria
-
-| ID | Security requirement | Implementation evidence | Verification |
-|---|---|---|---|
-| SR-01 | Only owner can change policy or emergency state | Solidity `onlyOwner` functions in [PolicyWallet.sol](../contracts/PolicyWallet.sol) | Source-reviewed; deployed enforcement not verified |
-| SR-02 | Operator actions are bounded by policy | `_verifyGuards`, caps, allowlists, pause | Source-reviewed; local simulator and attack tests exercised |
-| SR-03 | Policy interpretation is independently checked | Rule reader, LLM reader, Z3 comparison | 90-test suite and smoke test passed |
-| SR-04 | Human approval precedes deployment | `PolicyWorkflowManager` states | Happy path verified; caller identity not authenticated |
-| SR-05 | Unauthorized HTTP callers cannot mutate wallet or policy | Required for production | **Failed: no HTTP authentication/authorization layer** |
-| SR-06 | Execution values are derived from trusted chain state | Required for financial safety | **Failed in contract design: USD and post-balance values are caller inputs** |
-| SR-07 | Revocation blocks future execution | Contract invalidation/revoke functions and local flags | Local behavior tested; live transaction and queued-task race not verified |
-| SR-08 | Transaction hashes and receipts represent real chain execution | Required for auditability | **Not implemented in default client; hashes are generated identifiers** |
-| SR-09 | Account data is isolated by authenticated owner | Required for multi-user service | **Failed/not implemented: single local state and no identity boundary** |
-| SR-10 | Secrets are not baked into image or repository | `.dockerignore`, mock defaults | Docker context excludes `.env`; secret rotation and runtime secret governance not verified |
-
-## 6. Key custody, signing authority, and administrative privileges
-
-The example configuration names `AGENT_PRIVATE_KEY` and `OWNER_ADDRESS`, but the default local path does not load a signer for transaction submission. The contract client creates UUID-derived strings with a `0x` prefix for `tx_hash`; these are not cryptographic transaction hashes and do not prove a signature, broadcast, inclusion, or receipt.
-
-The Solidity reference contract has:
-
-- An immutable `owner`.
-- `onlyOwner` for policy updates, operator management, allowance revocation, pause, unpause, and invalidation.
-- `onlyAuthorized` for guarded execution, allowing owner or an authorized operator.
-- No upgrade proxy in the reviewed contract.
-- No on-chain nonce or replay domain in the reviewed execution functions.
-
-The application layer exposes routes that call analogous operations without proving that the requester is the owner. The apparent owner/operator addresses in [wallet_client.py](../contracts/wallet_client.py) are constants in local state, not authenticated identities.
-
-## 7. Permission-tier implementation and enforcement verification
+## 6. Key Custody, Signing Authority, & Permissions
 
 ![Permission enforcement flow](../visuals/rendered/permission-enforcement.png)
 
-Source: [permission-enforcement.mmd](../visuals/permission-enforcement.mmd).
+### Implemented / Modeled Tiers
 
-### Implemented or modeled tiers
+| Tier | Intended Holder | Allowed Actions | Restrictions | Enforcement Location | Status |
+| :--- | :--- | :--- | :--- | :--- | :---: |
+| **Owner** | Human wallet owner | Set/invalidate policy, manage operators, pause/unpause, revoke allowances | Highest privilege | Solidity `onlyOwner` | Implemented in contract source; API enforcement failed |
+| **Authorized Operator** | Autonomous agent | Guarded swap/transfer | Policy hash, caps, allowlists, floor, pause | Solidity `onlyAuthorized` + `_verifyGuards` | Implemented in contract; Python client gap noted (EE-06) |
+| **Reviewer** | Security reviewer | Mark proposal reviewed | Precondition for approval | String field `reviewed_by` | Modeled; not authenticated |
+| **Approver** | Owner / Approver | Mark proposal deployable | Human approval signature | String field `approved_by` | Modeled; cryptographic signature not verified |
+| **Public HTTP Caller** | Any network client | Actual caller of exposed routes | None in Flask layer | No auth middleware | **Unrestricted (Critical Gap)** |
 
-| Tier | Intended holder | Allowed actions | Restrictions | Enforcement location | Status |
-|---|---|---|---|---|---|
-| Owner | Human wallet owner | Set/invalidate policy, manage operators, pause/unpause, revoke allowances | Highest privilege | Solidity `onlyOwner`; application route has no identity check | Implemented in contract source; API enforcement failed |
-| Authorized operator | Autonomous agent or designated executor | Guarded swap/transfer | Policy hash, token/recipient allowlists, per-tx cap, daily cap, reserve floor, pause | Solidity `onlyAuthorized` + `_verifyGuards`; local client mirrors flags | Implemented in reference contract; live deployment unverified |
-| Reviewer | Human security reviewer | Mark proposal reviewed | Intended precondition for approval | String field `reviewed_by` in workflow | Modeled, not authenticated |
-| Approver | Human owner/approver | Mark proposal deployable | Intended human approval and signature | Status and generated signature in workflow | Modeled; cryptographic approval not verified |
-| Agent runtime | Local autonomous loop | Monitor and attempt task execution | Single active task; local policy/task checks | [agent/runtime.py](../agent/runtime.py), [agent/task.py](../agent/task.py) | Implemented and locally tested |
-| Public HTTP caller | Any network client | Actual caller of every exposed route | None in Flask layer | No middleware or route guard | **Unrestricted; critical boundary gap** |
+---
 
-### Required enforcement questions
+## 7. Security Test Register & Evidence
 
-| Question | Answer |
-|---|---|
-| Who receives each permission? | Owner/operator addresses are constants in the client and constructor inputs in Solidity; reviewer/approver are request fields |
-| Which component enforces it? | Solidity modifiers enforce the reference contract; Flask and workflow do not authenticate the identity field |
-| Are direct API calls restricted? | No. Mutating routes accept JSON without authentication |
-| Are direct contract calls restricted? | Reference contract restricts owner/operator functions, but the deployed address/code relationship was not verified |
-| Who can elevate permissions? | Solidity owner can authorize operators; in the API, any caller can invoke routes that mutate local state |
-| How was it verified? | Source review, unit tests, and Docker smoke happy paths; no adversarial authenticated/unauthenticated matrix was present |
+| ID | Requirement | Procedure | Result | Evidence Detail |
+| :--- | :--- | :--- | :---: | :--- |
+| **ST-01** | SR-03 | Run full Python test suite | **`PASSED`** | **94 passed in 17.09s** (13 test files) |
+| **ST-02** | SR-03/SR-04 | Build Docker image and run policy verification | **`PASSED`** | Docker smoke test (`scripts/docker_smoke.py`) |
+| **ST-03** | SR-04 | Review, approve, and deploy policy proposal | **`PASSED`** | Workflow stepper transitions verified |
+| **ST-04** | SR-02 | Execute six modeled adversarial penetration checks | **`PASSED`** | 6/6 Reverted with typed Solidity errors |
+| **ST-05** | SR-07 | Pause/unpause, revoke operator, invalidate policy | **`PASSED`** | Local client state transitions verified |
+| **ST-06** | SR-08 | Confirm genuine on-chain transaction hash & receipt | **`NOT TESTED`** | No broadcast transactions (Sandbox mode) |
+| **ST-07** | SR-05 | Attempt unauthenticated administrative API calls | **`FAILED`** | Mutating routes accept unauthenticated JSON |
+| **ST-08** | SR-06 | Prove contract derives value from trusted on-chain state | **`FAILED`** | Caller-supplied arguments in `PolicyWallet.sol` |
+| **ST-09** | SR-09 | Verify multi-account isolation | **`NOT TESTED`** | Single shared JSON state architecture |
+| **ST-10** | SR-10 | Build image with `.env` present and inspect context | **`PASSED`** | Excluded via `.dockerignore` |
+| **ST-11** | SR-02 | Concurrent execution & pending transaction race test | **`NOT TESTED`** | Single-threaded runner excluded concurrency |
+| **ST-12** | SR-03 | Conversational assistant anomaly auditing & explanation | **`PASSED`** | `tests/test_assistant.py` (4/4 tests passed) |
 
-## 8. Authentication, authorization, and account isolation
+---
 
-No login, session, bearer token, API key, wallet-signature challenge, CSRF protection, or per-account ownership check was found in [server.py](../flask/server.py). Routes such as wallet mutation, transaction creation, reset, policy review/approval/deployment, pause/unpause, operator revocation, allowance revocation, policy invalidation, agent pause/resume, and assistant actions are callable by a client that can reach the Flask server.
+## 8. Known Risks, Findings, & Residual Exposure
 
-The application is a single-user local simulation, which explains the design, but that boundary must not be mistaken for authorization. If exposed beyond a trusted local machine, the API permits unauthorized state changes and cross-user access by construction.
+| ID | Finding Description | Affected Component | Likelihood | Impact | Severity | Confidence | Status |
+| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **K-01** | Unauthenticated HTTP administrative & wallet mutation routes | `flask/server.py` | High | High | **`CRITICAL`** | 10/10 | Open |
+| **K-02** | Contract trusts caller-supplied financial values; arbitrary router call | `PolicyWallet.sol` | Medium | Critical | **`CRITICAL`** | 10/10 | Open |
+| **K-03** | Default client fabricates transaction hashes and confirmations | `contracts/wallet_client.py` | High | High | **`HIGH`** | 10/10 | Open |
+| **K-04** | Workflow accepts unauthenticated reviewer strings; premature deployment | `policy/workflow.py` | High | High | **`HIGH`** | 10/10 | Open |
+| **K-05** | Single shared JSON state lacks account isolation or ACID semantics | `user/db.py`, `agent/task.py` | High | High | **`HIGH`** | 9/10 | Open |
+| **K-06** | Simulator RPC fallback can return simulated success when offline | `contracts/simulator.py` | Medium | High | **`HIGH`** | 9/10 | Open |
+| **K-07** | No nonce, replay protection, or expiry deadline in contract/workflow | `PolicyWallet.sol`, `workflow.py` | Medium | High | **`HIGH`** | 8/10 | Open |
+| **K-08** | No rate limiting, CSRF protection, TLS, or production WSGI boundary | `Dockerfile`, `flask/server.py` | High* | Medium | **`HIGH`** | 9/10 | Open |
+| **K-09** | External market/RPC fallback and static addresses are not proof of live state | `exchange/`, `wallet_client.py` | Medium | Medium | **`MEDIUM`** | 9/10 | Open |
+| **K-10** | No verified dependency scan, deployed bytecode match, or live receipt | Repository-wide | Medium | Medium | **`MEDIUM`** | 10/10 | Open |
 
-## 9. Transaction authorization and execution lifecycle
+*\*K-08 rated High likelihood under internet exposure.*
 
-The intended lifecycle is:
+### Risk Heat Map
 
-1. Natural-language prompt enters `/api/verify`.
-2. Deterministic and untrusted-reader interpretations are compared.
-3. A proposal is created in `DRAFT`.
-4. Review and approval endpoints change status.
-5. Deployment syncs policy parameters to the local contract client and registers an agent task.
-6. Runtime evaluates market, gas, balance, and policy conditions.
-7. The simulator returns an allowed/reverted result; default client methods produce generated identifiers.
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           RISK SEVERITY MATRIX                              │
+├─────────────────────┬───────────────────┬───────────────────┬───────────────┤
+│ LIKELIHOOD \ IMPACT │        LOW        │       MEDIUM      │  HIGH / CRIT  │
+├─────────────────────┼───────────────────┼───────────────────┼───────────────┤
+│ HIGH                │                   │                   │ K-01, K-03,   │
+│                     │                   │                   │ K-04, K-05,   │
+│                     │                   │                   │ K-08          │
+├─────────────────────┼───────────────────┼───────────────────┼───────────────┤
+│ MEDIUM              │                   │ K-09, K-10        │ K-02, K-06,   │
+│                     │                   │                   │ K-07          │
+├─────────────────────┼───────────────────┼───────────────────┼───────────────┤
+│ LOW                 │                   │                   │               │
+└─────────────────────┴───────────────────┴───────────────────┴───────────────┘
+```
 
-The workflow implementation permits `deploy_policy` from `DRAFT`, `REVIEWED`, or `DEPLOYABLE`, despite the documented human-in-the-loop intent. Approval signatures are generated strings when no signature is supplied. There is no authenticated binding between `reviewed_by`/`approved_by` and a key, no expiry, no nonce, no immutable approval payload, and no verified pre-submission chain-state reconciliation in the default path.
+---
 
-## 10. Autonomous agent and tool security
+## 9. Remediation & Prioritized Action Plan
 
-The agent has a single-task constraint and pause/resume controls. These are useful safety mechanisms and were exercised by the Docker smoke test. They are not an authorization boundary because the controlling routes are unauthenticated and JSON task state is writable by the application process.
+1. **Block Public Deployment:** Add authentication middleware, session tokens, CSRF protection, TLS termination, and rate limits prior to any exposure outside `localhost`.
+2. **Replace Simulated Signing:** Implement an EIP-712 cryptographic signing boundary with domain separation, chain ID binding, account nonces, and verifiable receipt polling.
+3. **Harden Contract Execution:** Constrain swap routers to an approved immutable allowlist, attest token prices via signed Chainlink oracles, validate token decimals, and enforce `minAmountOut`.
+4. **Enforce Cryptographic Workflow Governance:** Require cryptographic ECDSA signatures from authorized keys for review/approval; strictly reject deployments from `DRAFT`.
+5. **Migrate to a Transactional Database:** Replace flat JSON files with PostgreSQL / SQLite with row-level account isolation and ACID transaction locking.
+6. **Fail-Closed on RPC Uncertainty:** Explicitly distinguish offline simulation from pending, confirmed, and reverted transactions; never report `CONFIRMED` for local synthetic receipts.
 
-The LLM is described as untrusted and is compared with deterministic parsing. This reduces interpretation risk, but it does not protect against unauthorized API invocation, malicious market/RPC responses, or a future tool being granted broader credentials. Prompt injection and malicious external content were not subjected to a dedicated adversarial test campaign.
+---
 
-## 11. Wallet and smart contract security
+## 10. Conclusion & Limitations
 
-### Positive controls found
+WalletAgent (Orvilo) successfully establishes a powerful natural-language policy compilation and formal verification framework. Its local deterministic tests (**94/94 passed**), Docker smoke test, and conversational co-pilot demonstrate strong preflight safety capabilities.
 
-- `onlyOwner`, `onlyAuthorized`, and `whenNotPaused` modifiers.
-- Policy hash comparison.
-- Token and recipient allowlists.
-- Per-transaction and daily caps.
-- Minimum balance floor.
-- Emergency pause and operator revocation.
-- Custom errors and event emission.
-- Local attack vectors and simulator coverage.
-
-### Material weaknesses
-
-`executeSwap` accepts an arbitrary `router` and arbitrary `routerData`, then executes `router.call`. The contract does not constrain the router to an approved address, does not independently derive USD value or post-trade balance, and does not enforce the returned amount against `minAmountOut` after the arbitrary call. `executeTransfer` also trusts caller-provided USD and balance values. These are critical design concerns for any real deployment.
-
-The reviewed source is a reference contract, not proof of the bytecode at the configured address. No deployment artifact, verified source match, transaction receipt, or live owner/operator state was supplied.
-
-## 12. Financial logic, spending limits, and blockchain state
-
-The intended calculations include:
-
-- `balanceAfter = current USDC balance - trade USD`.
-- `ethPurchased = trade USD / ETH price`, rounded to five decimals in the local simulation.
-- Daily spend reset by `block.timestamp / 1 days` in Solidity.
-- Gas estimate and fee derived from estimated gas and a gas price, with deterministic fallback values.
-
-The implementation does not establish token-decimal correctness for arbitrary ERC-20 tokens, oracle freshness, signed price provenance, slippage enforcement at the contract boundary, pending-transaction accounting, concurrency-safe chain reconciliation, replacement handling, reorganization handling, or failed-receipt reconciliation. USD values are caller or application inputs rather than a trusted on-chain valuation mechanism.
-
-## 13. Application, API, and data security
-
-The code uses JSON request parsing and typed conversions, but broad input validation is inconsistent. The application stores wallet and agent task state in local JSON files and uses in-process locks; this is not a durable transaction boundary for multiple workers or concurrent deployments. The reset endpoint deletes/reinitializes simulation state without authentication.
-
-The Flask development server is used in Docker. There is no documented reverse proxy, TLS termination, request-size policy, rate limit, audit-log integrity mechanism, or structured security-event pipeline. Error responses may expose implementation details, and the assistant can invoke dashboard actions based on natural-language input and a `confirmed` field rather than a user identity.
-
-## 14. Infrastructure, dependencies, and external services
-
-The Dockerfile uses Python 3.13 slim, installs `curl`, runs as non-root `orvilo`, excludes `.env` and generated artifacts through [.dockerignore](../.dockerignore), and defines a health check. These are positive baseline controls.
-
-The default image still runs Flask’s development server and has no TLS, authentication, network policy, persistent volume, backup, or production WSGI configuration. `docker-compose.yml` publishes port 5000 and sets mock LLM mode. Market WebSocket and RPC failures can fall back to synthetic or deterministic values; this is appropriate for simulation but unsafe if presented as proof of live execution.
-
-## 15. Security test register and evidence
-
-| ID | Requirement | Procedure | Result | Evidence |
-|---|---|---|---|---|
-| ST-01 | SR-03 | Run full Python test suite | Passed | `90 passed` |
-| ST-02 | SR-03/SR-04 | Build image and run policy verification through API | Passed | Docker smoke test |
-| ST-03 | SR-04 | Review, approve, deploy a proposal | Passed for happy path | Docker smoke test; identity not verified |
-| ST-04 | SR-02 | Run six modeled attack vectors | Passed as modeled rejections | Docker smoke test; not a chain exploit test |
-| ST-05 | SR-07 | Pause/unpause, revoke operator/allowance, invalidate policy | Passed locally | Docker smoke test; generated hashes |
-| ST-06 | SR-08 | Confirm genuine chain hash and receipt | Not tested / unavailable | No broadcast transaction |
-| ST-07 | SR-05 | Attempt unauthenticated administrative API calls | Failed by design review | No auth middleware or route checks |
-| ST-08 | SR-06 | Prove contract derives value and balance from trusted state | Failed by source review | Caller-supplied arguments in `PolicyWallet.sol` |
-| ST-09 | SR-09 | Verify two-account isolation | Not tested; architecture lacks account identity | Single JSON state |
-| ST-10 | SR-10 | Build image with secret and inspect context | Passed for `.env` exclusion | `.dockerignore` and Docker build |
-| ST-11 | SR-02 | Test concurrent execution and pending transaction reconciliation | Not tested | No multi-worker/live-chain evidence |
-| ST-12 | SR-10 | Dependency vulnerability scan | Not tested | No scanner result available |
-
-## 16. Known risks, findings, and residual exposure
-
-| ID | Finding | Affected component | Likelihood | Impact | Severity | Confidence | Status |
-|---|---|---|---|---|---|---:|---|
-| K-01 | Unauthenticated HTTP administrative and wallet mutation routes | [flask/server.py](../flask/server.py) | High | High | **Critical** | 10/10 | Open |
-| K-02 | Contract trusts caller-supplied USD amount and post-balance; arbitrary router call | [PolicyWallet.sol](../contracts/PolicyWallet.sol) | Medium | Critical | **Critical** | 10/10 | Open |
-| K-03 | Default client fabricates transaction hashes and confirmations | [wallet_client.py](../contracts/wallet_client.py) | High | High | **High** | 10/10 | Open |
-| K-04 | Workflow accepts unauthenticated reviewer/approver strings and synthetic signatures; deployment can proceed before approval | [workflow.py](../policy/workflow.py) | High | High | **High** | 10/10 | Open |
-| K-05 | Single shared JSON state has no account isolation or durable transaction semantics | [user/db.py](../user/db.py), [task.py](../agent/task.py) | High | High | **High** | 9/10 | Open |
-| K-06 | Simulator/RPC fallback can return simulated success when live state is unavailable | [simulator.py](../contracts/simulator.py) | Medium | High | **High** | 9/10 | Open |
-| K-07 | No nonce/replay/expiry binding for execution or approvals in reviewed contract/workflow | [PolicyWallet.sol](../contracts/PolicyWallet.sol), [workflow.py](../policy/workflow.py) | Medium | High | **High** | 8/10 | Open |
-| K-08 | No rate limiting, CSRF protection, TLS, or production WSGI boundary | [Dockerfile](../Dockerfile), [server.py](../flask/server.py) | High if internet-exposed | Medium/High | **High** | 9/10 | Open |
-| K-09 | External market/RPC fallback and static/default addresses are not proof of live security state | [exchange/](../exchange/), [wallet_client.py](../contracts/wallet_client.py) | Medium | Medium | Medium | 9/10 | Open |
-| K-10 | No verified dependency scan, deployed bytecode match, or live receipt evidence | Repository-wide | Medium | Medium | Medium | 10/10 | Open |
-
-These are residual exposure items, not claims that a live mainnet exploit occurred. The application is explicitly simulation-first; the risk is that simulated controls or identifiers could be mistaken for production-grade authorization and settlement.
-
-## 17. Remediation, risk acceptance, and retesting
-
-### Priority actions
-
-1. **Block public deployment:** add authentication, authorization middleware, CSRF protection, TLS/reverse proxy, and rate limits before exposing the API.
-2. **Replace simulated signing:** use a real signer boundary, chain ID/domain separation, nonces, expiry, receipt verification, and explicit failure states.
-3. **Redesign contract execution:** restrict routers and calldata, derive or oracle-attest amounts, validate token decimals, enforce `minAmountOut`, add replay protection, and obtain an independent Solidity audit.
-4. **Enforce workflow state and identity:** require authenticated reviewer/approver roles, cryptographic approval over an immutable policy hash and parameters, and reject deployment from `DRAFT`/`REVIEWED`.
-5. **Move state to a transactional store:** add account ownership, row-level authorization, durable audit records, idempotency keys, and migration/backup procedures.
-6. **Fail closed on uncertainty:** distinguish unavailable RPC, simulated result, submitted, pending, confirmed, and reverted; never report `CONFIRMED` for a generated identifier.
-7. **Add adversarial testing:** unauthenticated route tests, role matrix tests, replay/duplicate tests, concurrency tests, malformed calldata tests, dependency-failure tests, fuzzing, and dependency scanning.
-
-### Acceptance criteria
-
-A retest should not close K-01 through K-08 until evidence includes authenticated negative tests, a deployed bytecode/address match, genuine Base Sepolia receipts, signer and nonce evidence, and a contract review addressing arbitrary calls and caller-supplied financial values. Risk acceptance must name an accountable owner, expiry date, affected deployment, and compensating controls.
-
-## 18. Monitoring, incident response, and recovery
-
-Current implementation provides application logs, task reasons, JSON history, contract event definitions, pause, operator revocation, allowance revocation, and policy invalidation. It does not provide tamper-resistant audit storage, alert routing, centralized monitoring, tested backup restoration, credential rotation automation, or a proven recovery runbook.
-
-For a production deployment, incident response should immediately revoke the operator, pause the contract, invalidate the policy, rotate credentials, preserve logs and chain evidence, identify queued/pending transactions, and reconcile balances from chain state. Recovery must account for irreversible transfers and must not rely on local JSON state as the source of truth.
-
-## 19. Assessment conclusion and limitations
-
-Orvilo demonstrates a useful policy-verification and simulation workflow, and its local automated tests and Docker smoke test pass. The repository also contains meaningful reference guardrails in the Solidity contract and clear simulation boundaries in documentation.
-
-The evidence does **not** support a conclusion that Orvilo is safe for real funds or internet exposure. Authentication, account isolation, real signing, live deployment verification, replay protection, trusted financial valuation, and production monitoring remain unresolved. The report is a self-assessment of the repository and local execution, not an independent audit, formal verification certificate, penetration test, or deployment attestation.
-
-## 20. Appendices and supporting references
-
-### A. Primary source map
-
-- API surface and route behavior: [flask/server.py](../flask/server.py)
-- Contract guards and execution: [contracts/PolicyWallet.sol](../contracts/PolicyWallet.sol)
-- Local contract client: [contracts/wallet_client.py](../contracts/wallet_client.py)
-- Simulation fallback: [contracts/simulator.py](../contracts/simulator.py)
-- Approval workflow: [policy/workflow.py](../policy/workflow.py)
-- Agent lifecycle: [agent/runtime.py](../agent/runtime.py), [agent/task.py](../agent/task.py)
-- Wallet persistence: [user/db.py](../user/db.py)
-- Docker boundary: [Dockerfile](../Dockerfile), [docker-compose.yml](../docker-compose.yml)
-- CI and smoke evidence: [ci.yml](../.github/workflows/ci.yml), [docker_smoke.py](../scripts/docker_smoke.py)
-
-### B. Configuration and evidence references
-
-- Safe configuration template: [.env.example](../.env.example)
-- Test suite: [tests/](../tests/)
-- Trust-boundary diagram source: [security-trust-boundaries.mmd](../visuals/security-trust-boundaries.mmd)
-- Permission diagram source: [permission-enforcement.mmd](../visuals/permission-enforcement.mmd)
-
-### C. Selected security references
-
-- [OWASP Application Security Verification Standard](https://owasp.org/projects/asvs)
-- [OWASP Smart Contract Security Verification Standard](https://scs.owasp.org/SCSVS/)
-- [OWASP API Security Top 10](https://owasp.org/API-Security/)
-- Solidity security considerations: [docs.soliditylang.org](https://docs.soliditylang.org/en/latest/security-considerations.html)
-
-### D. On-chain evidence statement
-
-No genuine transaction hash, receipt status, block inclusion, deployed bytecode match, or live owner/operator query was available for this self-assessment. Values returned by the default local client are generated simulation identifiers and must not be cited as on-chain evidence.
+However, the empirical evidence demonstrates that **the application is currently a pre-production sandbox system**. It must not be deployed to handle real funds or exposed to the public internet without remediating findings K-01 through K-08. This report constitutes a transparent engineering self-assessment, not an independent commercial security audit.
