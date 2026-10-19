@@ -1,0 +1,1116 @@
+﻿EXECUTION EVIDENCE REPORT
+Orvilo
+Sandbox verification of policy, guardrail, workflow and revocation behavior
+ NON-ON-CHAIN · SANDBOX EVIDENCE 
+
+
+
+
+
+
+
+
+Report version
+	1.0
+	Preparation date
+	19 October 2026
+	Evidence execution date
+	2026-10-19 (UTC)
+	Team
+	Orvilo
+	Repository
+	https://github.com/immo2n/WalletAgent
+	Branch
+	feature/dark-mode-mobile-docs
+	Assessed commit
+	30f235d6057bf1290a2341553543c67aba1cb7e2
+	Submission category
+	Non-on-chain topic / sandbox evidence
+	Environment
+	Local Python sandbox · mock LLM · offline deterministic EVM guard simulation
+	
+
+EVIDENCE STATUS
+No signed transaction was submitted to Base Sepolia or any other chain during this evidence run. Hash-like values returned by the application are synthetic identifiers and are not transaction receipts.
+	Document Control
+Version
+	Date
+	Change
+	Prepared by
+	1.0
+	2026-10-19
+	Initial execution evidence report based on an isolated Codex-assisted run and repository review
+	Orvilo/ documentation
+	
+
+Table Of Contents
+
+
+EXECUTION EVIDENCE REPORT        1
+Document Control        2
+Table Of Contents        2
+1. Executive Summary        5
+Headline findings        5
+2. Purpose, Scope and Method        6
+2.1 Purpose        6
+2.2 Scope        6
+2.3 Evidence method        6
+2.4 How outcomes are classified        7
+3. Application Version and Execution Environment        8
+3.1 Recorded environment        8
+3.2 Why the environment matters        8
+4. Components and Test Accounts        9
+4.1 System context        9
+4.2 Components and execution status        9
+4.3 Accounts and permission tiers        9
+5. Execution Scenario Register        11
+Scenarios not executed        11
+6. Detailed Execution Records        12
+EE-01 · Authorized guarded operation        12
+EE-02 · Per-transaction spending limit rejection        14
+EE-03 · Restricted destination rejection        15
+EE-04 · Policy review, approval and activation        16
+EE-05 · Emergency pause rejection        17
+EE-06 · Operation after permission revocation        18
+EE-07 · Modeled adversarial guard checks        19
+7. On-Chain Transaction Evidence        20
+What future on-chain evidence must capture        20
+Submission classification        21
+8. Sandbox Operation Logs        22
+8.1 Log attributes        22
+8.2 Representative observed results        22
+9. Permission and Guardrail Evidence        23
+9.1 Required demonstrations        24
+10. Before-and-After State Verification        25
+11. Findings and Recommended Remediation        26
+12. Submission Readiness        27
+13. Demo Video and Evidence Walkthrough        28
+13.1 Video record        28
+13.2 Segment index        28
+13.3 Closing statement in the video        29
+13.4 Statement on video evidence        29
+14. Execution Results and Limitations        30
+Primary limitations        30
+15. Evidence Index and Reproduction        31
+15.1 Evidence index        31
+15.2 Reproduction        31
+Appendix A · Source Map        32
+Appendix B · Evidence Checksum        32
+Appendix C · Interpretation Rule        32
+Appendix D · Shared Policy Configuration        33
+Appendix E · Glossary        33
+
+
+1. Executive Summary
+This report records what the Orvilo software actually did when its policy-guard, workflow and revocation logic was executed in an isolated sandbox on 19 October 2026. It documents seven execution scenarios, the automated regression suite, the evidence log and its integrity checksum, and it states plainly where the evidence stops.
+
+
+7
+SCENARIOS RUN
+	6
+PASSED
+	1
+FAILED (EE-06)
+	2
+NOT EXECUTED
+	90
+AUTOMATED TESTS PASSED
+	0
+ON-CHAIN TRANSACTIONS
+	
+
+Headline findings
+* Guardrails behave as designed in the simulator. A compliant $200 transfer was accepted; a $700 transfer, a transfer to a non-allowlisted address and any transfer while paused were each rejected with the correct, named error (EE-01, EE-02, EE-03, EE-05).
+* The approval workflow progresses through all four states. A proposal moved DRAFT → REVIEWED → DEPLOYABLE → ACTIVE (EE-04), although approver identities and signatures are not authenticated.
+* All six modeled attack vectors were rejected. Recipient, token drain, balance-floor drain, daily-limit bypass, pause breach and unauthorized-operator vectors returned the expected reverts (EE-07).
+* One control failed. After an operator was revoked, the Python execution path still returned a synthetic CONFIRMED result (EE-06). This is disclosed as an open implementation gap.
+* No on-chain evidence exists. Nothing was signed or broadcast, so no transaction hashes, receipts or block data are claimed.
+
+
+SUBMISSION CLASSIFICATION
+The defensible category is non-on-chain sandbox evidence. Although the application labels its network Base Sepolia (chain ID 84532), the default client generates UUID-based hash-like identifiers and does not sign, submit, poll or verify blockchain transactions.
+	
+
+2. Purpose, Scope and Method
+2.1 Purpose
+This report records repeatable execution evidence for the current Orvilo repository. It demonstrates implemented policy-guard evaluation, workflow state transitions, simulated attack rejection, emergency pause behavior and permission revocation behavior. The evidence is intended to show what the software actually did in the assessed sandbox, not what a future production deployment is expected to do.
+
+
+2.2 Scope
+Covered
+	Excluded or unavailable
+	* Authorized operation accepted by local policy guards
+* Per-transaction limit and recipient allowlist rejection
+* Draft, review, approval, deployable and active workflow transitions
+* Emergency pause rejection and six modeled adversarial checks
+* Post-revocation execution attempt, including the observed enforcement gap
+* Repository automated tests (90 passed)
+	* Genuine private-key signing
+* Transaction submission, receipts and block inclusion
+* Deployed bytecode verification
+* Live account balances
+* Production authentication and multi-user account isolation
+* Mainnet execution
+	2.3 Evidence method
+The evidence was produced by a dedicated generator script rather than by hand, so every scenario can be re-run and checked against the sealed log.
+ fig_pipeline.png 
+
+Figure 1. Evidence production pipeline, from generator script to sealed log to this report.
+
+
+1. The generator creates fresh in-memory objects for each scenario, so no earlier state can leak into a later result.
+2. It deliberately avoids the mutable repository JSON stores and the Flask routes. This preserves existing wallet and task state and prevents sandbox activity from being confused with chain settlement.
+3. RPC is disabled through an explicit offline Web3 stub, and the LLM runs in its default mock/offline mode.
+4. Each record is written to a structured JSON log with an ISO 8601 UTC timestamp, scenario ID, inputs, expected and observed results, before/after state, outcome and a LOCAL_SANDBOX_SIMULATION label.
+5. A SHA-256 checksum of the log is generated, and the repository regression suite is run separately.
+
+
+2.4 How outcomes are classified
+Outcome
+	Meaning in this report
+	PASSED 
+	Observed behavior matched the expected result for the scenario within the sandbox.
+	PARTIAL 
+	The behavior was demonstrated, but identity, signature or enforcement details could not be verified.
+	FAILED 
+	Observed behavior did not match the expected control. Recorded as an implementation gap.
+	NOT EXECUTED 
+	No evidence was produced, because the control does not exist in the assessed code or no dedicated test was run.
+	3. Application Version and Execution Environment
+
+
+All evidence below was produced from a single commit in a local repository workspace. No public service was deployed.
+
+
+3.1 Recorded environment
+Source commit
+	30f235d6057bf1290a2341553543c67aba1cb7e2
+	Branch
+	feature/dark-mode-mobile-docs
+	Evidence run window
+	2026-10-19T07:54:22.288174+00:00  to  2026-10-19T07:54:22.288888+00:00
+	Runtime
+	Python 3.13 project virtual environment
+	LLM mode
+	Mock / offline by default
+	Persistence used
+	None for evidence scenarios; fresh in-memory objects
+	Blockchain network label
+	Base Sepolia · chain ID 84532
+	RPC in evidence run
+	Disabled by explicit offline Web3 stub
+	Deployment environment
+	Local repository workspace; no public service deployment
+	Automated test result
+	90 passed in 3.21 seconds
+	
+
+RUN DURATION
+All seven scenarios executed between the first and last recorded timestamps, a window of 714 microseconds (about 0.71 ms). This reflects purely local, deterministic computation with no network round trips.
+	3.2 Why the environment matters
+Because RPC is stubbed offline and no signer is configured, every result in this report is a statement about the application's own logic. Values such as gas estimates, projected balances and block numbers are produced locally and must not be read as observations of a blockchain.
+4. Components and Test Accounts
+4.1 System context
+The Orvilo implementation is organized into a policy plane, an agent plane and a contract plane behind a Flask server, with local JSON state and external observations (market data and Base Sepolia RPC) feeding in. Figure 2 shows the repository architecture.
+ fig_context.png 
+
+Figure 2. Orvilo implementation context and external dependencies (repository architecture, EV-FIG-01).
+
+
+4.2 Components and execution status
+Component
+	Execution role
+	Evidence status
+	EVMSimulator
+	Local policy and guard evaluation; optional eth_call path
+	Executed with RPC explicitly offline
+	PolicyWorkflowManager
+	Proposal review, approval and activation states
+	Executed in memory
+	PolicyWalletClient
+	Local security state and synthetic transaction responses
+	Executed; no signing or broadcast
+	AttackSimulator
+	Six modeled guardrail violations
+	Executed in memory
+	Flask dashboard
+	User interface and API
+	Source reviewed; not used in isolated evidence run
+	PolicyWallet.sol
+	Reference Solidity enforcement
+	Source reviewed; deployed bytecode not verified
+	4.3 Accounts and permission tiers
+Public identifier
+	Role / tier
+	Observed authority
+	Credential handling
+	0x71C8…039A
+	Owner / default sender label
+	Owner-equivalent in local defaults; owner-only in Solidity source
+	No private key available or used
+	0x2B5A…D6cF
+	Autonomous agent operator
+	Local authorization flag can be revoked; local execution path does not enforce the flag
+	No private key available or used
+	0x89D2…0359
+	Default contract-address label
+	Destination label in local responses
+	Deployment and bytecode not verified
+	5. Execution Scenario Register
+
+
+The register lists the seven executed scenarios in the order they were run. Full records follow in Section 6.
+ID
+	Feature
+	Expected → Actual
+	Outcome
+	Evidence
+	EE-01
+	Authorized guarded operation
+	SIMULATED_SUCCESS → SIMULATED_SUCCESS: guard evaluation completed
+	 PASSED 
+	EV-LOG-01 · EE-01
+	EE-02
+	Per-transaction spending limit rejection
+	SIMULATED_REVERT / ExceedsPerTxCap → ExceedsPerTxCap(amount=700.0, cap=500.0)
+	 PASSED 
+	EV-LOG-01 · EE-02
+	EE-03
+	Restricted destination rejection
+	SIMULATED_REVERT / RecipientNotAllowed → RecipientNotAllowed(0x9999…9999)
+	 PASSED 
+	EV-LOG-01 · EE-03
+	EE-04
+	Policy review, approval and activation
+	DRAFT → REVIEWED → DEPLOYABLE → ACTIVE; signature and deployment ID synthetic
+	 PASSED 
+	EV-LOG-01 · EE-04
+	EE-05
+	Emergency pause rejection
+	SIMULATED_REVERT / WalletPaused → WalletPaused()
+	 PASSED 
+	EV-LOG-01 · EE-05
+	EE-06
+	Operation attempted after permission revocation
+	Operation rejected → operator marked unauthorized, but local execution returned CONFIRMED
+	 FAILED 
+	EV-LOG-01 · EE-06
+	EE-07
+	Modeled adversarial guard checks
+	All vectors return expected simulated revert → 6/6 returned expected reverts
+	 PASSED 
+	EV-LOG-01 · EE-07
+	
+
+Scenarios not executed
+
+
+Scenario
+	Reason
+	Expired or reused approval rejection
+	The implementation lacks approval expiry and reuse binding, so there is no control to test.
+	Concurrent aggregate-limit behavior
+	No dedicated concurrency test was run, and this report does not claim a concurrency result without one.
+	6. Detailed Execution Records
+
+
+Each record states the objective, the inputs, the expected and observed result, the resulting state, what the result establishes and where its boundary lies. The shared policy configuration used by EE-01, EE-02, EE-03 and EE-05 is:
+
+
+Policy parameter
+	Value
+	Per-transaction cap
+	$500
+	Daily cap
+	$1,000
+	Minimum balance floor
+	$500
+	Allowed tokens
+	ETH, WETH, USDC
+	Allowed recipient
+	0x71C8366420A096207E90B01D252431792349039A
+	EE-01 · Authorized guarded operation
+
+
+OUTCOME
+
+
+ PASSED 
+	COMPONENT EXERCISED
+
+
+EVMSimulator
+	CATEGORY
+
+
+Authorized operation
+	EVIDENCE REFERENCE
+
+
+EV-LOG-01 · EE-01
+	
+
+Objective
+	Show that a request within every policy limit is accepted by the local guard evaluation, with no chain mutation.
+	Starting state
+	Balance $1,500; spent today $0; wallet not paused.
+	Test inputs
+	Token ETH · trade amount $200 · recipient is the allowlisted address · projected balance after trade $1,300 (above the $500 floor). Shared policy limits are listed in Appendix D.
+	Checks applied
+	Local deterministic checks; no authenticated identity and no blockchain signer
+	Expected result
+	SIMULATED_SUCCESS with no chain mutation
+	Observed result
+	SIMULATED_SUCCESS: guard evaluation completed. Projected $200 change; estimated gas 84,500.
+	Resulting state
+	chain_mutated = false · projected balance $1,300 · spend counter unchanged ($0)
+	
+
+WHAT THIS ESTABLISHES
+A $200 ETH transfer to an allowlisted recipient satisfies the per-transaction cap, daily cap, token allowlist, recipient allowlist, minimum-balance floor and pause checks, and the simulator returns a success decision.
+	
+
+BOUNDARY OF THE EVIDENCE
+This is a local guard evaluation only. The 84,500 gas figure is an estimate, and the projected balance is simulated state. Nothing was signed or broadcast.
+	EE-02 · Per-transaction spending limit rejection
+
+
+OUTCOME
+
+
+ PASSED 
+	COMPONENT EXERCISED
+
+
+EVMSimulator
+	CATEGORY
+
+
+Guardrail rejection
+	EVIDENCE REFERENCE
+
+
+EV-LOG-01 · EE-02
+	
+
+Objective
+	Show that a transfer above the per-transaction cap is rejected with the correct error.
+	Starting state
+	Policy loaded; chain_mutated = false.
+	Test inputs
+	Token ETH · trade amount $700 against a $500 per-transaction cap · recipient allowlisted · wallet not paused.
+	Checks applied
+	Local deterministic checks; no authenticated identity and no blockchain signer
+	Expected result
+	SIMULATED_REVERT with ExceedsPerTxCap
+	Observed result
+	SIMULATED_REVERT: ExceedsPerTxCap(amount=700.0, cap=500.0)
+	Resulting state
+	chain_mutated = false
+	
+
+WHAT THIS ESTABLISHES
+The guard identifies the cap breach and reports both the attempted amount ($700) and the configured limit ($500), so the cause of rejection is traceable.
+	
+
+BOUNDARY OF THE EVIDENCE
+The rejection occurs in the local simulator before any RPC call. It does not prove that a deployed contract enforces the same cap.
+	EE-03 · Restricted destination rejection
+
+
+OUTCOME
+
+
+PASSED 
+	COMPONENT EXERCISED
+
+
+EVMSimulator
+	CATEGORY
+
+
+Guardrail rejection
+	EVIDENCE REFERENCE
+
+
+EV-LOG-01 · EE-03
+	
+
+Objective
+	Show that a transfer to a recipient outside the allowlist is rejected.
+	Starting state
+	Policy loaded; chain_mutated = false.
+	Test inputs
+	Token ETH · trade amount $200 (within limits) · recipient 0x9999999999999999999999999999999999999999 which is not on the allowlist.
+	Checks applied
+	Local deterministic checks; no authenticated identity and no blockchain signer
+	Expected result
+	SIMULATED_REVERT with RecipientNotAllowed
+	Observed result
+	SIMULATED_REVERT: RecipientNotAllowed(0x9999999999999999999999999999999999999999)
+	Resulting state
+	chain_mutated = false
+	
+
+WHAT THIS ESTABLISHES
+With the amount held within limits, the only violated control is the destination, and the guard rejects on that basis alone and names the offending address.
+	
+
+BOUNDARY OF THE EVIDENCE
+Allowlist membership is evaluated locally. The reference contract's allowlist logic was not exercised.
+	EE-04 · Policy review, approval and activation
+
+
+OUTCOME
+
+
+ PASSED 
+	COMPONENT EXERCISED
+
+
+PolicyWorkflowManager
+	CATEGORY
+
+
+Approval workflow
+	EVIDENCE REFERENCE
+
+
+EV-LOG-01 · EE-04
+	
+
+Objective
+	Show the proposal lifecycle DRAFT → REVIEWED → DEPLOYABLE → ACTIVE.
+	Starting state
+	Proposal status DRAFT.
+	Test inputs
+	Proposal ID prop-957cf1f9.
+	Checks applied
+	Local deterministic checks; no authenticated identity and no blockchain signer
+	Expected result
+	DRAFT → REVIEWED → DEPLOYABLE → ACTIVE
+	Observed result
+	States recorded: DRAFT → REVIEWED → DEPLOYABLE → ACTIVE. Signature and deployment ID are synthetic.
+	Resulting state
+	proposal_status = ACTIVE · chain_mutated = false
+	
+
+WHAT THIS ESTABLISHES
+The workflow manager enforces an ordered four-stage lifecycle and the proposal reached ACTIVE through each intermediate state.
+	
+
+BOUNDARY OF THE EVIDENCE
+Reviewer and approver identities are strings, not authenticated cryptographic approvals, and the signature and deployment ID were generated locally. This is therefore a partial demonstration of the 'user approval required' control.
+	EE-05 · Emergency pause rejection
+
+
+OUTCOME
+
+
+ PASSED 
+	COMPONENT EXERCISED
+
+
+EVMSimulator
+	CATEGORY
+
+
+Emergency control
+	EVIDENCE REFERENCE
+
+
+EV-LOG-01 · EE-05
+	
+
+Objective
+	Show that no operation succeeds while the wallet is paused.
+	Starting state
+	is_paused = true.
+	Test inputs
+	Token ETH · trade amount $200 · recipient allowlisted · all other parameters within limits · is_paused = true.
+	Checks applied
+	Local deterministic checks; no authenticated identity and no blockchain signer
+	Expected result
+	SIMULATED_REVERT with WalletPaused
+	Observed result
+	SIMULATED_REVERT: WalletPaused()
+	Resulting state
+	chain_mutated = false · is_paused = true
+	
+
+WHAT THIS ESTABLISHES
+An otherwise valid request is rejected solely because the pause flag is set, which demonstrates the emergency stop takes precedence over otherwise-compliant operations.
+	
+
+BOUNDARY OF THE EVIDENCE
+The pause flag is local state. Owner-only pause and unpause permissions in the Solidity source were reviewed but not executed.
+	EE-06 · Operation after permission revocation
+
+
+OUTCOME
+
+
+ FAILED 
+	COMPONENT EXERCISED
+
+
+PolicyWalletClient
+	CATEGORY
+
+
+Revocation
+	EVIDENCE REFERENCE
+
+
+EV-LOG-01 · EE-06
+	
+
+Objective
+	Show that an operation attempted by an operator after revocation is rejected.
+	Starting state
+	Agent operator authorized = true.
+	Test inputs
+	Revoke the operator (authorized: true → false), then attempt an operation of $100.
+	Checks applied
+	Local deterministic checks; no authenticated identity and no blockchain signer
+	Expected result
+	Operation rejected after operator revocation
+	Observed result
+	Operator marked unauthorized, but local execution returned CONFIRMED. No broadcast occurred.
+	Resulting state
+	authorized = false · chain_mutated = false
+	
+
+WHY THIS SCENARIO FAILED
+The revocation flag was updated correctly (true → false), but the Python execution method selected a local sender without consulting that flag and returned a synthetic CONFIRMED response. The expected rejection did not occur, so this scenario is recorded as failed.
+This is an implementation gap, not evidence of successful on-chain execution.
+	
+
+BOUNDARY OF THE EVIDENCE
+The Solidity source restricts execution to authorized callers (onlyAuthorized), but that contract was not compiled, deployed or exercised in this run, so the gap is confirmed only for the Python execution path.
+	EE-07 · Modeled adversarial guard checks
+
+
+OUTCOME
+
+
+ PASSED 
+	COMPONENT EXERCISED
+
+
+AttackSimulator
+	CATEGORY
+
+
+Adversarial checks
+	EVIDENCE REFERENCE
+
+
+EV-LOG-01 · EE-07
+	
+
+Objective
+	Show that all six modeled attack vectors are rejected by the guard.
+	Starting state
+	Fresh in-memory objects; chain_mutated = false.
+	Test inputs
+	unauthorized_recipient · rogue_token_drain · floor_drain_attack · daily_limit_bypass · emergency_pause_breach · unauthorized_operator
+	Checks applied
+	Local deterministic checks; no authenticated identity and no blockchain signer
+	Expected result
+	All modeled vectors return the expected simulated revert
+	Observed result
+	6/6 modeled vectors returned the expected simulated reverts.
+	Resulting state
+	chain_mutated = false
+	
+
+WHAT THIS ESTABLISHES
+Each of the six modeled violations (recipient, token, balance floor, daily limit, pause and operator) produced the expected rejection within the simulator.
+	
+
+BOUNDARY OF THE EVIDENCE
+These are modeled vectors in a local simulator, not a penetration test. The unauthorized_operator vector is modeled at the simulator level and should be read alongside the EE-06 failure on the real client path.
+	7. On-Chain Transaction Evidence
+
+
+NO GENUINE ON-CHAIN EVIDENCE AVAILABLE
+Zero transactions were signed or broadcast, so there are no valid transaction hashes, receipts, block timestamps, contract events, fee records or verified state changes to report.
+	
+
+Required field
+	Evidence status
+	Status
+	Network and chain ID
+	Application configuration states Base Sepolia (84532)
+	 CONFIG ONLY 
+	Sender / destination
+	Only static labels are present; signer ownership was not proven
+	 LABELS ONLY 
+	Transaction hash
+	Unavailable; application responses are synthetic UUID-derived strings
+	 UNAVAILABLE 
+	Receipt status
+	Unavailable
+	 UNAVAILABLE 
+	Block number / timestamp
+	Unavailable; locally returned block numbers are simulated
+	 UNAVAILABLE 
+	Events and state change
+	Unavailable
+	 UNAVAILABLE 
+	Explorer link
+	Generated links are not accepted as evidence without a matching genuine receipt
+	 NOT ACCEPTED 
+	
+
+What future on-chain evidence must capture
+
+
+A future on-chain submission should capture, for each scenario, the signed payload, sender, chain ID, nonce, genuine transaction hash, receipt status, block number and timestamp, decoded contract events, fee record, before/after chain state and explorer link.
+Reverted transactions must be distinguished from application-level rejections that never reach the chain.
+
+
+Submission classification
+
+
+Submission category
+	Non-on-chain / sandbox execution evidence
+	Blockchain network configuration
+	Base Sepolia, chain ID 84532
+	Genuine transactions broadcast
+	0
+	Transaction hashes available
+	None
+	Primary evidence
+	Demonstration video, sandbox logs, screenshots, automated tests, before-and-after application state, and guardrail rejection results
+	
+
+IF ASKED ABOUT THE MISSING TRANSACTION HASHES
+There are no genuine Base Sepolia transaction hashes from this evidence run. The hash-like values displayed by Orvilo are generated locally using UUIDs, so they are simulation identifiers and not transactions that can be verified on Basescan. The only valid hash currently available is the SHA-256 checksum of the evidence log, 98e765bc3491a9eac9ca296b4062d03f6928902ab4d974a6fd27f1483ef1de83, which proves the evidence JSON file has not changed and is not a blockchain transaction hash. In the submission, state that genuine on-chain transaction hashes are none, with the reason that the demonstration used Orvilo’s local sandbox mode and no transaction was signed or broadcast to Base Sepolia, and list the evidence-file SHA-256 above. Do not submit the app’s generated 0x... values as genuine transaction hashes.
+	8. Sandbox Operation Logs
+
+
+EV-LOG-01 is the canonical structured log. Every record contains an ISO 8601 UTC timestamp, scenario identifier, inputs, expected and observed results, before/after state, outcome and an explicit LOCAL_SANDBOX_SIMULATION label.
+
+
+8.1 Log attributes
+File
+	docs/evidence/execution-report/execution-evidence.json
+	SHA-256
+	98e765bc3491a9eac9ca296b4062d03f6928902ab4d974a6fd27f1483ef1de83
+	Scenario count
+	7
+	RPC used
+	No
+	Transactions broadcast
+	0
+	Sensitive data
+	No credentials or private keys captured
+	8.2 Representative observed results
+Scenario
+	Status / decision
+	State mutation
+	EE-01
+	SIMULATED_SUCCESS; projected $200 change; estimated gas 84,500
+	No chain mutation
+	EE-02
+	SIMULATED_REVERT: ExceedsPerTxCap(amount=700, cap=500)
+	None
+	EE-03
+	SIMULATED_REVERT: RecipientNotAllowed
+	None
+	EE-05
+	SIMULATED_REVERT: WalletPaused
+	None
+	EE-07
+	Six modeled vectors rejected as expected
+	None
+	
+
+EE-04 and EE-06 are recorded in the same log. EE-04 changes in-memory workflow status only, and EE-06 changes the local authorization flag only (see Section 10).
+9. Permission and Guardrail Evidence
+Figure 3 shows where permission enforcement is intended to occur and where the local simulation boundary sits. The assessment notes that HTTP routes do not authenticate caller identity, so application permission labels are not an HTTP security boundary.
+
+
+ fig_perm.png 
+
+Figure 3. Intended permission enforcement points and the local simulation boundary (EV-FIG-02).
+9.1 Required demonstrations
+Required demonstration
+	Scenario
+	Observed result
+	Assessment
+	Authorized operation completes
+	EE-01
+	Local guards returned SIMULATED_SUCCESS
+	 PASSED (SANDBOX) 
+	Spending limit rejected
+	EE-02
+	ExceedsPerTxCap
+	 PASSED 
+	Restricted destination blocked
+	EE-03
+	RecipientNotAllowed
+	 PASSED 
+	User approval required
+	EE-04
+	State transition recorded, but actor labels and signature are unverified
+	 PARTIAL 
+	Expired or reused approval rejected
+	Not executed
+	No expiry/reuse control in assessed workflow
+	 UNAVAILABLE 
+	Attempt after permission revocation
+	EE-06
+	Local client still returned synthetic CONFIRMED
+	 FAILED 
+	Concurrent aggregate-limit interaction
+	Not executed
+	No dedicated concurrency evidence
+	 UNAVAILABLE 
+	10. Before-and-After State Verification
+
+
+Scenario
+	Before
+	After
+	Verified interpretation
+	EE-01
+	Projected balance $1,500; spend $0
+	Projected balance $1,300; spend counter unchanged
+	Simulation result only
+	EE-02
+	No chain mutation
+	No chain mutation
+	Cap violation rejected before RPC
+	EE-03
+	No chain mutation
+	No chain mutation
+	Recipient violation rejected before RPC
+	EE-04
+	DRAFT
+	ACTIVE
+	In-memory workflow changed; no chain state
+	EE-05
+	Paused
+	Paused; no chain mutation
+	Operation rejected
+	EE-06
+	Agent authorized = true
+	Agent authorized = false; execution still reported CONFIRMED
+	Revocation recorded but not locally enforced
+	EE-07
+	No chain mutation
+	No chain mutation
+	Modeled attacks only
+	
+
+FEE RECONCILIATION
+No fee reconciliation was possible because no transaction entered a mempool or block. Gas and balance values in the log are estimates or projected state, not observed blockchain state.
+	11. Findings and Recommended Remediation
+
+
+The findings below are drawn from the execution results and the repository review. Severity is the report author's assessment for the intended use of the system, and the recommendations are suggestions for follow-up work, not recorded results.
+ID
+	Finding
+	Severity
+	Recommended remediation
+	F-01
+	Revoked operator can still execute: the Python execution method does not check the authorization flag (EE-06)
+	 HIGH 
+	Check the authorized flag before selecting a sender and reject with an explicit error; add a regression test that replays EE-06 and expects rejection.
+	F-02
+	Wallet client fabricates CONFIRMED responses and UUID-derived hashes instead of signing and broadcasting
+	 HIGH 
+	Label simulated responses distinctly (for example SIMULATED) and add a separate signer, broadcast and receipt-verification path for approved networks.
+	F-03
+	Workflow reviewers, approvers and signatures are plain strings (EE-04)
+	 MEDIUM 
+	Bind approvals to authenticated identities and verifiable signatures.
+	F-04
+	No approval expiry or one-time-use binding
+	 MEDIUM 
+	Add an expiry timestamp and nonce to each approval and reject expired or reused approvals.
+	F-05
+	HTTP routes do not authenticate the caller (Figure 3)
+	 MEDIUM 
+	Add authentication and role checks at the route layer before the policy layer is relied on.
+	F-06
+	Simulator can fall back to success-oriented estimates when RPC is unavailable
+	 MEDIUM 
+	Fail closed when RPC is unavailable, or flag the result as unverified.
+	F-07
+	Reference contract not compiled, deployed or bytecode-matched in this run
+	 MEDIUM 
+	Compile, deploy to an approved test network and verify bytecode, then rerun scenarios against it.
+	F-08
+	No concurrency evidence for aggregate limits
+	 LOW 
+	Add a dedicated concurrency test for daily-cap accounting.
+	12. Submission Readiness
+
+
+This checklist shows which required items are present in the evidence package and which remain open at the time of writing.
+Item
+	Status
+	Note
+	Structured execution log (EV-LOG-01)
+	 READY 
+	Seven scenarios with timestamps, inputs, outputs and state
+	Integrity checksum (EV-HASH-01)
+	 READY 
+	SHA-256 recorded in Sections 8 and 15
+	Regression test result (EV-TEST-01)
+	 READY 
+	90 passed in 3.21 seconds
+	Architecture and permission figures
+	 READY 
+	Figures 2 and 3
+	Honest classification of evidence
+	 READY 
+	Non-on-chain sandbox evidence, with synthetic values disclosed
+	Revocation control (EE-06)
+	 OPEN GAP 
+	Disclosed as failed; remediation in F-01
+	Demo video (EV-VIDEO-01)
+	 READY 
+	5-minute walkthrough; timestamped segment index in Section 13
+	On-chain receipts (EV-CHAIN-01)
+	 UNAVAILABLE 
+	Not required for the non-on-chain category
+	13. Demo Video and Evidence Walkthrough
+
+
+The submitted demonstration video records Orvilo operating in its local sandbox environment. The table below indexes each segment of the video and links it to the scenario records in Section 6.
+
+
+13.1 Video record
+Evidence ID
+	EV-VIDEO-01
+	Video duration
+	5 minutes 00 seconds (maximum permitted: 5 minutes)
+	Evidence type
+	Sandbox execution demonstration
+	Network configuration
+	Base Sepolia, chain ID 84532
+	Genuine transactions broadcast
+	0
+	On-chain transaction hashes
+	Not available
+	13.2 Segment index
+Time
+	Content shown
+	Scenario
+	Report reference
+	00:00 – 00:15
+	Application dashboard and environment
+	Context
+	Sections 1, 3
+	00:15 – 00:35
+	Wallet balance and initial state
+	Context
+	Sections 3, 4
+	00:35 – 01:10
+	Policy creation and verification
+	Policy setup
+	Section 4
+	01:10 – 01:35
+	Policy review and approval
+	EE-04
+	Section 6, EE-04
+	01:35 – 02:05
+	Authorized simulated operation
+	EE-01
+	Section 6, EE-01
+	02:05 – 02:35
+	Spending-limit rejection
+	EE-02
+	Section 6, EE-02
+	02:35 – 03:05
+	Restricted-recipient rejection
+	EE-03
+	Section 6, EE-03
+	03:05 – 03:30
+	Emergency-pause rejection
+	EE-05
+	Section 6, EE-05
+	03:30 – 03:55
+	Permission/operator revocation
+	EE-06
+	Section 6, EE-06
+	03:55 – 04:35
+	Attack simulation results
+	EE-07
+	Section 6, EE-07
+	04:35 – 05:00
+	Transaction history, logs, final state, and sandbox-evidence disclosure
+	All
+	Sections 8, 14
+	
+
+13.3 Closing statement in the video
+CLOSING STATEMENT
+This demonstration was performed in Orvilo’s local sandbox environment, configured with the Base Sepolia network label and chain ID 84532. No transaction was signed or broadcast, so no genuine blockchain hash or receipt was produced. The results demonstrate application workflows, simulated execution, and guardrail enforcement without claiming on-chain settlement.
+	13.4 Statement on video evidence
+The submitted demonstration video records Orvilo operating in its local sandbox environment. It demonstrates policy creation, approval-state transitions, transaction simulation, spending-limit enforcement, destination restrictions, emergency pause controls, permission revocation, and modeled attack rejection. The application was configured with the Base Sepolia network label and chain ID 84532; however, no transaction was signed or broadcast during the demonstrated run. Consequently, the evidence package contains no genuine Base Sepolia transaction hashes, blockchain receipts, block confirmations, or verified contract events. Hash-like identifiers shown by the current application are locally generated simulation identifiers and must not be interpreted as public blockchain transactions.
+14. Execution Results and Limitations
+
+
+Result class
+	Count
+	Details
+	 PASSED 
+	6
+	EE-01 through EE-05 and EE-07
+	 FAILED 
+	1
+	EE-06: post-revocation local execution was not rejected
+	 NOT EXECUTED 
+	2
+	Approval expiry/reuse and concurrent aggregate-limit behavior
+	Automated tests
+	90 passed
+	Repository pytest suite
+	Genuine on-chain transactions
+	0
+	No signer or broadcast path exercised
+	
+
+Successful demonstrations establish only that the current local code produced the recorded responses under controlled inputs. They do not establish production security, correctness under concurrency, deployment integrity, authenticated authorization, live market accuracy, reliable settlement or safety for real funds.
+
+
+Primary limitations
+* The Python wallet client fabricates confirmation data instead of signing and broadcasting.
+* The local revocation flag is not consulted by the Python execution method.
+* Workflow reviewers, approvers and signatures are strings rather than authenticated cryptographic approvals.
+* The simulator can fall back to success-oriented estimates when RPC is unavailable; this report disables RPC and labels the result accordingly.
+* The reference contract was not compiled, deployed, bytecode-matched or exercised in this run.
+* No production account credentials were available, and the demonstration video records sandbox behavior only.
+15. Evidence Index and Reproduction
+
+
+15.1 Evidence index
+Evidence ID
+	Artifact
+	Purpose
+	Integrity / status
+	EV-LOG-01
+	execution-evidence.json
+	Structured scenario log
+	SHA-256: 98e765bc3491a9eac9ca296b4062d03f6928902ab4d974a6fd27f1483ef1de83
+	EV-HASH-01
+	execution-evidence.sha256
+	Integrity sidecar
+	Generated with SHA-256
+	EV-TEST-01
+	pytest console result
+	Regression evidence
+	 90 PASSED 
+	EV-FIG-01
+	system-context.png
+	Architecture context
+	Repository visual
+	EV-FIG-02
+	permission-enforcement.png
+	Permission boundary context
+	Repository visual
+	EV-VIDEO-01
+	Demonstration video (5:00)
+	Required walkthrough
+	 SUBMITTED 
+	EV-CHAIN-01
+	Transaction receipts
+	Required for on-chain category
+	 UNAVAILABLE 
+	15.2 Reproduction
+1. Use Python 3.13 and install requirements from requirements.txt in an isolated environment.
+2. From the repository root, run: .venv/bin/python scripts/generate_execution_evidence.py
+3. Verify integrity using the SHA-256 value in docs/evidence/execution-report/execution-evidence.sha256.
+4. Run the regression suite: .venv/bin/python -m pytest -q
+5. Review the JSON fields evidence_classification, rpc_used_for_this_run and genuine_transactions_broadcast before submission.
+
+
+SAFETY NOTE
+Do not insert private keys into the evidence generator. Genuine chain evidence requires a separately designed signer, broadcast and receipt-verification path and should be collected on an explicitly approved network.
+	Appendix A · Source Map
+
+
+Area
+	Repository source
+	Evidence generator
+	scripts/generate_execution_evidence.py
+	Policy simulator
+	contracts/simulator.py
+	Local wallet client
+	contracts/wallet_client.py
+	Attack scenarios
+	contracts/attack_tester.py
+	Approval workflow
+	policy/workflow.py
+	Reference smart contract
+	contracts/PolicyWallet.sol
+	Test suite
+	tests/
+	Container smoke workflow
+	scripts/docker_smoke.py and .github/workflows/ci.yml
+	Appendix B · Evidence Checksum
+
+
+SHA-256 of execution-evidence.json:
+SHA-256
+98e765bc3491a9eac9ca296b4062d03f6928902ab4d974a6fd27f1483ef1de83
+	Appendix C · Interpretation Rule
+
+
+Throughout this report, ‘simulated success’ means a local method returned a successful simulation result. ‘Synthetic confirmation’ means the application constructed confirmation-like fields locally. Neither term means a blockchain accepted or finalized a transaction. Only a genuine receipt from the identified chain, reconciled to the intended state change, would support that conclusion.
+Appendix D · Shared Policy Configuration
+
+
+The following policy parameters were common to the guard-evaluation scenarios (EE-01, EE-02, EE-03 and EE-05), as recorded in the evidence log:
+Parameter
+	Value
+	Per-transaction cap
+	$500
+	Daily cap
+	$1,000
+	Minimum balance floor
+	$500
+	Allowed tokens
+	ETH, WETH, USDC
+	Allowed recipient
+	0x71C8366420A096207E90B01D252431792349039A
+	Starting spend today
+	$0
+	Projected balance after trade
+	$1,300 (EE-01, EE-02, EE-03, EE-05)
+	Paused flag
+	false (true only in EE-05)
+	Appendix E · Glossary
+
+
+Term
+	Meaning
+	SIMULATED_SUCCESS / SIMULATED_REVERT
+	Result of the local guard evaluation; not a blockchain outcome
+	Guard
+	A policy check such as a spending cap, allowlist, balance floor or pause flag
+	Per-transaction cap
+	Maximum value permitted in a single operation
+	Daily cap
+	Maximum cumulative value permitted per day
+	Balance floor
+	Minimum balance that must remain after an operation
+	Allowlist
+	Set of recipients or tokens an operation may use
+	Operator
+	The autonomous agent account permitted to act within policy
+	Revocation
+	Removing an operator's authorization
+	Synthetic identifier
+	A locally generated value that resembles a transaction hash but is not one
+	RPC
+	Remote procedure call interface used to query or submit to a blockchain node
+	
+
+Page  of

@@ -37,6 +37,8 @@ Orvilo is a mathematically verified autonomous trading agent and wallet policy e
 | [Agent runtime](docs/agent-runtime.md) | Market feeds, autonomous loop, scheduling, RAG reasoning, dry-run checks, and task lifecycle |
 | [Smart contracts and security](docs/smart-contracts.md) | Solidity guards, simulator behavior, emergency controls, and attack-test vectors |
 | [User approval and audit](docs/user-and-audit.md) | Approval states, audit records, dashboard behavior, and operator controls |
+| [Execution evidence report](docs/execution-evidence-report.md) | Empirical sandbox execution records, scenario register (EE-01 to EE-07), test verification, and disclosed gaps |
+| [Execution evidence Word document](docs/Orvilo_Execution_Evidence_Report.docx) | Editable evidence report with embedded execution logs and checksums |
 | [Pitch deck reference](docs/pitch-deck-info.md) | Demonstration narrative and scorecard evidence |
 | [Mermaid visual sources](visuals/) | A4-oriented Mermaid diagrams and rendered PNG figures |
 
