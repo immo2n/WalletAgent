@@ -291,7 +291,7 @@ execution boundary.
 | Package / Directory | Purpose | Key Modules |
 | :--- | :--- | :--- |
 | [`policy/`](../policy/) | Natural language parsing, AST, dimensional sorts, Z3 SMT solver, workflow manager | [`ast.py`](../policy/ast.py), [`z3_compile.py`](../policy/z3_compile.py), [`compare.py`](../policy/compare.py), [`workflow.py`](../policy/workflow.py) |
-| [`agent/`](../agent/) | Autonomous daemon loop and DCA task scheduler | [`runtime.py`](../agent/runtime.py), [`task.py`](../agent/task.py) |
+| [`agent/`](../agent/) | Autonomous daemon loop, DCA task scheduler, and conversational assistant | [`runtime.py`](../agent/runtime.py), [`task.py`](../agent/task.py), [`assistant.py`](../agent/assistant.py) |
 | [`reasoning/`](../reasoning/) | Fragmented cognitive reasoning, historical market RAG, dry-run simulation | [`engine.py`](../reasoning/engine.py), [`rag.py`](../reasoning/rag.py), [`dry_run.py`](../reasoning/dry_run.py) |
 | [`contracts/`](../contracts/) | PolicyWallet.sol smart contract, EVM preflight simulator, attack tester | [`PolicyWallet.sol`](../contracts/PolicyWallet.sol), [`simulator.py`](../contracts/simulator.py), [`attack_tester.py`](../contracts/attack_tester.py) |
 | [`exchange/`](../exchange/) | Market perception, Coinbase WebSocket, Base Sepolia gas oracle | [`service.py`](../exchange/service.py), [`client.py`](../exchange/client.py), [`gas_oracle.py`](../exchange/gas_oracle.py) |

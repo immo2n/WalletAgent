@@ -4148,13 +4148,14 @@
       </button>
     </div>
     <div class="assistant-messages" id="assistantMessages">
-      <div class="assistant-message bot">Hi! I can explain your wallet, market, policy, contract security, transactions, and attack tests. I can also open sections, switch scenarios, and pause or resume the agent.</div>
+      <div class="assistant-message bot">👋 Hi! I am your AI WalletAgent Assistant. I can audit your transactions for suspicious activity, explain active agent goals, check on-chain security limits, and execute actions.</div>
     </div>
     <div class="assistant-quick-actions">
-      <button type="button" onclick="askAssistant('Show my wallet balance')">Balance</button>
-      <button type="button" onclick="askAssistant('What is the contract security status?')">Security</button>
-      <button type="button" onclick="askAssistant('Run all attack tests')">Attack tests</button>
-      <button type="button" onclick="askAssistant('What is the current market?')">Market</button>
+      <button type="button" onclick="askAssistant('Audit transactions for suspicious activity')"><i class="fa-solid fa-shield-virus me-1"></i>Audit Transactions</button>
+      <button type="button" onclick="askAssistant('Explain active agent tasks')"><i class="fa-solid fa-robot me-1"></i>Explain Tasks</button>
+      <button type="button" onclick="askAssistant('What is the contract security status?')"><i class="fa-solid fa-lock me-1"></i>Security</button>
+      <button type="button" onclick="askAssistant('Show my wallet balance')"><i class="fa-solid fa-wallet me-1"></i>Balance</button>
+      <button type="button" onclick="askAssistant('Run all attack tests')"><i class="fa-solid fa-bug me-1"></i>Attack Tests</button>
     </div>
     <form class="assistant-composer" onsubmit="event.preventDefault(); submitAssistantMessage();">
       <input id="assistantInput" type="text" autocomplete="off" placeholder="Ask WalletAgent anything..." aria-label="Message WalletAgent">
@@ -4564,10 +4565,18 @@
       }
     }
 
+    function formatAssistantText(str) {
+      if (!str) return '';
+      let safe = $('<div>').text(str).html();
+      safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      safe = safe.replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 rounded bg-light text-dark font-monospace" style="font-size:0.85em;">$1</code>');
+      return safe;
+    }
+
     function appendAssistantMessage(text, role) {
       const message = $('<div class="assistant-message"></div>')
         .addClass(role)
-        .text(text);
+        .html(formatAssistantText(text));
       $('#assistantMessages').append(message).scrollTop($('#assistantMessages')[0].scrollHeight);
     }
 

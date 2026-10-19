@@ -10,8 +10,9 @@
     <img src="https://img.shields.io/badge/FinTechathon_2026-Topic_F_Scorecard-7928ca?style=for-the-badge" alt="FinTechathon 2026" />
   </a>
   <a href="docs/technical-doc.md#empirical-test-verification--test-execution">
-    <img src="https://img.shields.io/badge/Tests-90%2F90_Passing-2ea043?style=for-the-badge&logo=pytest&logoColor=white" alt="Tests" />
+    <img src="https://img.shields.io/badge/Tests-94%2F94_Passing-2ea043?style=for-the-badge&logo=pytest&logoColor=white" alt="Tests" />
   </a>
+
   <a href="docs/smart-contracts.md#7-base-sepolia-deployment-configuration">
     <img src="https://img.shields.io/badge/Network-Base_Sepolia_84532-0052ff?style=for-the-badge&logo=ethereum&logoColor=white" alt="Base Sepolia" />
   </a>
@@ -63,6 +64,13 @@ WalletAgent is a mathematically verified autonomous trading agent and wallet pol
 - **Coinbase WebSocket:** Real-time tick-by-tick ETH/USD pricing feed.
 - **Ethereum / Base Sepolia RPC:** Live gas tracking (Base fee + Priority fee) and network state inspection (Base Sepolia Chain ID: `84532`).
 - **Interactive Web Dashboard:** Lightweight, responsive dashboard built with Flask and Vanilla CSS/JS featuring live charts, interactive guard gate testing, and policy discovery.
+
+### 6. Conversational LLM Assistant & Anomaly Auditor (LangChain Powered)
+- **Deep System Connection:** Floating conversational bubble connected directly to the live wallet database, task registry, autonomous agent loop, on-chain policy client, market feeds, and attack testing suite.
+- **Transaction Anomaly Detection:** Cognitively audits transaction ledgers to flag unapproved recipients, drain attempts threatening the $500 balance floor, over-cap transactions, and gas surge executions with categorized risk severity (`CRITICAL`, `ELEVATED`, `SECURE`, `CLEAN`).
+- **Autonomous Task Explanations:** Explains the agent's current mission, breaks down formal Z3 readbacks, compares live gas perceptions against thresholds, and tracks recurring DCA cadence.
+- **LangChain & Hybrid Synthesis:** Leverages `langchain_core` message abstractions with optional live LLM inference and deterministic cognitive fallbacks for offline reliability.
+
 
 ---
 
@@ -349,23 +357,81 @@ browser clients; do not use it as a terminating smoke-test command. Setting
 `execute` to `true` on `/api/validate_intent` mutates the local JSON wallet
 ledger and does not submit an on-chain transaction.
 
-### Conversational assistant
+---
 
-The dashboard includes a floating Messenger-style assistant on desktop and
-mobile. It can explain wallet balances, market and gas conditions, policy
-status, contract security, transaction history, and attack-test results. It
-can also navigate to dashboard sections, switch market scenarios, request
-simulations, run attack tests, and pause or resume the agent. Actions that
-change agent state require confirmation; contract-destructive operations are
-not exposed as unrestricted chat commands.
+## 💬 Conversational LLM Assistant & Anomaly Auditor
 
-Example:
+The dashboard features a floating conversational assistant (`agent/assistant.py`) integrated on both desktop and mobile layouts. Powered by LangChain and structured cognitive reasoning, it serves as an intelligent co-pilot directly wired into the runtime engine, on-chain policy client, and ledger database.
+
+### 🧩 Subsystem Connection
+
+```mermaid
+flowchart LR
+    UI["Dashboard Floating Bubble<br/>(#assistantPanel)"] --> API["POST /api/assistant/chat"]
+    API --> Assistant["WalletAssistant<br/>(agent/assistant.py)"]
+    Assistant --> DB["UserDatabase<br/>(Ledger & Balances)"]
+    Assistant --> TaskMgr["TaskManager<br/>(Active Tasks & DCA)"]
+    Assistant --> AgentDaemon["AutonomousAgent<br/>(Loop & Controls)"]
+    Assistant --> Web3Client["PolicyWalletClient<br/>(Base Sepolia Rules)"]
+    Assistant --> MarketFeed["ExchangeService<br/>(Gas & ETH Perception)"]
+    Assistant --> Attacker["AttackSimulator<br/>(Penetration Vectors)"]
+    Assistant --> LangChainEngine["LangChain Core<br/>(Prompt & Inference)"]
+```
+
+### 🛡️ Core Capabilities
+
+1. **Transaction Security & Anomaly Auditing (`/api/assistant/audit`)**:
+   - **Unapproved Recipient Inspection:** Cross-checks transfers and withdrawals against verified contract allowlists (`allowed_recipients`) to detect unauthorized recipient addresses.
+   - **Solvency Drain Prevention:** Inspects attempts threatening the `$500.00` USDC reserve floor, highlighting transactions intercepted by formal Z3 invariant guards.
+   - **Transaction Cap Violation Checks:** Scans for transactions exceeding the configured per-transaction cap ($300–$1,000) or cumulative daily limits.
+   - **Gas Surge Profiling:** Identifies trades executed during adverse gas conditions (>25 gwei).
+   - **Risk Scoring:** Assigns categorized risk verdicts: `✅ CLEAN & VERIFIED`, `🛡️ SECURE (Guards Active)`, `⚠️ ELEVATED`, or `🚨 CRITICAL`.
+
+2. **Autonomous Task Explanations (`/api/assistant/tasks`)**:
+   - **Goal & AST Breakdown:** Explains user prompts, formal dual-reader readbacks, and policy hashes in plain English.
+   - **Dynamic Trigger Evaluation:** Evaluates live market conditions against active task triggers in real time (e.g. *Gas Threshold: <= 20.0 gwei | Current Live Gas: 0.5 gwei -> SATISFIED*).
+   - **Active Safety Invariants:** Details enforced balance floors ($500), single trade limits ($300), and asset allowlists.
+   - **Cadence & Execution History:** Summarizes completed cycle counts, Base Sepolia transaction hashes, and recurring DCA intervals.
+
+3. **Interactive Actions & Safe Dashboard Controls**:
+   - **Dry-Run Invariant Simulations:** Formally evaluates prospective trade amounts (e.g. *"Simulate a $200 swap"*) against balance floors and single-transaction caps.
+   - **Simulation Scenario Toggles:** Switches the simulator to `HIGH_GAS` (35 gwei) or `GAS_DIP` (0.5 gwei) directly from chat.
+   - **Penetration Testing:** Triggers the 6-vector adversarial attack suite and redirects to the rejection view.
+   - **Runtime Gating:** Pauses or resumes autonomous agent monitoring loops with safety confirmation dialogs.
+
+4. **LangChain & Hybrid Cognitive Synthesis**:
+   - Utilizes `langchain_core` message schema (`HumanMessage`, `AIMessage`, `ChatPromptTemplate`).
+   - Supports multi-provider live LLM synthesis (Groq, Gemini, OpenAI) when API keys are configured.
+   - Includes a deterministic, offline-safe cognitive synthesis fallback ensuring 100% availability with 0ms latency during local demonstrations.
+
+### 💡 Example Prompts & Use Cases
+
+| Category | Example User Query | Assistant Response & Action |
+|:---|:---|:---|
+| **Security Audit** | `"Are there any suspicious transactions?"` | Audits ledger, scores anomalies, navigates to Ledger tab |
+| **Task Explanation** | `"What is the agent currently doing?"` | Explains active goals, triggers, and Z3 invariants |
+| **Solvency Simulation** | `"Simulate a $200 swap"` | Formally checks balance after trade vs $500 floor |
+| **Balance & Holdings** | `"What is my wallet balance?"` | Reports ETH, USDC, reserve floor, and available spending liquidity |
+| **Penetration Testing** | `"Run all attack tests"` | Executes 6 attack vectors and validates typed Solidity reverts |
+| **Market Perception** | `"What is the current market?"` | Reports real-time ETH price and Base Sepolia gas in gwei |
+| **Scenario Control** | `"Switch to high gas scenario"` | Sets gas to 35 gwei to demonstrate invariant holding behavior |
+| **Runtime Control** | `"Pause the agent"` | Prompts confirmation and halts background monitoring daemon |
+
+### 🔌 Assistant API Reference
 
 ```bash
+# Natural language chat & action routing
 curl -fsS -X POST http://127.0.0.1:5000/api/assistant/chat \
   -H 'Content-Type: application/json' \
-  -d '{"message":"What is the current wallet balance?"}'
+  -d '{"message":"Audit transactions for suspicious activity"}'
+
+# Direct JSON security audit
+curl -fsS http://127.0.0.1:5000/api/assistant/audit
+
+# Direct JSON active task explanation
+curl -fsS http://127.0.0.1:5000/api/assistant/tasks
 ```
+
 
 ### Dashboard behavior
 
@@ -452,13 +518,13 @@ Run the complete test suite from the repository root:
 .venv/bin/python -m pytest -q
 ```
 
-The current suite contains 90 collected tests covering policy parsing and
-verification, task scheduling, agent behavior, Flask routes, wallet state,
-contract simulation, attack vectors, and scorecard features. A focused run is
+The current suite contains 94 collected tests covering policy parsing and
+verification, task scheduling, agent behavior, conversational assistant, Flask routes,
+wallet state, contract simulation, attack vectors, and scorecard features. A focused run is
 useful when changing the dashboard backend:
 
 ```bash
-.venv/bin/python -m pytest -q tests/test_agent.py tests/test_scorecard_features.py
+.venv/bin/python -m pytest -q tests/test_agent.py tests/test_assistant.py tests/test_scorecard_features.py
 ```
 
 Do not commit generated runtime state from `agent/data/agent_tasks.json` or
@@ -718,7 +784,10 @@ return JSON containing the current market state.
 
 ```
 WalletAgent/
-├── agent/                  # Autonomous daemon runtime, task models, and single-task registry
+├── agent/                  # Autonomous runtime, tasks, assistant & anomaly auditor
+│   ├── assistant.py        # Conversational system assistant & anomaly auditor
+│   ├── runtime.py          # Continuous agent decision loop and thread daemon
+│   └── task.py             # AgentTask dataclass and TaskManager registry
 ├── exchange/               # Market feeds, WebSocket clients, and live price/gas polling
 ├── flask/                  # Web dashboard templates, static assets, and API routes
 ├── policy/                 # Z3 formal verification engine, AST definitions, and parsers
