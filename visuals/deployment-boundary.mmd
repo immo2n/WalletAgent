@@ -1,0 +1,25 @@
+---
+config:
+  theme: neutral
+  themeVariables:
+    primaryColor: "#EAF0FF"
+    primaryBorderColor: "#315EF5"
+    primaryTextColor: "#16213E"
+    lineColor: "#5B677A"
+    secondaryColor: "#E8F7F3"
+    tertiaryColor: "#FFF4DF"
+---
+flowchart LR
+    Dev["Developer workstation"]
+    Venv[".venv + requirements.txt"]
+    App["main.py<br/>Flask + background agent"]
+    Browser["Browser"]
+    Json[("wallet_db.json<br/>agent_tasks.json")]
+    Feed["Optional external feeds<br/>Coinbase WS / Base Sepolia RPC"]
+    Future["Production boundary<br/>WSGI • TLS • auth • signer • monitoring"]
+
+    Dev --> Venv --> App
+    Browser <--> App
+    App --> Json
+    Feed --> App
+    App -. requires additional controls .-> Future

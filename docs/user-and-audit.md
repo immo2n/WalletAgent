@@ -1,4 +1,4 @@
-# User Approval Workflow, Audit Trail & Interface Specification
+# Orvilo User Approval Workflow, Audit Trail & Interface Specification
 
 > **Subsystem Specification**: Policy Review Lifecycle, Cryptographic Signing, Transaction Audit Ledger, and Web Dashboard
 > **Repository Modules**: [`policy/workflow.py`](../policy/workflow.py), [`user/`](../user/), [`flask/`](../flask/)
@@ -13,15 +13,21 @@
 
 ## 1. Explicit Policy Review & Approval Workflow
 
+> **Current behavior:** The startup default is intentionally auto-promoted to
+> `ACTIVE` so the demo dashboard has an operational policy. New proposals can
+> be reviewed and approved through the API, but the current workflow manager
+> keeps proposals in process memory and generates placeholder signatures when
+> no signature is supplied. It is not an EIP-712 signing implementation.
+
 FinTechathon 2026 Feature 2 requires a formal, multi-stage human-in-the-loop approval workflow before any autonomous trading policy can be deployed or executed on-chain.
 
 - **Module**: [`policy/workflow.py`](../policy/workflow.py)
 - **Class**: [`PolicyWorkflowManager`](../policy/workflow.py#L70-L185), [`PolicyProposal`](../policy/workflow.py#L24-L68)
 
 ### Visual User & State Pipeline Flowchart
-Below is the system flowchart rendered from [`visuals/user.svg`](../visuals/user.svg):
+Below is the system flowchart rendered from [`visuals/rendered/data-model.png`](../visuals/rendered/data-model.png):
 
-![User and Storage Flow](../visuals/user.svg)
+![User and Storage Flow](../visuals/rendered/data-model.png)
 
 ---
 
@@ -34,7 +40,7 @@ stateDiagram-v2
     [*] --> DRAFT: Natural Language Compiled & Verified
     DRAFT --> REVIEWED: Human Auditor Inspects AST & Readback
     REVIEWED --> DEPLOYABLE: Owner Cryptographic Approval / Signature
-    DEPLOYABLE --> ACTIVE: Broadcast to PolicyWallet.sol
+    DEPLOYABLE --> ACTIVE: Sync local wallet-client guard state
     ACTIVE --> REJECTED: Superseded / Emergency Invalidation
     DRAFT --> REJECTED: Manual Rejection
     REVIEWED --> REJECTED: Manual Rejection
@@ -60,8 +66,11 @@ stateDiagram-v2
 - Sets `is_deployable = True`.
 
 ### Stage 4: `ACTIVE`
-- The policy parameters are broadcast to [`PolicyWallet.sol`](../contracts/PolicyWallet.sol) on Base Sepolia.
-- An on-chain transaction hash (`onchain_tx_hash`) is recorded.
+- The policy parameters are passed to the local `PolicyWalletClient`. Its
+  generated transaction-shaped result is not a mined Base Sepolia receipt.
+- The default client returns a generated transaction-shaped identifier and
+  stores it in process memory. It is not evidence of a mined Base Sepolia
+  transaction.
 - The autonomous background daemon immediately adopts this active policy as its primary operational boundary.
 
 ---
@@ -127,7 +136,7 @@ In the web dashboard, clicking any transaction in the ledger opens the **Reasoni
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        TOP NAVIGATION & STATUS BAR                     │
-│  WalletAgent Logo │ Base Sepolia (84532) │ Killswitch │ Gas: 0.5 gwei  │
+│  Orvilo Logo │ Base Sepolia (84532) │ Killswitch │ Gas: 0.5 gwei  │
 ├────────────────────────────────────────────────────────────────────────┤
 │                          PORTFOLIO & ASSET STATS                       │
 │  Net Worth: $1,500.00 │ ETH Balance: 0.25 ETH │ USDC: $1,000.00        │

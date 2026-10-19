@@ -1,6 +1,6 @@
-# WalletAgent
+# Orvilo: User-Defined On-Chain Guardrails for Autonomous AI Wallets
 
-> **Autonomous Web3 Wallet Agent with Z3 Formal Policy Verification & RAG Cognitive Reasoning**
+> **Orvilo implementation repository — local verification, guardrail simulation, and autonomous wallet dashboard**
 
 <p align="left">
   <a href="docs/technical-doc.md">
@@ -20,7 +20,7 @@
 
 > 📚 **Documentation Hub**: [**Technical Architecture & Competition Specification**](docs/technical-doc.md) • [**Pitch Deck Blueprint**](docs/pitch-deck-info.md) • [**Policy Engine & Z3 SMT**](docs/policy-engine.md) • [**Agent Runtime & RAG**](docs/agent-runtime.md) • [**Smart Contracts & Security**](docs/smart-contracts.md) • [**User Approval & Audit**](docs/user-and-audit.md)
 
-WalletAgent is a mathematically verified autonomous trading agent and wallet policy engine designed for EVM networks (Base Sepolia / Ethereum). It bridges the gap between natural language user intent and provably secure on-chain execution by pairing LLM semantic synthesis with deterministic Z3 SMT solver verification, historical market RAG retrieval, and strict invariant policy guards.
+Orvilo is a mathematically verified autonomous trading agent and wallet policy engine designed for EVM networks (Base Sepolia / Ethereum). It bridges the gap between natural language user intent and provably secure on-chain execution by pairing LLM semantic synthesis with deterministic Z3 SMT solver verification, historical market RAG retrieval, and strict invariant policy guards.
 
 > **Implementation status:** The repository is a local Flask simulation and verification environment. The policy compiler, Z3 gates, EVM simulator, wallet client, attack tester, dashboard, and audit ledger are implemented and tested. Local execution mutates JSON state and does not broadcast real transactions unless a separately configured production signing and deployment layer is added.
 
@@ -28,12 +28,17 @@ WalletAgent is a mathematically verified autonomous trading agent and wallet pol
 
 | Document | Contents |
 |:---|:---|
+| [Technical documentation PDF](WalletAgent_Technical_Documentation.pdf) | A4-ready implementation report with verified architecture, workflows, testing evidence, and Mermaid figures |
+| [Technical documentation source](docs/technical-report.html) | Reproducible HTML source used to generate the PDF |
+| [Security self-assessment](docs/security-self-assessment.md) | Evidence-based security report with permission-tier matrix, known-risk register, test evidence, and trust-boundary diagrams |
+| [Security self-assessment Word document](docs/Security_Self_Assessment_Report.docx) | Editable report generated from the Markdown assessment with embedded diagrams |
 | [Technical architecture](docs/technical-doc.md) | System overview, feature matrix, runtime flows, API surface, testing, and deployment notes |
 | [Policy engine](docs/policy-engine.md) | Natural-language parsing, typed ASTs, Z3 equivalence checking, and policy workflow |
 | [Agent runtime](docs/agent-runtime.md) | Market feeds, autonomous loop, scheduling, RAG reasoning, dry-run checks, and task lifecycle |
 | [Smart contracts and security](docs/smart-contracts.md) | Solidity guards, simulator behavior, emergency controls, and attack-test vectors |
 | [User approval and audit](docs/user-and-audit.md) | Approval states, audit records, dashboard behavior, and operator controls |
 | [Pitch deck reference](docs/pitch-deck-info.md) | Demonstration narrative and scorecard evidence |
+| [Mermaid visual sources](visuals/) | A4-oriented Mermaid diagrams and rendered PNG figures |
 
 ---
 
@@ -41,7 +46,9 @@ WalletAgent is a mathematically verified autonomous trading agent and wallet pol
 
 ### 1. Dual-Channel Natural Language Policy Compilation
 - **Channel A (Deterministic Parser):** Rule-based semantic dependency parser powered by spaCy and custom grammar rules.
-- **Channel B (LLM Synthesizer):** Multi-provider LLM support (Groq, Gemini, OpenAI, Anthropic, or local Ollama) for flexible natural language interpretation.
+- **Channel B (LLM Synthesizer):** Schema-constrained reader with the offline
+  `mock` provider enabled by default. A Groq adapter exists as an optional
+  integration, but the checked-in/local configuration does not use it.
 - **Ambiguity Detection & Resolution:** Proactively detects dimensional and semantic ambiguities (such as ambiguous percentages for gas thresholds) and presents structured mathematical interpretations for user selection.
 
 ### 2. Formal Verification & Z3 Equivalence Checking
@@ -58,11 +65,11 @@ WalletAgent is a mathematically verified autonomous trading agent and wallet pol
 ### 4. Autonomous Agent Daemon Runtime
 - **Tick-by-Tick Evaluation:** Background monitoring daemon continuously assesses live market conditions against active task triggers.
 - **Single-Task Lifecycle:** Enforces a clean single-active-task lifecycle (`RUNNING`, `FINISHED`, `STOPPED`) with human-in-the-loop control (Pause, Dismiss, Manual Override).
-- **Audit Ledger:** Every transaction and dry-run decision records an immutable reasoning audit trail with solver status, RAG metrics, and execution hashes.
+- **Audit Ledger:** Transaction and reasoning reports are persisted in a mutable local JSON file. Records include actor, status, guard reasons, RAG metrics, and generated identifiers; this is not an immutable production ledger.
 
 ### 5. Live Market Feeds & Web3 Simulation
 - **Coinbase WebSocket:** Real-time tick-by-tick ETH/USD pricing feed.
-- **Ethereum / Base Sepolia RPC:** Live gas tracking (Base fee + Priority fee) and network state inspection (Base Sepolia Chain ID: `84532`).
+- **Ethereum L1 gas oracle and Coinbase feed:** Background adapters attempt live observations, while deterministic scenario injection remains available for repeatable demos. Base Sepolia is the configured contract reference; the default wallet flows do not submit transactions.
 - **Interactive Web Dashboard:** Lightweight, responsive dashboard built with Flask and Vanilla CSS/JS featuring live charts, interactive guard gate testing, and policy discovery.
 
 ### 6. Conversational LLM Assistant & Anomaly Auditor (LangChain Powered)
@@ -80,13 +87,13 @@ WalletAgent is a mathematically verified autonomous trading agent and wallet pol
 flowchart TB
     Prompt["User Prompt"]
     ChannelA["Channel A (spaCy)<br/>Deterministic Parser"]
-    ChannelB["Channel B (LLM)<br/>Groq / Gemini / etc."]
+    ChannelB["Channel B (LLM)<br/>mock or Groq"]
     Verifier["Z3 Equivalence Verifier<br/>Proves AST_A &lt;=&gt; AST_B"]
     Deployed["Verified Policy Deployed"]
     Feeds["Market Feeds: WS &amp; RPC<br/>Live Gas &amp; ETH Price Stream"]
     Gates["Reasoning &amp; Safety Gates<br/>1. RAG Historical Regime Match<br/>2. Dry-Run Risk Assessment<br/>3. Formal Z3 Invariant Gate"]
     Daemon["Autonomous Daemon Loop"]
-    Execution["Base Sepolia Execution"]
+    Execution["Local guarded simulation<br/>optional RPC eth_call"]
 
     Prompt --> ChannelA
     Prompt --> ChannelB
@@ -100,7 +107,7 @@ flowchart TB
     Gates --> Execution
 ```
 
-WalletAgent is a single Python process with a Flask dashboard, background market-feed
+Orvilo is a single Python process with a Flask dashboard, background market-feed
 workers, and one autonomous agent worker. The dashboard and agent share singleton
 services for the exchange, policy state, task registry, reasoning engine, and wallet
 database.
@@ -232,7 +239,7 @@ JSON files for the simulation.
 
 ```bash
 git clone https://github.com/immo2n/WalletAgent.git
-cd WalletAgent
+cd Orvilo
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -266,16 +273,17 @@ Edit `.env` to configure the implemented LLM provider:
 # Offline development:
 LLM_PROVIDER=mock
 
-# Optional live Groq-compatible policy reader:
+# Optional Groq-compatible policy reader (not required for local operation):
 # LLM_PROVIDER=groq
-# GROQ_API_KEY=your_groq_api_key_here
+# GROQ_API_KEY=replace_with_a_rotated_key
 # LLM_MODEL=llama-3.3-70b-versatile
 
-LLM_MODEL=llama-3.3-70b-versatile
-LLM_BASE_URL=https://api.groq.com/openai/v1/chat/completions
+LLM_MODEL=mock
+# LLM_BASE_URL=https://api.groq.com/openai/v1/chat/completions
 ```
 
-The application currently implements `mock` and `groq` adapters. The
+The application currently implements `mock` and `groq` adapters. The local
+configuration uses `mock`. The
 `gemini`, `openai`, `anthropic`, and `ollama` names are not implemented by the
 current adapters. The `CHAIN_ID`, `RPC_URL`, `EXPLORER_URL`, contract/key,
 market API key, and timeout values in `.env.example` are reference settings
@@ -314,6 +322,113 @@ PYTHONPATH=. python main.py --prompt "Buy ETH when gas is under 20 gwei and keep
 ```
 
 Stop the local server with `Ctrl+C`.
+
+### 5. Run with Docker
+
+Build and start the complete local simulation in a container. The image runs
+as the non-root `orvilo` user and uses the offline mock LLM by default, so no
+API key is required:
+
+```bash
+docker build --tag orvilo:latest .
+docker run --detach \
+  --name orvilo \
+  --publish 5000:5000 \
+  orvilo:latest
+```
+
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000). The image binds Flask to
+`0.0.0.0` and includes a Docker health check backed by
+`/api/market/live`. Verify the container and health state with:
+
+```bash
+docker ps
+docker inspect --format '{{.State.Health.Status}}' orvilo
+curl http://127.0.0.1:5000/api/market/live
+```
+
+The expected Docker health status is `healthy`. Container JSON state is
+ephemeral by default; stopping and recreating the container starts from the
+repository seed state. Stop and remove the container with:
+
+```bash
+docker stop orvilo
+docker rm orvilo
+```
+
+Docker Compose is also supported:
+
+```bash
+docker compose up --build
+docker compose down
+```
+
+#### Docker configuration
+
+The default container configuration is:
+
+```env
+LLM_PROVIDER=mock
+LLM_MODEL=mock
+CHAIN_ID=84532
+RPC_URL=https://sepolia.base.org
+PORT=5000
+```
+
+To provide optional runtime configuration, use a local, untracked environment
+file. Never commit credentials or put API keys in the Dockerfile:
+
+```bash
+docker run --detach \
+  --name orvilo \
+  --publish 5000:5000 \
+  --env-file .env \
+  orvilo:latest
+```
+
+#### Validate all Docker functionality
+
+The repository includes a bounded API smoke test at
+[scripts/docker_smoke.py](scripts/docker_smoke.py). With the container
+running, execute:
+
+```bash
+docker exec orvilo \
+  python scripts/docker_smoke.py http://127.0.0.1:5000
+```
+
+It verifies the dashboard, market API and SSE stream, wallet, transactions,
+reasoning, policy verification and deployment, agent controls and scheduling,
+intent validation, simulation, contract security, all six attack vectors,
+assistant chat, and reset flows. A successful run prints:
+
+```text
+Docker smoke test passed: dashboard, market, wallet, policy, agent, simulation, contract, attacks, assistant.
+```
+
+#### Export and share the Docker image
+
+Export the image as a compressed archive:
+
+```bash
+docker save orvilo:latest | gzip > orvilo-latest.tar.gz
+```
+
+On another machine, import and run it:
+
+```bash
+docker load < orvilo-latest.tar.gz
+docker run --detach \
+  --name orvilo \
+  --publish 5000:5000 \
+  orvilo:latest
+```
+
+The CI workflow runs the Python suite, builds the image, starts a temporary
+container, waits for its Docker health check, and exercises the complete API
+smoke test in [scripts/docker_smoke.py](scripts/docker_smoke.py), including
+market, wallet, policy, agent, simulation, contract, attack-test, reasoning,
+and assistant functionality.
 
 ## 🔌 Dashboard API Reference
 
@@ -449,7 +564,7 @@ curl -fsS http://127.0.0.1:5000/api/assistant/tasks
 
 ## 🚢 Deployment
 
-WalletAgent is a simulation and verification dashboard, not a production
+Orvilo is a simulation and verification dashboard, not a production
 custody service. Deploy it only in a trusted environment, do not commit
 `.env` files or API keys, and do not connect it to real funds without adding
 production-grade authentication, secret management, persistence, monitoring,
@@ -462,7 +577,7 @@ and transaction signing controls.
 
    ```bash
    git clone https://github.com/immo2n/WalletAgent.git
-   cd WalletAgent
+   cd Orvilo
    python3 -m venv .venv
    .venv/bin/python -m pip install -r requirements.txt
    ```

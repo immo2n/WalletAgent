@@ -1,0 +1,494 @@
+{
+  "report": "Orvilo Execution Evidence",
+  "run_started_utc": "2026-10-19T07:54:22.288174+00:00",
+  "run_completed_utc": "2026-10-19T07:54:22.288888+00:00",
+  "classification": "NON_ON_CHAIN_SANDBOX_EVIDENCE",
+  "network_label_in_application": "Base Sepolia (84532)",
+  "rpc_used_for_this_run": false,
+  "genuine_transactions_broadcast": 0,
+  "scenarios": [
+    {
+      "scenario_id": "EE-01",
+      "timestamp_utc": "2026-10-19T07:54:22.288305+00:00",
+      "feature": "Authorized guarded operation",
+      "preconditions": {
+        "rpc": "offline",
+        "mode": "simulation"
+      },
+      "inputs": {
+        "trade_amount_usd": 200.0,
+        "balance_after_usd": 1300.0,
+        "min_balance_floor_usd": 500.0,
+        "per_tx_cap_usd": 500.0,
+        "daily_cap_usd": 1000.0,
+        "spent_today_usd": 0.0,
+        "token": "ETH",
+        "allowed_tokens": [
+          "ETH",
+          "WETH",
+          "USDC"
+        ],
+        "recipient": "0x71C8366420A096207E90B01D252431792349039A",
+        "allowed_recipients": [
+          "0x71C8366420A096207E90B01D252431792349039A"
+        ],
+        "is_paused": false
+      },
+      "expected_result": "SIMULATED_SUCCESS with no chain mutation",
+      "observed_result": {
+        "success": true,
+        "simulated_via": "EVM eth_call & state-simulation",
+        "gas_estimated": 84500,
+        "estimated_fee_usd": 0.0104,
+        "revert_reason": null,
+        "state_diff": {
+          "token_in": "ETH",
+          "delta_usd": -200.0,
+          "token_out": "ETH",
+          "delta_eth": 0.08163
+        },
+        "policy_verified": true,
+        "gas_estimate": 84500,
+        "gas_cost_eth": 4e-06,
+        "status": "SIMULATED_SUCCESS"
+      },
+      "outcome": "PASSED",
+      "before_state": {
+        "spent_today_usd": 0.0,
+        "balance_after_usd": 1500.0
+      },
+      "after_state": {
+        "spent_today_usd": 0.0,
+        "projected_balance_after_usd": 1300.0,
+        "chain_mutated": false
+      },
+      "evidence_classification": "LOCAL_SANDBOX_SIMULATION"
+    },
+    {
+      "scenario_id": "EE-02",
+      "timestamp_utc": "2026-10-19T07:54:22.288339+00:00",
+      "feature": "Per-transaction spending limit rejection",
+      "preconditions": {
+        "rpc": "offline",
+        "mode": "simulation"
+      },
+      "inputs": {
+        "trade_amount_usd": 700.0,
+        "balance_after_usd": 1300.0,
+        "min_balance_floor_usd": 500.0,
+        "per_tx_cap_usd": 500.0,
+        "daily_cap_usd": 1000.0,
+        "spent_today_usd": 0.0,
+        "token": "ETH",
+        "allowed_tokens": [
+          "ETH",
+          "WETH",
+          "USDC"
+        ],
+        "recipient": "0x71C8366420A096207E90B01D252431792349039A",
+        "allowed_recipients": [
+          "0x71C8366420A096207E90B01D252431792349039A"
+        ],
+        "is_paused": false
+      },
+      "expected_result": "SIMULATED_REVERT with ExceedsPerTxCap",
+      "observed_result": {
+        "success": false,
+        "simulated_via": "EVM Guard Revert Check",
+        "revert_reason": "ExceedsPerTxCap(amount=700.0, cap=500.0)",
+        "custom_error_name": "ExceedsPerTxCap",
+        "gas_estimated": 24100,
+        "gas_estimate": 24100,
+        "status": "SIMULATED_REVERT",
+        "estimated_fee_usd": 0.01,
+        "policy_verified": false
+      },
+      "outcome": "PASSED",
+      "before_state": {
+        "chain_mutated": false
+      },
+      "after_state": {
+        "chain_mutated": false
+      },
+      "evidence_classification": "LOCAL_SANDBOX_SIMULATION"
+    },
+    {
+      "scenario_id": "EE-03",
+      "timestamp_utc": "2026-10-19T07:54:22.288365+00:00",
+      "feature": "Restricted destination rejection",
+      "preconditions": {
+        "rpc": "offline",
+        "mode": "simulation"
+      },
+      "inputs": {
+        "trade_amount_usd": 200.0,
+        "balance_after_usd": 1300.0,
+        "min_balance_floor_usd": 500.0,
+        "per_tx_cap_usd": 500.0,
+        "daily_cap_usd": 1000.0,
+        "spent_today_usd": 0.0,
+        "token": "ETH",
+        "allowed_tokens": [
+          "ETH",
+          "WETH",
+          "USDC"
+        ],
+        "recipient": "0x9999999999999999999999999999999999999999",
+        "allowed_recipients": [
+          "0x71C8366420A096207E90B01D252431792349039A"
+        ],
+        "is_paused": false
+      },
+      "expected_result": "SIMULATED_REVERT with RecipientNotAllowed",
+      "observed_result": {
+        "success": false,
+        "simulated_via": "EVM Guard Revert Check",
+        "revert_reason": "RecipientNotAllowed(0x9999999999999999999999999999999999999999)",
+        "custom_error_name": "RecipientNotAllowed",
+        "gas_estimated": 22900,
+        "gas_estimate": 22900,
+        "status": "SIMULATED_REVERT",
+        "estimated_fee_usd": 0.01,
+        "policy_verified": false
+      },
+      "outcome": "PASSED",
+      "before_state": {
+        "chain_mutated": false
+      },
+      "after_state": {
+        "chain_mutated": false
+      },
+      "evidence_classification": "LOCAL_SANDBOX_SIMULATION"
+    },
+    {
+      "scenario_id": "EE-04",
+      "timestamp_utc": "2026-10-19T07:54:22.288405+00:00",
+      "feature": "Policy review, approval, and activation",
+      "preconditions": {
+        "identity": "unverified sandbox labels"
+      },
+      "inputs": {
+        "proposal_id": "prop-957cf1f9"
+      },
+      "expected_result": "DRAFT -> REVIEWED -> DEPLOYABLE -> ACTIVE",
+      "observed_result": {
+        "states": [
+          "DRAFT",
+          "REVIEWED",
+          "DEPLOYABLE",
+          "ACTIVE"
+        ],
+        "signature_kind": "synthetic_uuid_string",
+        "deployment_identifier_kind": "synthetic_uuid_hash",
+        "reported_tx_hash": "0x6a8dbe392d584899a1e2ab207b32a65d81eb4002f42b4412bbfa7a5c74c30d0d"
+      },
+      "outcome": "PASSED",
+      "before_state": {
+        "proposal_status": "DRAFT"
+      },
+      "after_state": {
+        "proposal_status": "ACTIVE",
+        "chain_mutated": false
+      },
+      "evidence_classification": "LOCAL_SANDBOX_SIMULATION"
+    },
+    {
+      "scenario_id": "EE-05",
+      "timestamp_utc": "2026-10-19T07:54:22.288429+00:00",
+      "feature": "Emergency pause rejection",
+      "preconditions": {
+        "mode": "simulation"
+      },
+      "inputs": {
+        "trade_amount_usd": 200.0,
+        "balance_after_usd": 1300.0,
+        "min_balance_floor_usd": 500.0,
+        "per_tx_cap_usd": 500.0,
+        "daily_cap_usd": 1000.0,
+        "spent_today_usd": 0.0,
+        "token": "ETH",
+        "allowed_tokens": [
+          "ETH",
+          "WETH",
+          "USDC"
+        ],
+        "recipient": "0x71C8366420A096207E90B01D252431792349039A",
+        "allowed_recipients": [
+          "0x71C8366420A096207E90B01D252431792349039A"
+        ],
+        "is_paused": true
+      },
+      "expected_result": "SIMULATED_REVERT with WalletPaused",
+      "observed_result": {
+        "success": false,
+        "simulated_via": "EVM Guard Revert Check",
+        "revert_reason": "WalletPaused()",
+        "custom_error_name": "WalletPaused",
+        "gas_estimated": 21000,
+        "gas_estimate": 21000,
+        "status": "SIMULATED_REVERT",
+        "estimated_fee_usd": 0.01,
+        "policy_verified": false
+      },
+      "outcome": "PASSED",
+      "before_state": {
+        "is_paused": true
+      },
+      "after_state": {
+        "is_paused": true,
+        "chain_mutated": false
+      },
+      "evidence_classification": "LOCAL_SANDBOX_SIMULATION"
+    },
+    {
+      "scenario_id": "EE-06",
+      "timestamp_utc": "2026-10-19T07:54:22.288745+00:00",
+      "feature": "Operation attempted after permission revocation",
+      "preconditions": {
+        "mode": "local client simulation",
+        "operator": "0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF"
+      },
+      "inputs": {
+        "amount_usd": 100.0
+      },
+      "expected_result": "Operation rejected after operator revocation",
+      "observed_result": {
+        "revoke_response": {
+          "success": true,
+          "operator": "0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF",
+          "authorized": false,
+          "tx_hash": "0x8d05ee8910ba4354857fd2d94fa528aaa8e3c91cdd7f4d76a5cfe31f9e047605",
+          "block_number": 19482352,
+          "gas_used": 32100,
+          "message": "Operator authorization for 0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF permanently revoked.",
+          "explorer_url": "https://sepolia.basescan.org/tx/0x8d05ee8910ba4354857fd2d94fa528aaa8e3c91cdd7f4d76a5cfe31f9e047605"
+        },
+        "post_revocation_execution_response": {
+          "status": "CONFIRMED",
+          "onchain_verified": true,
+          "tx_hash": "0x35a80fadead649079d605bc0ebe1cb8b2be2391ae3d945d3b8e43e09bfd4b7a4",
+          "block_number": 19482827,
+          "gas_used": 84500,
+          "contract_address": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+          "network": "Base Sepolia (84532)",
+          "explorer_url": "https://sepolia.basescan.org/tx/0x35a80fadead649079d605bc0ebe1cb8b2be2391ae3d945d3b8e43e09bfd4b7a4",
+          "simulated_preflight": {
+            "success": true,
+            "simulated_via": "EVM eth_call & state-simulation",
+            "gas_estimated": 84500,
+            "estimated_fee_usd": 0.0104,
+            "revert_reason": null,
+            "state_diff": {
+              "token_in": "ETH",
+              "delta_usd": -100.0,
+              "token_out": "ETH",
+              "delta_eth": 0.04082
+            },
+            "policy_verified": true,
+            "gas_estimate": 84500,
+            "gas_cost_eth": 4e-06,
+            "status": "SIMULATED_SUCCESS"
+          }
+        },
+        "interpretation": "Execution still reported CONFIRMED locally; revocation is not enforced by the Python client."
+      },
+      "outcome": "FAILED",
+      "before_state": {
+        "authorized": true
+      },
+      "after_state": {
+        "authorized": false,
+        "chain_mutated": false
+      },
+      "evidence_classification": "LOCAL_SANDBOX_SIMULATION"
+    },
+    {
+      "scenario_id": "EE-07",
+      "timestamp_utc": "2026-10-19T07:54:22.288886+00:00",
+      "feature": "Modeled adversarial guard checks",
+      "preconditions": {
+        "mode": "simulation",
+        "vector_count": 6
+      },
+      "inputs": {
+        "vector_ids": [
+          "unauthorized_recipient",
+          "rogue_token_drain",
+          "floor_drain_attack",
+          "daily_limit_bypass",
+          "emergency_pause_breach",
+          "unauthorized_operator"
+        ]
+      },
+      "expected_result": "All modeled vectors return expected simulated revert",
+      "observed_result": {
+        "results": [
+          {
+            "vector_id": "unauthorized_recipient",
+            "vector_name": "Unauthorized Recipient Exfiltration",
+            "name": "Unauthorized Recipient Exfiltration",
+            "category": "Exfiltration Exploit",
+            "severity": "CRITICAL",
+            "description": "Adversary attempts to siphon wallet assets to an unapproved recipient address outside the verified whitelist.",
+            "simulated_action": "Adversary attempts to siphon wallet assets to an unapproved recipient address outside the verified whitelist.",
+            "target_contract": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+            "network": "Base Sepolia (84532)",
+            "contract_reverted": true,
+            "reverted_as_expected": true,
+            "actual_status": "REVERTED (0x0)",
+            "revert_reason": "RecipientNotAllowed(0x999999999999999999999999999999999999HACK)",
+            "custom_error_name": "RecipientNotAllowed",
+            "expected_error": "RecipientNotAllowed",
+            "evm_error_selector": "0x4e487b71",
+            "error_signature": "0x4e487b71",
+            "raw_revert_bytecode": "0x4e487b7100000000000000000000000000000000",
+            "gas_consumed_in_revert": 22900,
+            "gas_used": 22900,
+            "onchain_state_mutated": false,
+            "wallet_funds_secured": true,
+            "verdict": "SECURE: CONTRACT REVERTED ADVERSARIAL TRANSACTION",
+            "status": "PASSED"
+          },
+          {
+            "vector_id": "rogue_token_drain",
+            "vector_name": "Rogue / Unapproved Token Drain",
+            "name": "Rogue / Unapproved Token Drain",
+            "category": "Asset Substitution",
+            "severity": "HIGH",
+            "description": "Adversary attempts to trade an arbitrary or malicious unapproved ERC-20 token not present in the verified policy allowlist.",
+            "simulated_action": "Adversary attempts to trade an arbitrary or malicious unapproved ERC-20 token not present in the verified policy allowlist.",
+            "target_contract": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+            "network": "Base Sepolia (84532)",
+            "contract_reverted": true,
+            "reverted_as_expected": true,
+            "actual_status": "REVERTED (0x0)",
+            "revert_reason": "TokenNotAllowed(0xEvilDrainToken6666666666666666666666666666)",
+            "custom_error_name": "TokenNotAllowed",
+            "expected_error": "TokenNotAllowed",
+            "evm_error_selector": "0x08c379a0",
+            "error_signature": "0x08c379a0",
+            "raw_revert_bytecode": "0x08c379a000000000000000000000000000000000",
+            "gas_consumed_in_revert": 22800,
+            "gas_used": 22800,
+            "onchain_state_mutated": false,
+            "wallet_funds_secured": true,
+            "verdict": "SECURE: CONTRACT REVERTED ADVERSARIAL TRANSACTION",
+            "status": "PASSED"
+          },
+          {
+            "vector_id": "floor_drain_attack",
+            "vector_name": "Minimum Reserve Floor Drain",
+            "name": "Minimum Reserve Floor Drain",
+            "category": "Solvency Violation",
+            "severity": "CRITICAL",
+            "description": "Adversary attempts a large $1,200 swap that would reduce the wallet reserve below the verified $500 safety floor.",
+            "simulated_action": "Adversary attempts a large $1,200 swap that would reduce the wallet reserve below the verified $500 safety floor.",
+            "target_contract": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+            "network": "Base Sepolia (84532)",
+            "contract_reverted": true,
+            "reverted_as_expected": true,
+            "actual_status": "REVERTED (0x0)",
+            "revert_reason": "BelowMinimumBalanceFloor(balanceAfter=300.0, floor=500.0)",
+            "custom_error_name": "BelowMinimumBalanceFloor",
+            "expected_error": "BelowMinimumBalanceFloor",
+            "evm_error_selector": "0x3f5b821a",
+            "error_signature": "0x3f5b821a",
+            "raw_revert_bytecode": "0x3f5b821a00000000000000000000000000000000",
+            "gas_consumed_in_revert": 23400,
+            "gas_used": 23400,
+            "onchain_state_mutated": false,
+            "wallet_funds_secured": true,
+            "verdict": "SECURE: CONTRACT REVERTED ADVERSARIAL TRANSACTION",
+            "status": "PASSED"
+          },
+          {
+            "vector_id": "daily_limit_bypass",
+            "vector_name": "24-Hour Daily Cap Bypass",
+            "name": "24-Hour Daily Cap Bypass",
+            "category": "Rate Limit Bypass",
+            "severity": "HIGH",
+            "description": "Adversary attempts rapid transactions exceeding the verified 24-hour daily cumulative ceiling.",
+            "simulated_action": "Adversary attempts rapid transactions exceeding the verified 24-hour daily cumulative ceiling.",
+            "target_contract": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+            "network": "Base Sepolia (84532)",
+            "contract_reverted": true,
+            "reverted_as_expected": true,
+            "actual_status": "REVERTED (0x0)",
+            "revert_reason": "ExceedsPerTxCap(amount=2500.0, cap=1000.0)",
+            "custom_error_name": "ExceedsDailyLimit",
+            "expected_error": "ExceedsDailyLimit",
+            "evm_error_selector": "0x892a014d",
+            "error_signature": "0x892a014d",
+            "raw_revert_bytecode": "0x892a014d00000000000000000000000000000000",
+            "gas_consumed_in_revert": 24100,
+            "gas_used": 24100,
+            "onchain_state_mutated": false,
+            "wallet_funds_secured": true,
+            "verdict": "SECURE: CONTRACT REVERTED ADVERSARIAL TRANSACTION",
+            "status": "PASSED"
+          },
+          {
+            "vector_id": "emergency_pause_breach",
+            "vector_name": "Emergency Pause Killswitch Breach",
+            "name": "Emergency Pause Killswitch Breach",
+            "category": "Killswitch Bypass",
+            "severity": "CRITICAL",
+            "description": "Adversary attempts to broadcast a transfer while the on-chain contract emergency pause is engaged.",
+            "simulated_action": "Adversary attempts to broadcast a transfer while the on-chain contract emergency pause is engaged.",
+            "target_contract": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+            "network": "Base Sepolia (84532)",
+            "contract_reverted": true,
+            "reverted_as_expected": true,
+            "actual_status": "REVERTED (0x0)",
+            "revert_reason": "WalletPaused()",
+            "custom_error_name": "WalletPaused",
+            "expected_error": "WalletPaused",
+            "evm_error_selector": "0xd92e233d",
+            "error_signature": "0xd92e233d",
+            "raw_revert_bytecode": "0xd92e233d00000000000000000000000000000000",
+            "gas_consumed_in_revert": 21000,
+            "gas_used": 21000,
+            "onchain_state_mutated": false,
+            "wallet_funds_secured": true,
+            "verdict": "SECURE: CONTRACT REVERTED ADVERSARIAL TRANSACTION",
+            "status": "PASSED"
+          },
+          {
+            "vector_id": "unauthorized_operator",
+            "vector_name": "Unauthorized Operator Hijack",
+            "name": "Unauthorized Operator Hijack",
+            "category": "Access Control Hijack",
+            "severity": "CRITICAL",
+            "description": "Adversary calls wallet execution functions using an unauthorized private key or untrusted caller address.",
+            "simulated_action": "Adversary calls wallet execution functions using an unauthorized private key or untrusted caller address.",
+            "target_contract": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+            "network": "Base Sepolia (84532)",
+            "contract_reverted": true,
+            "reverted_as_expected": true,
+            "actual_status": "REVERTED (0x0)",
+            "revert_reason": "UnauthorizedOperator(0xAttackerPrivateKeyNoAccess1111111111111)",
+            "custom_error_name": "UnauthorizedOperator",
+            "expected_error": "UnauthorizedOperator",
+            "evm_error_selector": "0x82b42900",
+            "error_signature": "0x82b42900",
+            "raw_revert_bytecode": "0x82b4290000000000000000000000000000000000",
+            "gas_consumed_in_revert": 21250,
+            "gas_used": 21250,
+            "onchain_state_mutated": false,
+            "wallet_funds_secured": true,
+            "verdict": "SECURE: CONTRACT REVERTED ADVERSARIAL TRANSACTION",
+            "status": "PASSED"
+          }
+        ]
+      },
+      "outcome": "PASSED",
+      "before_state": {
+        "chain_mutated": false
+      },
+      "after_state": {
+        "chain_mutated": false
+      },
+      "evidence_classification": "LOCAL_SANDBOX_SIMULATION"
+    }
+  ]
+}
