@@ -1,0 +1,30 @@
+---
+config:
+  theme: base
+  themeVariables:
+    primaryColor: "#e8f1ff"
+    primaryTextColor: "#10233f"
+    primaryBorderColor: "#2f6fed"
+    lineColor: "#53657d"
+---
+flowchart TB
+    request["HTTP request or agent action"]
+    api["Flask route"]
+    workflow["PolicyWorkflowManager<br/>string status transitions"]
+    runtime["TaskManager / AgentRuntime<br/>single active task"]
+    client["PolicyWalletClient<br/>in-memory flags + generated hashes"]
+    chain["PolicyWallet.sol<br/>onlyOwner / onlyAuthorized / whenNotPaused"]
+    outcome["Allowed / blocked / simulated result"]
+
+    request --> api
+    api --> workflow
+    api --> runtime
+    api --> client
+    client -. "not broadcast by default" .-> chain
+    runtime --> outcome
+    workflow --> outcome
+    client --> outcome
+    chain --> outcome
+
+    note["Important assessment result:<br/>HTTP routes do not authenticate caller identity.<br/>Application permission labels are not an HTTP boundary."]
+    api -.-> note
