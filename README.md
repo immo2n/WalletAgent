@@ -29,6 +29,8 @@ Orvilo is a mathematically verified autonomous trading agent and wallet policy e
 |:---|:---|
 | [Technical documentation PDF](WalletAgent_Technical_Documentation.pdf) | A4-ready implementation report with verified architecture, workflows, testing evidence, and Mermaid figures |
 | [Technical documentation source](docs/technical-report.html) | Reproducible HTML source used to generate the PDF |
+| [Security self-assessment](docs/security-self-assessment.md) | Evidence-based security report with permission-tier matrix, known-risk register, test evidence, and trust-boundary diagrams |
+| [Security self-assessment Word document](docs/Security_Self_Assessment_Report.docx) | Editable report generated from the Markdown assessment with embedded diagrams |
 | [Technical architecture](docs/technical-doc.md) | System overview, feature matrix, runtime flows, API surface, testing, and deployment notes |
 | [Policy engine](docs/policy-engine.md) | Natural-language parsing, typed ASTs, Z3 equivalence checking, and policy workflow |
 | [Agent runtime](docs/agent-runtime.md) | Market feeds, autonomous loop, scheduling, RAG reasoning, dry-run checks, and task lifecycle |
