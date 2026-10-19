@@ -267,9 +267,10 @@ class RuleReader(Reader):
     def _find_comparator(self, doc) -> str | None:
         text = doc.text.lower()
         # Multi-word comparators first
-        for phrase in ("no more than", "at most", "less than", "greater than", "at least", "more than"):
+        for phrase in ("no more than", "at most", "less than", "greater than", "at least", "more than", "<=", ">=", "=="):
             if phrase in text:
                 return COMPARATORS[phrase]
+
         for t in doc:
             w = t.text.lower()
             if w in COMPARATORS:

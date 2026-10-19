@@ -10,16 +10,23 @@ COMPARATORS: dict[str, str] = {
     "below": "lt",
     "less than": "lt",
     "lower than": "lt",
+    "<": "lt",
+    "<=": "le",
     "at most": "le",
     "no more than": "le",
     "over": "gt",
     "above": "gt",
     "greater than": "gt",
     "more than": "gt",
+    ">": "gt",
+    ">=": "ge",
     "at least": "ge",
     "exactly": "eq",
     "equal to": "eq",
+    "=": "eq",
+    "==": "eq",
 }
+
 
 # State nouns mapping to state variable names
 STATE_NOUNS: dict[str, str] = {
