@@ -1,0 +1,1228 @@
+﻿TECHNICAL DOCUMENTATION
+Orvilo
+User-Defined On-Chain Guardrails for Autonomous AI Wallets
+Architecture, data flow, calculations, APIs, operations, testing evidence and implementation boundaries.
+
+
+
+
+
+
+Document title
+	Orvilo Technical Documentation
+	Version
+	1.1 (submission edition)
+	Prepared
+	19 October 2026
+	Organization
+	Orvilo engineering team
+	Repository
+	Flask modular monolith with local JSON persistence
+	Basis
+	Verified against the source tree; 90 automated tests passing
+	
+
+Document control
+Revision history
+Table 1. Revision history
+Version
+	Date
+	Change
+	Owner
+	1.0
+	2026-10-19
+	Initial complete Orvilo technical baseline derived from source inspection and executed tests.
+	Orvilo engineering
+	1.1
+	2026-10-19
+	Submission edition: restructured into 21 sequential chapters, corrected section numbering, consolidated figures, redrawn diagrams, added worked examples, capability matrix, trust model, readiness checklist and recommendations.
+	Orvilo engineering
+	
+
+Scope
+This document describes the current repository, including implemented behaviour, local simulation boundaries, APIs, UI behaviour, operations and test evidence. It is intended for developers, reviewers, operators, security assessors and technical evaluators.
+Document properties
+Table 2. Document properties
+Property
+	Value
+	Classification
+	Technical documentation for submission and review
+	Format
+	A4 portrait; Calibri 10.5 pt body text
+	Navigation
+	Headings use Word’s built-in styles, so the Navigation Pane and cross-references work
+	Status labels
+	Implemented · Modeled · Reference · Not implemented (see Section 1.3)
+	
+
+Table Of Contents
+1. Introduction        7
+1.1 Purpose of this document        7
+1.2 Intended audience        7
+1.3 Conventions used        7
+1.4 How the document is organised        8
+2. Executive summary        9
+2.1 The problem and the approach        9
+2.2 Key properties        9
+2.3 What the repository is — and is not        10
+3. System overview        10
+3.1 Users and roles        10
+3.2 System boundary        10
+3.3 Worked scenario        11
+3.4 Capability status        11
+4. Technology stack        12
+5. System architecture and data flow        13
+5.1 Architectural style        13
+5.2 Request lifecycle        14
+5.3 Concurrency model        14
+5.4 Trust boundaries        14
+6. Codebase structure        15
+7. Functional modules        15
+7.1 Policy compilation and verification        16
+Policy lifecycle states        17
+7.2 Approval and deployment        18
+7.3 Agent and reasoning        18
+7.4 Contract security and attack tester        19
+7.5 Wallet, market and assistant modules        20
+8. End-to-end workflows        21
+8.1 From instruction to active policy        21
+8.2 Autonomous tick        21
+8.3 Attack test        21
+8.4 Manual intent validation        22
+9. Database and data architecture        22
+9.1 Storage model        22
+9.2 Logical relationships        23
+9.3 Entities        23
+9.4 Failure and recovery behaviour        24
+10. API documentation        25
+10.1 Conventions        25
+10.2 Dashboard and market        25
+10.3 Wallet and ledger        25
+10.4 Policy        25
+10.5 Agent        26
+10.6 Contract security and assistant        26
+10.7 Example requests        26
+11. Business rules, algorithms and calculations        28
+11.1 Reserve and cap guards        28
+11.2 Dry-run swap        28
+11.3 RAG scoring        29
+11.4 Daily contract accounting        29
+12. External integrations        30
+13. Frontend and UI behavior        30
+13.1 Overview        30
+13.2 Behaviours        31
+13.3 Screenshots        31
+14. Authentication and authorization        32
+14.1 Security control summary        33
+15. Installation and local development        33
+15.1 Prerequisites        33
+15.2 Setup and run        33
+15.3 Verify the installation        34
+15.4. Docker Deployment        34
+16. Configuration and deployment        35
+16.1 Environment variables        35
+16.2 Production readiness        35
+17. Testing and validation        36
+17.1 Executed verification        36
+17.2 Coverage areas        36
+18. Performance and reliability        37
+19. Operations, maintenance and troubleshooting        37
+19.1 Routine maintenance        38
+20. Known limitations and future development        38
+20.1 Current limitations        38
+20.2 Recommended next steps        39
+21. Appendices and source references        40
+Appendix A. Glossary        40
+Appendix B. Source map        40
+Appendix C. Quick reference        41
+List of figures
+Figure 1. Orvilo system context
+Figure 2. Layered view of the application
+Figure 3. Policy interpretation, formal comparison and approval workflow
+Figure 4. Policy approval state machine.
+Figure 5. Agent runtime with explicit safety gates and audit outcomes
+Figure 6. Contract guard decision path
+Figure 7. Logical data relationships (records are JSON, not relational tables)
+Figure 8. Desktop user interface (market view)
+Figure 9. Mobile user interface (market view)
+List of tables
+Table 1. Revision history
+Table 2. Document properties
+Table 3. Reader guide
+Table 4. Key properties of the system
+Table 5. Actors and responsibilities
+Table 6. Capability status matrix
+Table 7. Technology stack by layer
+Table 8. Trust boundaries and applied controls
+Table 9. Repository layout and responsibilities
+Table 10. Policy compilation and verification
+Table 11. Policy lifecycle
+Table 12. Approval and deployment
+Table 13. Agent and reasoning
+Table 14. Contract security and attack tester
+Table 15. Supporting modules
+Table 16. Instruction-to-deployment sequence
+Table 17. JSON data stores
+Table 18. Logical entities
+Table 19. Storage failure handling
+Table 20. Dashboard and market endpoints
+Table 21. Wallet and ledger endpoints
+Table 22. Policy endpoints
+Table 23. Agent endpoints
+Table 24. Contract security and assistant endpoints
+Table 25. Guard worked examples (illustrative parameters)
+Table 26. Dry-run worked example (illustrative inputs)
+Table 27. Baseline regime used when history is empty
+Table 28. External integrations
+Table 29. Security controls and their basis
+Table 30. Implemented configuration
+Table 31. Production readiness checklist
+Table 32. Test coverage by area
+Table 33. Performance and reliability characteristics
+Table 34. Troubleshooting guide
+Table 35. Known limitations
+Table 36. Recommended next steps
+Table 37. Glossary
+Table 38. Source map
+Table 39. Quick reference
+1. Introduction
+1.1 Purpose of this document
+This document is the complete technical reference for Orvilo, a system that lets a wallet owner express guardrails for an autonomous AI wallet agent in natural language and then enforces those guardrails with deterministic, verifiable controls. It describes what the repository contains today: the architecture, the data flow, the algorithms and calculations, the HTTP API, the user interface, operating procedures, test evidence and the boundaries of the current implementation.
+Every statement describes software that is present in the repository. Where behaviour is simulated rather than executed on a live blockchain, the text says so explicitly, and Section 3.4 summarises the status of every major capability in one table.
+1.2 Intended audience
+Table 3. Reader guide
+Reader
+	What they will find most useful
+	Developers
+	Sections 5–7 (architecture, codebase, modules), 10 (API), 11 (calculations) and 15 (local setup).
+	Reviewers and evaluators
+	Sections 2–3 (summary and capability status), 8 (workflows), 17 (test evidence) and 20 (limitations).
+	Operators
+	Sections 15–16 (installation and configuration), 18 (reliability) and 19 (troubleshooting).
+	Security assessors
+	Sections 5.4 (trust boundaries), 7.4 (contract guard model), 14 (authentication) and 20 (limitations).
+	
+
+1.3 Conventions used
+* Implemented means the behaviour exists in the repository and runs in the default local application.
+* Modeled means the behaviour is reproduced by a Python simulator; it is evidence of design intent, not of a mined blockchain transaction.
+* Not implemented means the repository contains no such capability; it is listed so that readers do not assume it.
+* Source paths, route paths, environment variables and code symbols appear in monospace.
+* Figures and tables are numbered consecutively; the lists of figures and tables follow the table of contents.
+1.4 How the document is organised
+The document follows the order in which a newcomer would learn the system: what it is (Sections 2–4), how it is built (5–6), what each part does (7–8), how data and APIs are shaped (9–10), how the rules and numbers work (11), how it connects to the outside world and to the user (12–13), how it is secured (14), how to run it (15–16), how it was tested (17), how it behaves under load and failure (18–19), and where it stops (20). Appendices hold the glossary, the source map and quick-reference material.
+2. Executive summary
+2.1 The problem and the approach
+Autonomous agents that can move funds are only as safe as the limits placed on them. Limits written in code are hard for a wallet owner to read; limits written in plain language are easy to read but ambiguous. Orvilo bridges the gap. The owner writes an instruction such as “buy ETH when gas is under 20 gwei and never let the balance fall below $500”, and the system turns it into a typed policy that both humans and machines can check.
+Two independent readers interpret the instruction. A deterministic rule reader produces a typed abstract syntax tree (AST); an optional schema-constrained LLM reader produces a second one. The policy package type-checks both, compares them formally with the Z3 solver, produces a canonical human-readable readback and a SHA-256 identifier, and exports guard parameters. Only then can the owner approve and deploy the policy.
+Once a policy is active, the autonomous agent observes market state, retrieves similar historical regimes, proposes an intent, performs a dry run and applies deterministic gates before any change is made to the local wallet ledger. Blocked attempts are recorded with the reason, so every outcome is auditable.
+90
+automated tests passing
+	6
+modeled attack vectors
+	3
+JSON data stores
+	6
+domain packages
+	
+
+2.2 Key properties
+Table 4. Key properties of the system
+Property
+	How Orvilo delivers it
+	Readable policies
+	Every verified policy has a canonical readback in plain language that the owner reviews before approval.
+	Formal assurance
+	Two interpretations are compared in both directions with Z3; a mismatch can expose a counterexample instead of being silently accepted.
+	Fail-closed behaviour
+	Parse, type, timeout, mismatch and sanity failures reject the policy or route it to human review.
+	Untrusted model
+	The language model proposes; it never approves. All gates are deterministic code.
+	Auditability
+	Allowed, blocked and high-risk attempts are persisted with reasoning reports and reasons.
+	Reproducibility
+	Deterministic market scenarios and a Python contract simulator make results repeatable without a live chain.
+	
+
+Security boundary
+The language model is an untrusted proposer. Approval, type checking, formal equivalence, dry-run calculations, operator checks, caps, allowlists, reserve floors, pause state and audit persistence remain deterministic application or contract-model controls.
+	
+
+2.3 What the repository is - and is not
+The default application is a local deterministic simulation. It does not sign or broadcast transactions, and the Solidity contract is a deployable reference rather than evidence of a deployed contract. This boundary is repeated wherever it matters in the sections that follow, because it determines how the test and attack-tester results should be interpreted.
+3. System overview
+3.1 Users and roles
+Table 5. Actors and responsibilities
+Role
+	Responsibilities
+	Wallet owner
+	Edits balances, reviews policy readbacks, approves and deploys policies, controls pause and resume, and inspects audit records.
+	Autonomous agent
+	Evaluates exactly one active task on a background schedule and records the outcome.
+	Security reviewer
+	Marks a policy proposal as reviewed, moving it from DRAFT to REVIEWED.
+	Groq reader (optional)
+	Untrusted proposer that supplies a second interpretation of the instruction; never an authority.
+	
+
+3.2 System boundary
+The default application is a local Flask simulation. It uses JSON files, in-memory policy and security state, optional Coinbase and Ethereum RPC observations, and a Python contract model. The default flow does not sign or broadcast transactions. The Solidity contract is a deployable reference, not evidence of a deployed contract.
+ Context diagram: the owner uses the dashboard, which calls the Flask server; the server delegates to policy, agent and contract planes; all planes persist to local JSON state; external feeds are observed by the agent plane. 
+
+Figure 1. Orvilo system context.
+3.3 Worked scenario
+The owner submits a policy, reviews its readback, approves it and deploys it through the dashboard. The agent watches gas. When gas satisfies the trigger, the reasoning pipeline retrieves a regime, simulates a swap and checks the reserve floor. The attempt then ends one of two ways: Orvilo records a locally confirmed swap, or it records a blocked attempt together with the reason.
+3.4 Capability status
+Table 6. Capability status matrix
+Capability
+	Status
+	Notes
+	Natural-language policy compilation
+	Implemented
+	Rule reader plus optional LLM reader; typed AST.
+	Z3 equivalence checking
+	Implemented
+	Both directions; counterexamples on mismatch.
+	Policy review / approve / deploy workflow
+	Implemented
+	In-memory proposals; four-state lifecycle.
+	Autonomous agent and reasoning pipeline
+	Implemented
+	One active task; RAG, dry run, deterministic gates.
+	Wallet ledger and transaction history
+	Implemented
+	Local JSON; actor-attributed records.
+	Live market observation
+	Implemented
+	Coinbase WebSocket with synthetic fallback; optional RPC.
+	PolicyWallet guard logic and attack tester
+	Modeled
+	Six adversarial vectors; simulator verdicts, not receipts.
+	Solidity PolicyWallet contract
+	Reference
+	Source present; no evidence of a deployed instance.
+	EIP-712 approval signing
+	Not implemented
+	A placeholder signature is generated if none is supplied.
+	Transaction signing and broadcast
+	Not implemented
+	Default flow never submits transactions.
+	Authentication, sessions, CSRF protection
+	Not implemented
+	Local demonstration only.
+	Production persistence and deployment tooling
+	Not implemented
+	No database, Dockerfile, CI/CD or health endpoint.
+	
+
+4. Technology stack
+The stack is deliberately small: a single Python process, a few well-known libraries and no external services that the default demonstration cannot run without.
+Table 7. Technology stack by layer
+Layer
+	Implementation (verified in repository)
+	Role
+	Runtime
+	Python; Flask 3.x compatible; main.py
+	Startup orchestration, CLI verification and the HTTP server.
+	Policy
+	Python AST and readers, JSON Schema, Z3 Solver
+	Parse, type-check, normalize, compare and approve policies.
+	Agent
+	Background loop, task store, scheduler
+	Evaluate schedules, retrieve market context, simulate and record outcomes.
+	Market
+	Coinbase WebSocket adapter plus deterministic scenarios
+	Live-compatible feed boundary and reproducible test data.
+	Contract model
+	Solidity source, ABI/client boundary, Python simulator
+	Policy guards, emergency controls and typed rejection vectors.
+	Persistence
+	Local JSON files
+	Wallet ledger, agent tasks, and reasoning/market history.
+	UI
+	Server-rendered HTML, CSS, browser JavaScript, SSE
+	Responsive dashboard, dark mode, timezone selection and assistant.
+	Testing
+	pytest; 90 tests collected
+	Automated regression coverage (see Section 17).
+	
+
+5. System architecture and data flow
+5.1 Architectural style
+Orvilo is a modular monolith. Flask routes coordinate the policy, agent, reasoning, exchange, contract and user modules inside one Python process. This keeps local demonstrations simple while preserving explicit module boundaries that can later be deployed behind a WSGI server and a production persistence layer.
+ Five horizontal layers: presentation, API and orchestration, domain modules, persistence, and external boundary. 
+
+Figure 2. Layered view of the application.
+5.2 Request lifecycle
+1. The browser requests dashboard state and sends user actions to JSON endpoints.
+2. The server validates inputs and delegates to the relevant domain module.
+3. Domain modules update local state and return a structured result.
+4. The UI refreshes its panels, or consumes market updates through server-sent events.
+5. Assistant requests use the same action surface; confirmation is required for pause operations.
+5.3 Concurrency model
+The agent loop, the Coinbase listener and the gas oracle run as daemon threads. Each JSON-backed service guards reads and writes with a re-entrant lock. Writes are whole-file rewrites performed while the lock is held, which is adequate for a single-process demonstration but is not a substitute for database transactions.
+5.4 Trust boundaries
+Table 8. Trust boundaries and applied controls
+Component
+	Trust level
+	Controls applied
+	LLM reader (Groq)
+	Untrusted
+	Output must match a JSON Schema, is type-checked, and is compared with the deterministic reader using Z3 before it can influence a policy.
+	Market feeds and RPC
+	Observed data
+	Treated as input only; a synthetic fallback keeps the system running when a feed is disconnected; RPC is never used to submit transactions.
+	Browser / dashboard
+	Local, unauthenticated
+	Inputs are validated server-side. No login exists; the server must not be exposed to untrusted networks.
+	Policy, gate and guard code
+	Trusted, deterministic
+	Type checks, Z3 comparison, caps, floors, allowlists, pause state and audit persistence.
+	JSON stores
+	Local files
+	Re-entrant locks; malformed files fall back to default state rather than failing open.
+	
+
+6. Codebase structure
+The repository is organised by responsibility. Each top-level package corresponds to one plane of the architecture and exposes a small number of entry-point symbols.
+Table 9. Repository layout and responsibilities
+Path
+	Responsibility
+	Important symbols
+	main.py
+	CLI policy discovery and Flask startup.
+	discover_and_print_policy(), main()
+	flask/server.py
+	HTML route, JSON APIs, SSE stream and assistant actions.
+	create_app(), route handlers
+	policy/
+	Typed AST, readers, type checks, Z3 comparison, hashing and workflow.
+	verify_policy, PolicyWorkflowManager
+	agent/
+	One-task registry and background daemon.
+	AutonomousAgent, TaskManager
+	reasoning/
+	RAG retrieval, intent, dry run, gates and report assembly.
+	ReasoningEngine, RiskSimulator
+	exchange/
+	Coinbase snapshot, synthetic fallback, scenarios and gas oracle.
+	ExchangeService
+	contracts/
+	Solidity reference, Python simulator, client and attack vectors.
+	PolicyWalletClient, EVMSimulator
+	user/
+	Wallet state and transaction JSON persistence.
+	UserDatabase
+	tests/
+	Policy, agent, exchange, reasoning, scorecard and user tests.
+	90 collected tests
+	
+
+7. Functional modules
+Each module below is described with the same fields: purpose, trigger, inputs, processing, data, output, failure behaviour and source references.
+7.1 Policy compilation and verification
+Table 10. Policy compilation and verification
+Module card · Policy compilation and verification
+	Purpose
+	Convert natural language into a verified, typed policy.
+	Trigger
+	Startup discovery or POST /api/verify.
+	Inputs
+	A prompt, the rule reader, and the mock or Groq reader.
+	Processing
+	1. Parse the instruction with both readers.
+2. Type-check; ask for clarification when a coercion is unresolved.
+3. Compare the formulas in both directions with Z3.
+4. Run sanity checks.
+5. Build the readback, SHA-256 hash and on-chain parameters.
+	Data
+	The proposal is held in the workflow manager; no policy database is used.
+	Output
+	VerifiedPolicy, a human-review result, or a rejection.
+	Failure
+	Parse, type, timeout, mismatch or sanity failures fail closed or return human review.
+	References
+	policy/loop.py, policy/typecheck.py, policy/compare.py
+	
+
+Policy construction has two readers: a deterministic rule reader and an optional schema-constrained LLM reader. Both produce a normalized representation. Type checks reject incompatible units and invalid values before formal comparison. Z3 checks whether the two interpretations are equivalent and can expose a counterexample when they are not.
+ Flow from instruction through two readers, type checking and Z3 comparison to a verified policy and the approval workflow, with a clarification path on mismatch. 
+
+Figure 3. Policy interpretation, formal comparison and approval workflow.
+Policy lifecycle states
+Table 11. Policy lifecycle
+State
+	Meaning
+	Required transition
+	DRAFT
+	A candidate policy exists but is not approved.
+	Review
+	REVIEWED
+	Human or workflow review is complete.
+	Sign and approve
+	APPROVED
+	The policy is approved for deployment.
+	Deploy
+	ACTIVE
+	The hash and guard parameters are active in the model.
+	Pause, invalidate or replace
+	
+
+ Left-to-right state machine: DRAFT, REVIEWED, APPROVED, ACTIVE, then paused or invalidated. 
+
+Figure 4. Policy approval state machine.
+7.2 Approval and deployment
+Table 12. Approval and deployment
+Module card · Approval and deployment
+	Purpose
+	Move a proposal through review, approval and deployment.
+	Trigger
+	Review, approve or deploy API calls (/api/policy/review|approve|deploy).
+	Processing
+	The workflow manager changes the proposal status. The deploy step copies the exported limits into the in-memory wallet client and then registers an agent task.
+	Output
+	The updated proposal, or HTTP 400 with an error message.
+	
+
+Important boundary
+When no signature is supplied, the approval step generates a placeholder signature. EIP-712 signing is not implemented; the approval record must therefore not be treated as a cryptographic attestation.
+	
+
+7.3 Agent and reasoning
+Table 13. Agent and reasoning
+Module card · Agent and reasoning
+	Purpose
+	Continuously evaluate one active task.
+	Processing
+	Pause check → market snapshot → trigger evaluation → RAG retrieval → intent proposal → dry run → deterministic gates → local balance and transaction update.
+	Outputs
+	Thought stream, task status, transaction record and reasoning report.
+	Failure
+	Blocked and high-risk attempts are recorded; unexpected loop exceptions are logged.
+	References
+	agent/runtime.py, agent/task.py, reasoning/engine.py
+	
+
+ Numbered flowchart of one agent tick from daemon tick to persisted result, with skip and block outcomes. 
+
+Figure 5. Agent runtime with explicit safety gates and audit outcomes.
+7.4 Contract security and attack tester
+Table 14. Contract security and attack tester
+Module card · Contract security and attack tester
+	Purpose
+	Model policy enforcement and repeat six adversarial cases.
+	Inputs
+	Token, recipient, amount, balance-after, caps and pause flag.
+	Outputs
+	A named modeled revert, a gas estimate and a status, with no change to local state.
+	Evidence value
+	The result is simulator evidence, not a chain receipt.
+	References
+	contracts/PolicyWallet.sol, contracts/simulator.py, contracts/attack_tester.py
+	
+
+The guard model evaluates conditions in a fixed order. The first failing condition produces a typed custom error; only a call that passes every check reaches execution.
+ Vertical decision chain: paused, authorized operator, policy hash, then caps, floor and allowlists, leading to execute or a typed rejection. 
+
+Figure 6. Contract guard decision path.
+7.5 Wallet, market and assistant modules
+Table 15. Supporting modules
+Module
+	Behaviour
+	Wallet
+	Stores balances and actor-attributed transactions in user/data/wallet_db.json.
+	Market
+	Combines Coinbase data, synthetic ticks, scenario offsets and gas-oracle state into one snapshot and a one-per-second SSE stream.
+	Assistant
+	Answers state questions and dispatches bounded UI actions through the same Flask process; confirmation is required for agent pause and resume.
+	
+
+8. End-to-end workflows
+8.1 From instruction to active policy
+Table 16. Instruction-to-deployment sequence
+Step
+	Actor
+	Action
+	Result
+	1
+	Owner
+	Submits a natural-language instruction (POST /api/verify).
+	Proposal created.
+	2
+	Policy package
+	Runs the rule reader and, if configured, the LLM reader; type-checks both.
+	Two typed ASTs.
+	3
+	Z3 comparison
+	Checks equivalence in both directions; runs sanity checks.
+	Verified, review or rejected.
+	4
+	Policy package
+	Builds readback, SHA-256 hash and guard parameters.
+	Proposal in DRAFT.
+	5
+	Security reviewer
+	Reviews the readback (/api/policy/review).
+	REVIEWED.
+	6
+	Owner
+	Approves (/api/policy/approve).
+	APPROVED.
+	7
+	Owner
+	Deploys (/api/policy/deploy); limits are copied to the wallet client and a task is registered.
+	ACTIVE; agent task registered.
+	
+
+8.2 Autonomous tick
+Each scheduled tick evaluates task state and market inputs. A triggered task retrieves relevant regime context, forms an intent, computes a dry-run result, evaluates the deterministic safety gates, performs EVM-style preflight decoding, and persists either an execution record or a blocked explanation. The sequence is shown in the agent runtime figure in Section 7.3.
+Dry-run calculations include balance impact, slippage, gas cost, reserve floor, transaction cap, daily cap and allowlist checks. The exact formulas are in Section 11.
+8.3 Attack test
+1. The operator lists the available vectors (GET /api/contract/attack-test/*).
+2. The operator runs one vector by id (POST /api/contract/attack-test/*).
+3. The guard model evaluates pause state, operator, policy hash and caps in order.
+4. The result returns the named modeled revert, a gas estimate and a status. Local state is not mutated.
+Reading attack-test results
+Local attack-test results represent modeled contract rejections. They are not live Base Sepolia transaction receipts and must not be cited as on-chain evidence.
+	
+
+8.4 Manual intent validation
+POST /api/validate_intent accepts a trade size and gas price and returns the guard result. With execute set, an allowed intent mutates the local JSON ledger only; no transaction is submitted anywhere.
+9. Database and data architecture
+9.1 Storage model
+Orvilo has no SQL database, migrations, indexes or relational transactions. It uses three JSON stores, each protected by a re-entrant lock around read and write operations.
+Table 17. JSON data stores
+File
+	Owner
+	Contents
+	user/data/wallet_db.json
+	User service
+	Balances, wallet address, network, transaction ledger.
+	agent/data/agent_tasks.json
+	Agent task manager
+	Registered tasks, schedules, trigger and invariant definitions.
+	reasoning/data/market_history.json
+	Reasoning engine
+	Historical regimes used by RAG retrieval.
+	
+
+9.2 Logical relationships
+ Entity diagram: wallet account schedules agent tasks and owns transaction records; tasks produce transactions; transactions are explained by reasoning audits; market history informs reasoning audits. 
+
+Figure 7. Logical data relationships (records are JSON, not relational tables).
+9.3 Entities
+Table 18. Logical entities
+Entity
+	Key fields
+	Operations
+	UserState
+	wallet address, network, balances, transactions, timestamps
+	initialize, read, reset, update
+	TransactionRecord
+	id, actor, action, amount, token, status, hash, reason, report
+	prepend; lookup by id or hash
+	AgentTask
+	policy hash, status, triggers, invariants, schedule, count
+	register, stop, rerun, delete, persist
+	HistoricalRegime
+	conditions, metrics, recommendation
+	load, overwrite, retrieve
+	
+
+9.4 Failure and recovery behaviour
+Table 19. Storage failure handling
+Condition
+	Behaviour
+	Wallet JSON malformed
+	Falls back to initialized default state.
+	Task JSON malformed
+	Falls back to default (empty) state.
+	Market-history load failure
+	Logs an error and uses an empty list, which activates the baseline regime (Section 11.3).
+	Files absent at start
+	Created and initialized automatically.
+	10. API documentation
+10.1 Conventions
+* No authentication, version prefix, pagination, webhook or CORS policy exists in the Flask routes.
+* Workflow exceptions generally return HTTP 400 with a JSON error; many action routes return the domain result directly.
+* All payloads are JSON except GET / (HTML) and GET /api/market/stream (text/event-stream).
+10.2 Dashboard and market
+Table 20. Dashboard and market endpoints
+Method and path
+	Purpose and input
+	Response / status
+	GET /
+	Render the dashboard.
+	HTML 200.
+	GET /api/market/live
+	Market snapshot and chart history.
+	JSON 200.
+	POST /api/market/scenario
+	scenario.
+	Scenario result.
+	GET /api/market/stream
+	One SSE event per second.
+	Open text/event-stream.
+	
+
+10.3 Wallet and ledger
+Table 21. Wallet and ledger endpoints
+Method and path
+	Purpose and input
+	Response / status
+	GET/POST /api/user/wallet
+	Read or set ETH/USDC/WETH; optional log_transaction.
+	User state JSON.
+	GET /api/wallet/balances
+	Read balances.
+	Balance object.
+	GET/POST /api/user/transactions
+	Read or add transaction records.
+	Ledger JSON.
+	POST /api/user/reset, /api/simulation/reset
+	Reset local state.
+	Reset result.
+	
+
+10.4 Policy
+Table 22. Policy endpoints
+Method and path
+	Purpose and input
+	Response / status
+	POST /api/verify
+	prompt; run policy verification.
+	Verified / review / rejected JSON.
+	POST /api/validate_intent
+	trade_usd, gas_gwei, execute.
+	Guard result; execution mutates local JSON only.
+	GET /api/policy/workflow
+	Current and recent in-memory proposals.
+	Workflow JSON.
+	POST /api/policy/review|approve|deploy
+	proposal_id plus reviewer, approver or signature where applicable.
+	Proposal, or HTTP 400 error.
+	
+
+10.5 Agent
+Table 23. Agent endpoints
+Method and path
+	Purpose and input
+	Response / status
+	GET /api/agent/status
+	Agent state, task and thoughts.
+	Status JSON.
+	GET/POST/DELETE /api/agent/task
+	Read, register or delete the task.
+	Task JSON.
+	POST /api/agent/task/stop|rerun|deploy|delete
+	Task id and action control.
+	Task action result.
+	POST /api/agent/pause|resume|schedule
+	Agent control or scheduled-transfer fields.
+	Control or task result.
+	
+
+10.6 Contract security and assistant
+Table 24. Contract security and assistant endpoints
+Method and path
+	Purpose and input
+	Response / status
+	GET/POST /api/contract/security-status and controls
+	Pause, unpause, revoke operator or allowance, invalidate policy.
+	In-memory security result.
+	POST /api/simulation/simulate
+	Trade, token, recipient.
+	Simulation guards and result.
+	GET/POST /api/contract/attack-test/*
+	List vectors or run a vector id.
+	Modeled attack verdict.
+	POST /api/assistant/chat
+	message and optional confirmation.
+	Natural-language reply plus bounded action result.
+	
+
+10.7 Example requests
+The examples below use the default local address and the parameter names listed above. They are illustrative of request shape; actual response bodies depend on application state.
+Verify a policy
+curl -s -X POST http://127.0.0.1:5001/api/verify \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Buy ETH when gas is under 20 gwei and never let the balance fall below $500."}'
+	
+
+Validate a trade intent without executing it
+curl -s -X POST http://127.0.0.1:5001/api/validate_intent \
+  -H "Content-Type: application/json" \
+  -d '{"trade_usd": 200, "gas_gwei": 18, "execute": false}'
+	
+
+Ask the assistant a state question
+curl -s -X POST http://127.0.0.1:5001/api/assistant/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What is the current agent status?"}'
+	
+
+11. Business rules, algorithms and calculations
+This section defines every numeric rule that affects whether an action is allowed. The worked examples use illustrative inputs; the ETH price and gas values are taken from the dashboard screenshots in Section 13.
+11.1 Reserve and cap guards
+For a proposed USD trade T, current USDC balance B, reserve floor F, per-transaction cap C, daily spend so far S and daily cap D, the local checks are:
+GUARD CONDITIONS
+B − T  ≥  F
+T  ≤  C
+S + T  ≤  D
+	
+
+Inputs come from wallet JSON, policy parameters and the proposed task. Values use Python floats in the wallet and simulator layers; policy compilation itself uses exact Fraction values and Z3 reals.
+Table 25. Guard worked examples (illustrative parameters)
+Check
+	Worked example
+	Outcome
+	Reserve floor
+	B = $1,500, T = $200, F = $500 → $1,300 ≥ $500
+	Pass
+	Per-transaction cap
+	T = $200, C = $250 → $200 ≤ $250
+	Pass
+	Daily cap
+	S = $300, T = $200, D = $600 → $500 ≤ $600
+	Pass
+	Reserve floor (breach)
+	B = $600, T = $200, F = $500 → $400 < $500
+	Blocked
+	
+
+11.2 Dry-run swap
+Base slippage is 0.05 %. If gas exceeds 40 gwei, 0.15 percentage points are added. With market price P, slippage s (in percent) and gas in gwei:
+DRY-RUN FORMULAS
+effective_price = P × (1 + s / 100)
+estimated_ETH   = T / effective_price
+post_swap_USDC  = B − T
+	
+
+The simulator rounds ETH to five decimals, USDC to two, and report fields to their model precision. A regime is classified high-risk when the risk score is at least 7, the expected return is below −2 %, the risk level is HIGH, or the recommendation is HALT_TRADING.
+Table 26. Dry-run worked example (illustrative inputs)
+Quantity
+	Gas = 18 gwei
+	Gas = 45 gwei
+	Price P (USD)
+	2360.10
+	2360.10
+	Slippage s
+	0.05 %
+	0.20 %
+	Effective price
+	$2361.28
+	$2364.82
+	Estimated ETH for T = $200
+	0.08470 ETH
+	0.08457 ETH
+	Post-swap USDC (B = $1,500)
+	$1300.00
+	$1300.00
+	
+
+11.3 RAG scoring
+Each historical regime receives a weighted score and the highest-scoring regime is returned:
+REGIME SIMILARITY
+score = 0.45 × gas_compat + 0.35 × price_range + 0.20 × scenario_trend
+	
+
+Example: gas compatibility 0.90, price-range score 0.80 and scenario/trend score 0.50 give 0.45 × 0.90 + 0.35 × 0.80 + 0.20 × 0.50 = 0.785.
+Table 27. Baseline regime used when history is empty
+Baseline field (no regimes available)
+	Value
+	Similarity
+	0.75
+	Win rate
+	0.70
+	Expected return
+	2.0 %
+	Risk score
+	3.0
+	
+
+11.4 Daily contract accounting
+The Solidity reference computes the day index from the block timestamp and resets the daily counter whenever the day changes. It then rejects a call if the proposed cumulative total would exceed the daily cap.
+DAILY CAP LOGIC
+dayIndex = block.timestamp / 1 days
+if dayIndex changed:  spentTodayUsd = 0
+reject if  spentTodayUsd + amount > dailyCapUsd
+	
+
+In the default run this behaviour is represented by simulator inputs, not by a deployed chain.
+12. External integrations
+Table 28. External integrations
+Integration
+	Connection and data
+	Fallback and limits
+	Coinbase Exchange
+	WebSocket wss://ws-feed.exchange.coinbase.com, ETH-USD ticker.
+	Reconnect with backoff; synthetic ticks while disconnected.
+	Ethereum / Base RPC
+	Web3 HTTP provider; optional BASE_SEPOLIA_RPC; eth_call and gas estimate.
+	Offline deterministic simulator fallback; no transaction submission.
+	Groq
+	HTTP JSON completion using LLM_BASE_URL, API key, model and schema guide.
+	Retries 429 and non-200 responses; default provider is mock.
+	spaCy model
+	Local deterministic dependency parsing.
+	Required dependency for the rule reader.
+	
+
+Design note
+Every external dependency has a local fallback, so the full demonstration runs offline. Live feeds improve realism but never become a point of authority.
+	
+
+13. Frontend and UI behavior
+13.1 Overview
+The server renders flask/templates/index.html. Browser JavaScript calls the APIs described in Section 10, updates dashboard panels, consumes SSE chart events, stores theme and timezone preferences in local storage, and displays policy, security, attack, activity and reasoning surfaces.
+13.2 Behaviours
+* Timezone. Beijing time (Asia/Shanghai) is the default; the user can select another zone.
+* Theme. Dark mode is supported; semantic dark surfaces cover the policy, contract and attack sections.
+* Navigation. Seven sections are reachable from the bottom bar: Market, Policies, Agent, Wallet, Activity, Security and Attacks.
+* Quick actions. Swap, Policy, Agent and Funds shortcuts appear on the net-worth card.
+* Assistant. A floating assistant button is fixed above the mobile bottom navigation.
+* Live market. The ETH/USD card shows the Coinbase WebSocket price and the gas card shows L1 gas with base and tip values.
+The user interface labels the application “Wallet Agent” in its header in the current build; “Orvilo” is the product name used throughout this document.
+13.3 Screenshots
+  
+
+Figure 8. Desktop user interface (market view).
+ Mobile dashboard showing the net worth card, market cards, agent daemon status and bottom navigation. 
+
+Figure 9. Mobile user interface (market view).
+14. Authentication and authorization
+Not for public deployment
+No login, session, bearer token, CSRF protection or route authentication is implemented. Do not expose the default server to an untrusted network or use it with real funds.
+	
+
+The UI is intended for local demonstration. Application-level labels identify owner, reviewer and agent, while the contract reference code has owner and operator modifiers. The Python client does not cryptographically authenticate requests.
+14.1 Security control summary
+Table 29. Security controls and their basis
+Control
+	Enforced by
+	Deterministic?
+	Policy type checking
+	policy/typecheck.py
+	Yes
+	Reader equivalence
+	Z3 in policy/compare.py
+	Yes
+	Reserve floor, caps, allowlists
+	Reasoning gates and guard model
+	Yes
+	Pause state, operator checks
+	Contract model / security state
+	Yes
+	Interpretation proposal (LLM)
+	Groq reader
+	No (untrusted)
+	HTTP caller identity
+	Not enforced
+	Not implemented
+	
+
+15. Installation and local development
+15.1 Prerequisites
+* Python 3 with venv and pip.
+* The dependencies in requirements.txt, including Flask, Z3 and the spaCy model used by the rule reader.
+* Optional: a Groq API key (for the LLM reader) and a Base Sepolia RPC URL.
+15.2 Setup and run
+Commands
+cd WalletAgent                      # repository root
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+cp .env.example .env
+PYTHONPATH=. .venv/bin/python main.py --cli-only
+PYTHONPATH=. .venv/bin/python main.py --host 127.0.0.1 --port 5001
+	
+
+The --cli-only run performs policy discovery and prints the result without starting the server. The second command starts the dashboard.
+15.3 Verify the installation
+Smoke checks
+curl -fsS http://127.0.0.1:5001/api/market/live
+curl -fsS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5001/
+	
+
+The first call should return a JSON market snapshot and the second should print 200. The application initializes local JSON files when they are absent; there are no migrations to run.
+15.4. Docker Deployment
+Build the Docker image from the repository root:
+docker build -t orvilo:latest .
+Run the application:
+docker run -d \
+  --name orvilo \
+  --restart unless-stopped \
+  -p 5000:5000 \
+  orvilo:latest
+Access the dashboard at http://localhost:5000.
+Verify the deployment:
+docker ps
+curl -fsS http://localhost:5000/api/market/live
+docker exec orvilo python scripts/docker_smoke.py http://127.0.0.1:5000
+Alternatively, use Docker Compose:
+docker compose up --build -d
+docker compose logs -f
+docker compose down
+Stop and remove the container:
+docker stop orvilo
+docker rm orvilo
+The default Docker configuration uses the offline mock LLM and does not require an API key. Optional LLM and blockchain settings can be configured through environment variables.
+
+
+16. Configuration and deployment
+16.1 Environment variables
+Table 30. Implemented configuration
+Variable
+	Purpose
+	LLM_PROVIDER
+	Selects the reader provider; mock (default) runs offline.
+	LLM_API_KEY
+	API key for the selected provider.
+	GROQ_API_KEY
+	Groq-specific API key.
+	LLM_MODEL
+	Model identifier for the LLM reader.
+	LLM_BASE_URL
+	Base URL for the provider’s HTTP completion endpoint.
+	BASE_SEPOLIA_RPC
+	Optional Base Sepolia RPC endpoint for eth_call and gas estimates.
+	
+
+Other blockchain values in .env.example are reference settings unless a module explicitly reads them.
+16.2 Production readiness
+There is no Dockerfile, WSGI manifest, CI/CD workflow, health endpoint, backup job, migration order or rollback automation. The table lists what a production topology would require.
+Table 31. Production readiness checklist
+Requirement
+	Current state
+	Recommended action
+	TLS and network protection
+	Absent
+	Terminate TLS at a reverse proxy; restrict network exposure.
+	Process supervision / WSGI
+	Absent
+	Serve with a production WSGI server under a supervisor.
+	Authenticated access
+	Absent
+	Add authentication, authorization and CSRF protection.
+	Durable storage
+	JSON files
+	Move to a transactional database with migrations and backups.
+	Signer custody
+	Absent
+	Introduce key management and real EIP-712 signing.
+	Observability and health
+	Logs only
+	Add a health endpoint, metrics and alerting.
+	Chain reconciliation
+	Absent
+	Reconcile local ledger against receipts from a live network.
+	
+
+17. Testing and validation
+17.1 Executed verification
+90
+tests passed
+	0
+tests failed
+	
+
+The verification run for this documentation baseline used .venv/bin/python -m pytest -q and returned 90 passed.
+17.2 Coverage areas
+Table 32. Test coverage by area
+Area
+	What the tests exercise
+	Policy
+	AST construction, type checking, reader behaviour and the verification loop.
+	Agent
+	Task lifecycle: register, stop, rerun, delete and persistence.
+	Exchange
+	Market snapshot, fallback and scenario behaviour.
+	Reasoning
+	Retrieval, intent, dry-run and gate behaviour.
+	Scorecard
+	Scorecard feature behaviour.
+	User database
+	Initialize, read, reset and update operations on wallet state.
+	
+
+What the tests do not prove
+They do not prove deployed bytecode, production security or live transaction receipts.
+	
+
+18. Performance and reliability
+Table 33. Performance and reliability characteristics
+Concern
+	Current behaviour
+	Threads
+	The agent, Coinbase listener and gas oracle use daemon threads; locks protect shared state.
+	Market stream
+	Emits one SSE event per second.
+	Reconnection
+	Coinbase reconnects with bounded exponential backoff and generates synthetic ticks while disconnected.
+	LLM calls
+	Groq retries transient HTTP failures (429 and non-200).
+	Persistence
+	JSON writes are whole-file rewrites under locks.
+	Not implemented
+	No queue, cache, database transaction, rate limiter, resource quota or measured throughput benchmark.
+	
+
+No throughput benchmark has been measured; the figures above describe design behaviour, not measured capacity.
+19. Operations, maintenance and troubleshooting
+Table 34. Troubleshooting guide
+Symptom
+	Diagnosis
+	Resolution
+	Port unavailable
+	Another process owns the port.
+	Use another port such as 5001 and verify with the printed URL.
+	Market shows disconnected
+	Coinbase WebSocket unavailable.
+	Expected fallback behaviour; inspect logs and network, or use a scenario.
+	Groq failure
+	Missing key, provider response or timeout.
+	Use LLM_PROVIDER=mock for offline operation; check key and endpoint.
+	Task not executing
+	Trigger, pause flag, risk or invariant blocked it.
+	Inspect /api/agent/status and the transaction reason.
+	State reset needed
+	Demo data is stale.
+	POST to /api/user/reset or /api/simulation/reset.
+	Corrupt JSON
+	A file cannot be decoded.
+	Back up the file, then allow the service’s default initialization behaviour.
+	
+
+19.1 Routine maintenance
+* Back up the three JSON files before upgrades or manual edits.
+* Reset demo state with the reset endpoints before a fresh demonstration.
+* Review logs for unexpected agent-loop exceptions, which are logged rather than surfaced in the UI.
+20. Known limitations and future development
+20.1 Current limitations
+Table 35. Known limitations
+Implemented now
+	Incomplete or absent
+	Practical effect
+	Typed policy verification and local guard model.
+	Live policy deployment and receipt reconciliation.
+	No proof that local results match deployed state.
+	JSON wallet, task and history stores.
+	Transactional database, migrations, backups.
+	Single-process demo only; concurrent durability is limited.
+	Mock and Groq readers.
+	Other named providers and production model governance.
+	Provider choice is narrow.
+	Owner and operator concepts in the model.
+	HTTP authentication and cryptographic request authorization.
+	Unsafe for public deployment.
+	Six modeled attack vectors.
+	Independent audit and live penetration evidence.
+	Modeled reverts are not security certification.
+	
+
+20.2 Recommended next steps
+The steps below are engineering recommendations derived from the limitations above; they are not commitments or implemented features.
+Table 36. Recommended next steps
+#
+	Step
+	Rationale
+	Priority
+	1
+	Add authentication, authorization and CSRF protection to the Flask routes.
+	Removes the largest barrier to any non-local deployment.
+	High
+	2
+	Implement EIP-712 approval signing.
+	Turns the placeholder approval into a verifiable attestation.
+	High
+	3
+	Replace JSON stores with a transactional database and migrations.
+	Provides durability and safe concurrent access.
+	High
+	4
+	Deploy the contract to a test network and reconcile receipts with the local ledger.
+	Connects modeled behaviour to chain evidence.
+	Medium
+	5
+	Add packaging, CI/CD, a health endpoint and observability.
+	Enables repeatable deployment and monitoring.
+	Medium
+	6
+	Commission an independent security audit.
+	Provides assurance beyond modeled attack vectors.
+	Medium
+	
+
+21. Appendices and source references
+Appendix A. Glossary
+Table 37. Glossary
+Term
+	Definition
+	AST
+	Typed abstract syntax tree representing a policy.
+	Counterexample
+	A concrete input, found by Z3, on which two policy interpretations disagree.
+	Dry run
+	A simulated swap that computes slippage, gas and balance impact before any state changes.
+	Guard
+	A deterministic rule that can block an action.
+	gwei
+	A unit of Ethereum gas price (10⁻⁹ ETH).
+	Modeled revert
+	A simulator rejection, not a mined transaction result.
+	Readback
+	The canonical plain-language restatement of a verified policy.
+	RAG
+	Retrieval of historical market regimes to inform an intent.
+	Regime
+	A historical market condition set with metrics and a recommendation.
+	Reserve floor
+	The minimum USDC balance that must remain after a trade.
+	SSE
+	Server-sent events; the one-way stream used for live market updates.
+	Z3
+	An SMT solver used to check logical equivalence of policy formulas.
+	
+
+Appendix B. Source map
+Table 38. Source map
+Claim
+	Evidence
+	Startup and route registration
+	main.py, flask/server.py
+	Policy verification
+	policy/loop.py, policy/compare.py, policy/typecheck.py
+	Agent execution
+	agent/runtime.py, agent/task.py
+	Calculations and RAG
+	reasoning/dry_run.py, reasoning/rag.py, reasoning/engine.py
+	Contract reference and modeled attacks
+	contracts/PolicyWallet.sol, contracts/simulator.py, contracts/attack_tester.py
+	Persistence
+	user/db.py, user/models.py, agent/task.py
+	Tests
+	tests/; 90 passed in the executed local run
+	
+
+Appendix C. Quick reference
+Table 39. Quick reference
+Item
+	Value
+	Default address
+	http://127.0.0.1:5001
+	Base slippage
+	0.05 %; +0.15 percentage points above 40 gwei
+	High-risk threshold
+	Risk score ≥ 7, expected return < −2 %, HIGH risk or HALT_TRADING
+	RAG weights
+	Gas 0.45 · price range 0.35 · scenario/trend 0.20
+	Baseline regime
+	Similarity 0.75 · win rate 0.70 · return 2.0 % · risk 3.0
+	Policy states
+	DRAFT → REVIEWED → APPROVED → ACTIVE
+	Default timezone
+	Beijing (Asia/Shanghai)
+	
+
+
+
+Page  of
