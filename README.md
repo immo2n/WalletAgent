@@ -30,15 +30,16 @@ Orvilo is a mathematically verified autonomous trading agent and wallet policy e
 |:---|:---|
 | [Technical documentation PDF](WalletAgent_Technical_Documentation.pdf) | A4-ready implementation report with verified architecture, workflows, testing evidence, and Mermaid figures |
 | [Technical documentation source](docs/technical-report.html) | Reproducible HTML source used to generate the PDF |
-| [Security self-assessment](docs/security-self-assessment.md) | Evidence-based security report with permission-tier matrix, known-risk register, test evidence, and trust-boundary diagrams |
-| [Security self-assessment Word document](docs/Security_Self_Assessment_Report.docx) | Editable report generated from the Markdown assessment with embedded diagrams |
 | [Technical architecture](docs/technical-doc.md) | System overview, feature matrix, runtime flows, API surface, testing, and deployment notes |
+| [Technical documentation Word document](docs/final/Orvilo_Technical_Documentation.docx) | Official editable technical documentation with embedded diagrams and REST API spec |
+| [Security self-assessment](docs/security-self-assessment.md) | Evidence-based security report with permission-tier matrix, known-risk register, test evidence, and trust-boundary diagrams |
+| [Security self-assessment Word document](docs/final/Orvilo_Security_Self_Assessment_Report.docx) | Editable report generated from the Markdown assessment with embedded diagrams |
+| [Execution evidence report](docs/execution-evidence-report.md) | Empirical sandbox execution records, scenario register (EE-01 to EE-07), test verification, and disclosed gaps |
+| [Execution evidence Word document](docs/final/Orvilo_Execution_Evidence_Report.docx) | Editable evidence report with embedded execution logs and checksums |
 | [Policy engine](docs/policy-engine.md) | Natural-language parsing, typed ASTs, Z3 equivalence checking, and policy workflow |
 | [Agent runtime](docs/agent-runtime.md) | Market feeds, autonomous loop, scheduling, RAG reasoning, dry-run checks, and task lifecycle |
 | [Smart contracts and security](docs/smart-contracts.md) | Solidity guards, simulator behavior, emergency controls, and attack-test vectors |
 | [User approval and audit](docs/user-and-audit.md) | Approval states, audit records, dashboard behavior, and operator controls |
-| [Execution evidence report](docs/execution-evidence-report.md) | Empirical sandbox execution records, scenario register (EE-01 to EE-07), test verification, and disclosed gaps |
-| [Execution evidence Word document](docs/Orvilo_Execution_Evidence_Report.docx) | Editable evidence report with embedded execution logs and checksums |
 | [Pitch deck reference](docs/pitch-deck-info.md) | Demonstration narrative and scorecard evidence |
 | [Mermaid visual sources](visuals/) | A4-oriented Mermaid diagrams and rendered PNG figures |
 

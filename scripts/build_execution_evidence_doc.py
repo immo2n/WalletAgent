@@ -17,8 +17,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/evidence/execution-report/execution-evidence.json"
-OUT_ORVILO = ROOT / "docs/Orvilo_Execution_Evidence_Report.docx"
-OUT_WALLET = ROOT / "docs/WalletAgent_Execution_Evidence_Report.docx"
+OUT = ROOT / "docs/final/Orvilo_Execution_Evidence_Report.docx"
 FIG_SYSTEM = ROOT / "visuals/rendered/system-context.png"
 FIG_PERMISSION = ROOT / "visuals/rendered/permission-enforcement.png"
 
@@ -931,11 +930,9 @@ def build() -> None:
     doc.settings.element.append(OxmlElement("w:updateFields"))
     doc.settings.element[-1].set(qn("w:val"), "true")
 
-    # Save to both Orvilo and WalletAgent docx targets
-    doc.save(OUT_ORVILO)
-    print(f"Generated: {OUT_ORVILO}")
-    doc.save(OUT_WALLET)
-    print(f"Generated: {OUT_WALLET}")
+    # Save to docs/final
+    doc.save(OUT)
+    print(f"Generated: {OUT}")
 
 
 if __name__ == "__main__":

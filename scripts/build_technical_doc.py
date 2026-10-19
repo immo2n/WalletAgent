@@ -15,9 +15,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT_ORVILO = ROOT / "docs/Orvilo_Technical_Documentation.docx"
-OUT_TECH = ROOT / "docs/Technical_Documentation.docx"
-OUT_FINAL = ROOT / "docs/final/Orvilo_Technical_Documentation.docx"
+OUT = ROOT / "docs/final/Orvilo_Technical_Documentation.docx"
 
 FIG_POLICY = ROOT / "visuals/rendered/policy-verification.png"
 FIG_RUNTIME = ROOT / "visuals/rendered/runtime-safety.png"
@@ -712,12 +710,8 @@ def build() -> None:
     doc.settings.element.append(OxmlElement("w:updateFields"))
     doc.settings.element[-1].set(qn("w:val"), "true")
 
-    doc.save(OUT_ORVILO)
-    print(f"Generated: {OUT_ORVILO}")
-    doc.save(OUT_TECH)
-    print(f"Generated: {OUT_TECH}")
-    doc.save(OUT_FINAL)
-    print(f"Generated: {OUT_FINAL}")
+    doc.save(OUT)
+    print(f"Generated: {OUT}")
 
 
 if __name__ == "__main__":

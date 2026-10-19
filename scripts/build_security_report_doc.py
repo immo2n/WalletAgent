@@ -15,9 +15,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT_ORVILO = ROOT / "docs/Orvilo_Security_Self_Assessment_Report.docx"
-OUT_SEC = ROOT / "docs/Security_Self_Assessment_Report.docx"
-OUT_FINAL = ROOT / "docs/final/Orvilo_Security_Self_Assessment_Report.docx"
+OUT = ROOT / "docs/final/Orvilo_Security_Self_Assessment_Report.docx"
 
 FIG_TRUST = ROOT / "visuals/rendered/security-trust-boundaries.png"
 FIG_PERMISSION = ROOT / "visuals/rendered/permission-enforcement.png"
@@ -741,12 +739,8 @@ def build() -> None:
     doc.settings.element.append(OxmlElement("w:updateFields"))
     doc.settings.element[-1].set(qn("w:val"), "true")
 
-    doc.save(OUT_ORVILO)
-    print(f"Generated: {OUT_ORVILO}")
-    doc.save(OUT_SEC)
-    print(f"Generated: {OUT_SEC}")
-    doc.save(OUT_FINAL)
-    print(f"Generated: {OUT_FINAL}")
+    doc.save(OUT)
+    print(f"Generated: {OUT}")
 
 
 if __name__ == "__main__":
