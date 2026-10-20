@@ -21,7 +21,7 @@
       "recipient": "0x71C8366420A096207E90B01D252431792349039A"
     },
     "canonical_readback": "Scheduled transfer of $100.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
-    "last_checked_at": "2026-10-20T04:41:36.146004+00:00",
+    "last_checked_at": "2026-10-20T04:41:49.160387+00:00",
     "last_reason": "Scheduled execution pending: Next run at 2026-10-20 04:41:50 UTC",
     "execution_tx_hash": null,
     "executed_at": null,
