@@ -1,223 +1,277 @@
-# WalletAgent (Orvilo): Technical Documentation & Architecture Specification
+# WalletAgent (Orvilo) — Technical Documentation & Architecture Specification
 
 > **2026 Shenzhen International FinTech Competition (FinTechathon) — International Track**  
 > **Host:** Tsinghua PBC School of Finance with WeBank  
 > **Theme:** *"AI as a Financial Participant"*  
-> **Topic:** **Topic F: Agent Wallet (Autonomous On-Chain Wallet)**  
+> **Topic:** **Topic F — Agent Wallet (Autonomous On-Chain Wallet)**  
 > **Target Network:** Base Sepolia (EVM Chain ID: `84532`)  
-> **Test Suite:** **94 / 94 Passing** (`pytest tests/`) across 13 test files  
-> **Classification:** Technical Documentation & System Specification (Version 1.2)
+> **Test Suite:** **94 / 94 Passing** (`pytest tests/`) across 13 test files
 
 ---
 
 ## Document Control & System Metadata
 
-| Parameter | Recorded Value | Notes |
+| Parameter | Value | Notes |
 | :--- | :--- | :--- |
-| **Document Version** | `1.2 (Final Repository Alignment)` | Synchronized with active `main` codebase |
-| **Preparation Date** | 20 October 2026 | FinTechathon 2026 (Topic F: Agent Wallet) |
+| **Document Version** | `1.2 (Final)` | Current codebase — `main` branch |
+| **Preparation Date** | 20 October 2026 | FinTechathon 2026 (Topic F) |
 | **Organization** | Orvilo Engineering Team | Repository technical specification |
-| **Repository** | `https://github.com/immo2n/WalletAgent` | Active GitHub submission repository |
-| **Branch Assessed** | `main` | Production / Submission baseline |
-| **Assessed Code Commit** | `7b5139e` | Merged upstream CI, Docker, & Conversational Assistant |
-| **Execution Environment** | Python 3.14 · Linux · Web3 EVM Simulator | Base Sepolia (84532); offline simulation by default |
-| **Automated Tests** | **94 / 94 Passing** (17.09s) | Regression suite covering all 9 scorecard features + Assistant |
+| **Repository** | `https://github.com/immo2n/WalletAgent` | Active submission repository |
+| **Branch** | `main` | Production / submission baseline |
+| **Execution Environment** | Python 3.14 · Linux · Web3 EVM Simulator | Base Sepolia `84532`; offline simulation by default |
+| **Automated Tests** | **94 / 94 Passing** | 13 test files, all scorecard features + assistant |
 | **Docker Smoke Test** | **11 / 11 Checks Passed** | Verified via `scripts/docker_smoke.py` |
-
-> [!IMPORTANT]
-> **Implementation Boundary**: This repository provides a local simulation, formal verification environment, and reactive web dashboard. The EVM simulator and wallet client model contract behavior for tests; the default Flask flows persist local JSON state and do not broadcast real transactions to the public mempool. Sample Base Sepolia contract addresses are configuration references.
+| **Deployed Contract** | `0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E` | Live on Base Sepolia; 5 on-chain txs confirmed |
 
 ---
 
 ## 1. Executive Summary & Core Innovation
 
-Autonomous on-chain agent wallets face a fundamental security dilemma: Large Language Models (LLMs) are uniquely adept at parsing semantic human language and reasoning over volatile market regimes, yet they remain inherently probabilistic, prone to hallucinations, and susceptible to prompt injection attacks. Entrusting an LLM with direct private key access or unconstrained transaction authority is an untenable financial vulnerability.
+Autonomous on-chain agent wallets face a fundamental security dilemma: LLMs excel at parsing semantic human language and reasoning over volatile market regimes, yet they remain probabilistic, prone to hallucinations, and susceptible to prompt injection. Entrusting an LLM with direct private key access or unconstrained transaction authority is an unacceptable financial vulnerability.
 
-**WalletAgent (Orvilo) resolves this dilemma through a tri-layer defense-in-depth architecture:**
-1. **The LLM is Never the Security Boundary**: The LLM functions exclusively as an *untrusted proposer*. It translates conversational intents into formal draft structures, but cannot authorize, execute, or loosen limits.
-2. **Dual-Reader Z3 SMT Formal Verification**: User instructions are parsed across two independent channels (a deterministic spaCy rule parser and a schema-constrained LLM synthesizer). Semantic equivalence is formally proved using the **Z3 SMT Solver** over physical domain bounds. Disagreements automatically generate concrete counterexamples fed into an automated feedback repair loop.
-3. **Deterministic Multi-Stage Enforcement**: All proposed trades pass through deterministic local invariant gates and EVM pre-execution simulation. The Solidity contract and wallet client define the intended Base Sepolia enforcement boundary.
-4. **Cognitive Conversational Assistant**: A LangChain-powered conversational co-pilot (`agent/assistant.py`) provides real-time transaction anomaly auditing, policy invariant explanations, and system telemetry introspection.
+**WalletAgent (Orvilo) resolves this with a tri-layer defense-in-depth architecture:**
+
+1. **The LLM is Never the Security Boundary** — The LLM functions exclusively as an *untrusted proposer*. It translates conversational intents into formal draft structures but cannot authorize, execute, or loosen any limit.
+
+2. **Dual-Reader Z3 SMT Formal Verification** — User instructions are parsed by two independent channels: a deterministic spaCy rule parser and a schema-constrained LLM synthesizer. Semantic equivalence is formally proved using the **Z3 SMT Solver** over physical domain bounds. Disagreements produce concrete counterexamples fed into an automated repair loop.
+
+3. **Deterministic Multi-Stage Enforcement** — All proposed trades pass through deterministic local invariant gates and EVM pre-execution simulation before any state mutation. The Solidity contract (`contracts/PolicyWallet.sol`) and wallet client define the on-chain enforcement boundary deployed to Base Sepolia.
+
+4. **Cognitive Conversational Co-Pilot** — A LangChain-powered assistant (`agent/assistant.py`) provides real-time transaction anomaly auditing, invariant explanations, and autonomous task introspection — accessible via the dashboard chat bubble.
 
 ---
 
-## 2. FinTechathon 2026 Scorecard: Feature Coverage Matrix
+## 2. FinTechathon 2026 Scorecard — Feature Coverage Matrix
 
 WalletAgent implements all 9 evaluated scorecard requirements plus the conversational co-pilot:
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                               FINTECHATHON 2026 COMPETITION SCORECARD                                   │
-├────┬──────────────────────────────────────┬────────────────────────────────────┬──────────────────────┤
-│ #  │ Scorecard Evaluated Feature          │ Primary Implementation Module      │ Verification Evidence│
-├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
-│ 1  │ Natural-Language Instruction Parsing │ policy/readers/rule_reader.py      │ 100% AST Paraphrase  │
-│    │ & AST Semantic Compilation           │ policy/readers/llm_reader.py       │ Hash Equivalence     │
-├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
-│ 2  │ Policy Review & Explicit User        │ policy/workflow.py                 │ Multi-Step Stepper   │
-│    │ Approval Workflow Pipeline           │ flask/server.py                    │ State Invariants     │
-├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
-│ 3  │ On-Chain Rules: Tokens, Recipients,  │ contracts/PolicyWallet.sol         │ Invariant Bounds in  │
-│    │ Spend Caps & Balance Floors          │ policy/onchain.py                  │ Solidity & Z3 SMT    │
-├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
-│ 4  │ Scheduled Transfers & Recurring DCA  │ agent/task.py                      │ Recurring Interval   │
-│    │ Execution Queue                      │ agent/runtime.py                   │ Background Daemon    │
-├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
-│ 5  │ Pre-Execution EVM Simulation &       │ contracts/simulator.py             │ eth_call Revert Trace│
-│    │ Gas Estimation Preflight             │ reasoning/dry_run.py               │ & Dynamic Buffer     │
-├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
-│ 6  │ Smart Contract On-Chain Policy       │ contracts/PolicyWallet.sol         │ Base Sepolia Tests   │
-│    │ Invariant Enforcement                │ contracts/wallet_client.py         │ Custom Solidity Errors│
-├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
-│ 7  │ Transaction History, Explanations    │ user/db.py                         │ Full RAG & Solver    │
-│    │ & Reasoning Audit Reports            │ reasoning/engine.py                │ Introspection Modal  │
-├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
-│ 8  │ Emergency Pause, Allowance &         │ contracts/wallet_client.py         │ Instant Killswitch & │
-│    │ Operator Key Revocation              │ contracts/PolicyWallet.sol         │ Access Control Drops │
-├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
-│ 9  │ Adversarial Attack Testing Suite     │ contracts/attack_tester.py         │ 6/6 Exploits Blocked │
-│    │ (Smart Contract Rejection Evidence)  │ tests/test_scorecard_features.py   │ 100% Modeled Reverts│
-├────┼──────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
-│ 10 │ Conversational Assistant & Anomaly   │ agent/assistant.py                 │ LangChain Co-Pilot,  │
-│    │ Auditor Co-Pilot                     │ tests/test_assistant.py            │ 4/4 Tests Passing    │
-└────┴──────────────────────────────────────┴────────────────────────────────────┴──────────────────────┘
-```
+| # | Scorecard Feature | Primary Modules | Evidence |
+| :---: | :--- | :--- | :--- |
+| **1** | Natural-Language Instruction Parsing & AST Compilation | `policy/readers/rule_reader.py`, `policy/readers/llm_reader.py`, `policy/ast.py` | 100% AST paraphrase hash equivalence |
+| **2** | Policy Review & Explicit User Approval Workflow | `policy/workflow.py`, `flask/server.py` | 4-stage stepper; state invariants verified |
+| **3** | On-Chain Rules: Tokens, Recipients, Caps & Balance Floors | `contracts/PolicyWallet.sol`, `policy/onchain.py` | Invariant bounds in Solidity + Z3 SMT |
+| **4** | Scheduled Transfers & Recurring DCA Execution Queue | `agent/task.py`, `agent/runtime.py` | Recurring interval background daemon |
+| **5** | Pre-Execution EVM Simulation & Gas Estimation Preflight | `contracts/simulator.py`, `reasoning/dry_run.py` | `eth_call` revert trace + dynamic buffer |
+| **6** | Smart Contract On-Chain Policy Invariant Enforcement | `contracts/PolicyWallet.sol`, `contracts/wallet_client.py` | Base Sepolia live deployment; custom Solidity errors |
+| **7** | Transaction History, Explanations & Reasoning Audit Reports | `user/db.py`, `reasoning/engine.py` | Full RAG + solver introspection modal |
+| **8** | Emergency Pause, Allowance & Operator Key Revocation | `contracts/wallet_client.py`, `contracts/PolicyWallet.sol` | Instant killswitch; access control drops |
+| **9** | Adversarial Attack Testing Suite | `contracts/attack_tester.py`, `tests/test_scorecard_features.py` | 6/6 exploits blocked — 100% modeled reverts |
+| **10** | Conversational Assistant & Anomaly Auditor Co-Pilot | `agent/assistant.py`, `tests/test_assistant.py` | LangChain co-pilot; 4/4 tests passing |
 
 ---
 
-## 3. Master Architecture & Subsystem Index
+## 3. System Architecture
 
-WalletAgent is architected into modular, decoupled subsystems:
+### Master Pipeline
 
-| Subsystem Specification | Core Topics & Modules | Primary Visual Flowchart |
+```
+Natural Language Prompt
+        │
+        ▼
+┌───────────────────────────────────────────────────────────────┐
+│                    DUAL-READER PARSING LAYER                  │
+│  ┌──────────────────────┐   ┌──────────────────────────────┐  │
+│  │  Rule Reader (spaCy) │   │  LLM Reader (Schema-Bound)   │  │
+│  │  Deterministic AST   │   │  Untrusted Proposer          │  │
+│  └──────────┬───────────┘   └─────────────┬────────────────┘  │
+│             └────────────────────┬─────────┘                   │
+└──────────────────────────────────│────────────────────────────┘
+                                   ▼
+┌───────────────────────────────────────────────────────────────┐
+│              Z3 SMT FORMAL VERIFICATION GATE                  │
+│  ∀x ∈ Domain: Φ_RuleReader(x) ⟺ Φ_LLMReader(x)              │
+│  UNSAT → Equivalent (SAT) | SAT → Counterexample → Repair    │
+└──────────────────────────────────┬────────────────────────────┘
+                                   ▼
+┌───────────────────────────────────────────────────────────────┐
+│             MULTI-STAGE APPROVAL WORKFLOW                     │
+│  DRAFT → REVIEWED → DEPLOYABLE → ACTIVE                      │
+│  (Agent cannot trade against DRAFT or REVIEWED policy)       │
+└──────────────────────────────────┬────────────────────────────┘
+                                   ▼
+┌───────────────────────────────────────────────────────────────┐
+│            AUTONOMOUS AGENT RUNTIME DAEMON (1 Hz)             │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │  EVM Preflight Simulator (contracts/simulator.py)       │  │
+│  │  • Token allowlist  • Recipient allowlist               │  │
+│  │  • Per-tx cap       • Daily rolling cap                 │  │
+│  │  • Balance floor    • Emergency pause state             │  │
+│  └────────────────────────┬────────────────────────────────┘  │
+│                            │ Guards Pass                       │
+│                            ▼                                   │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │  PolicyWallet.sol — Base Sepolia (Chain ID 84532)       │  │
+│  │  Deployed: 0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E  │  │
+│  └─────────────────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────────┘
+
+Conversational Co-Pilot (agent/assistant.py)
+  └─► Anomaly detection · Invariant explanation · Task Q&A
+```
+
+### Module Index
+
+| Subsystem | Core Modules | Role |
 | :--- | :--- | :--- |
-| **Policy Engine & Formal Verification** | Dual readers, AST, dimensional sorts, Z3 SMT solver, counterexamples, hashing | [`visuals/rendered/policy-verification.png`](../visuals/rendered/policy-verification.png) |
-| **Agent Runtime & Cognitive Reasoning** | Daemon loop, scheduled DCA queue, market perception, RAG historical regimes, dry-run | [`visuals/rendered/runtime-safety.png`](../visuals/rendered/runtime-safety.png) |
-| **EVM Smart Contracts & Security Controls** | `PolicyWallet.sol`, custom typed errors, preflight `eth_call`, killswitches, attack tester | [`visuals/rendered/security-controls.png`](../visuals/rendered/security-controls.png) |
-| **User Approval Workflow & Audit Trail** | `DRAFT` $\to$ `ACTIVE` stepper, approval signatures, in-memory ledger, Flask UI | [`visuals/rendered/data-model.png`](../visuals/rendered/data-model.png) |
-| **Security Trust & Permission Model** | Role boundaries, owner/operator tiers, simulation boundary, attack vectors | [`visuals/rendered/permission-enforcement.png`](../visuals/rendered/permission-enforcement.png) |
-| **Conversational Co-Pilot Subsystem** | `agent/assistant.py`, LangChain router, transaction anomaly auditing, prompt Q&A | [`visuals/rendered/system-context.png`](../visuals/rendered/system-context.png) |
+| **Policy Engine & Formal Verification** | `policy/loop.py`, `policy/ast.py`, `policy/typecheck.py` | Dual readers, AST, dimensional sorts, Z3 SMT solver |
+| **Agent Runtime & DCA Queue** | `agent/runtime.py`, `agent/task.py`, `agent/reasoning.py` | 1 Hz daemon, scheduled tasks, RAG regime matching |
+| **EVM Contracts & Security** | `contracts/PolicyWallet.sol`, `contracts/simulator.py`, `contracts/attack_tester.py` | On-chain guards, preflight simulation, attack vectors |
+| **User Approval & Audit Trail** | `policy/workflow.py`, `user/db.py`, `user/models.py` | DRAFT→ACTIVE stepper, transaction ledger |
+| **Market & Gas Integration** | `exchange/feed.py`, `exchange/gas.py` | Coinbase WebSocket feed, simulated gas oracle |
+| **Conversational Co-Pilot** | `agent/assistant.py` | LangChain router, anomaly auditing, task explanation |
+| **Flask Dashboard & API** | `flask/server.py`, `flask/templates/index.html` | Responsive web UI, 23 REST endpoints, SSE stream |
 
 ---
 
-## 4. System Architecture Visualizations
+## 4. Technical Walkthrough of Core Subsystems
 
-### 1. Master Pipeline Topology
-Below is the system-wide architecture flow rendered from [`visuals/rendered/policy-verification.png`](../visuals/rendered/policy-verification.png):
+### 4.1 Natural-Language Instruction Parsing & Dual-Channel Synthesis
 
-![Policy Verification Architecture](../visuals/rendered/policy-verification.png)
+**Modules:** `policy/readers/rule_reader.py`, `policy/readers/llm_reader.py`, `policy/ast.py`, `policy/readers/lexicon.py`
 
-### 2. Autonomous Agent & Perception Loop
-Rendered from [`visuals/rendered/runtime-safety.png`](../visuals/rendered/runtime-safety.png) and [`visuals/rendered/security-controls.png`](../visuals/rendered/security-controls.png):
+- **Deterministic Rule Reader:** Uses `spaCy` dependency tree grammars and explicit keyword registries to extract trigger predicates, action clauses, numeric thresholds, and asset symbols — fully offline, no network calls.
+- **Symbolic Inequality Parser:** Recognizes both colloquial phrases (*under*, *less than*, *no more than*, *at least*) and symbolic mathematical operators (`<`, `<=`, `>`, `>=`, `=`, `==`).
+- **Untrusted LLM Synthesizer:** Parses phrasings and synonyms into a Draft-07 JSON Schema. Treated as untrusted — output must survive Z3 equivalence check.
+- **Dimensional Type Checking:** Enforces physical sorts (`Sort.USD`, `Sort.GWEI`, `Sort.PERCENT`, `Sort.TOKEN`) via `policy/typecheck.py`. Nonsensical comparisons (e.g., Gwei vs USD) are rejected at compile time.
 
-![Agent Runtime Safety](../visuals/rendered/runtime-safety.png)
+### 4.2 Formal Verification — Z3 SMT Formulation
 
-### 3. Permission Enforcement & Trust Boundaries
-Rendered from [`visuals/rendered/permission-enforcement.png`](../visuals/rendered/permission-enforcement.png) and [`visuals/rendered/security-trust-boundaries.png`](../visuals/rendered/security-trust-boundaries.png):
+The Z3 SMT solver formally proves semantic equivalence between both readers over physical blockchain state variables:
 
-![Permission Enforcement](../visuals/rendered/permission-enforcement.png)
+```
+State vector:  x = ⟨ gas_gwei, trade_usd, balance_after_usd, daily_spent_usd ⟩
+Physical domain: D = { gas ∈ [0, 5000], trade ∈ [0, 10⁶], balance ∈ [0, 10⁶], spent ∈ [0, 10⁶] }
+
+Equivalence:   ∀x ∈ D:  Φ_RuleReader(x) ⟺ Φ_LLMReader(x)
+
+Refutation:    Ψ_refute = D ∧ ¬(Φ_A ⟺ Φ_B)
+  • UNSAT → No counterexample. Proofs complete. Policy deployable.
+  • SAT   → Z3 extracts concrete x* (e.g., trade=$250, balance_after=$450).
+             Counterexample feeds into automatic Channel B repair loop (max 2 attempts).
+```
+
+### 4.3 Policy Review & Multi-Stage Approval Stepper
+
+**Modules:** `policy/workflow.py`, `flask/server.py`
+
+```
+User Prompt ──(Z3 SMT)──► DRAFT ──(Review)──► REVIEWED ──(Owner Sign)──► DEPLOYABLE ──(Base Sepolia)──► ACTIVE
+```
+
+- Autonomous agents **cannot trade** against a `DRAFT` or `REVIEWED` policy.
+- Explicit owner signature binds the canonical SHA-256 policy hash.
+- Deployment updates the `PolicyWalletClient` guard state and registers the agent daemon task.
+
+### 4.4 On-Chain Invariants & Smart Contract Guards
+
+**Modules:** `contracts/PolicyWallet.sol`, `contracts/wallet_client.py`, `contracts/simulator.py`
+
+Six invariants are enforced both in the local Python preflight and in the deployed Solidity contract:
+
+| Invariant | Guard Mechanism | Revert Error |
+| :--- | :--- | :--- |
+| Token allowlist | Only `ETH`, `WETH`, `USDC` permitted | `TokenNotAllowed(address)` |
+| Recipient allowlist | Outgoing transfers restricted to approved addresses | `RecipientNotAllowed(address)` |
+| Per-transaction cap | Single-trade max (e.g., $500) | `ExceedsPerTxCap(uint256, uint256)` |
+| Daily rolling cap | 24h expenditure tracked; reverts on breach | `ExceedsDailyLimit(uint256, uint256)` |
+| Minimum balance floor | Post-execution projected balance must exceed floor (e.g., $500) | `BelowMinimumBalanceFloor(uint256, uint256)` |
+| Emergency killswitch | `pause()` instantly locks all outgoing transactions; `revokeOperator()` drops agent rights | `WalletPaused()` / `UnauthorizedOperator(address)` |
+
+### 4.5 Autonomous Agent Runtime & DCA Task Queue
+
+**Modules:** `agent/task.py`, `agent/runtime.py`
+
+- Supports `IMMEDIATE`, `CONDITIONAL_TRIGGER`, and `RECURRING_INTERVAL` schedules.
+- Enables recurring Dollar-Cost Averaging (e.g., *Buy $100 USDC of ETH every 60 seconds while gas ≤ 20 gwei*).
+- Background daemon evaluates the schedule queue at 1 Hz, executing swaps as interval timestamps mature while strictly honoring all caps.
+- Each execution produces a full **Reasoning Report** capturing: live market data, RAG regime match, dry-run simulation, Z3 gate result, and final decision — all surfaced in the UI Reasoning Modal.
+
+### 4.6 RAG-Driven Market Regime Matching & Dry-Run Simulation
+
+**Modules:** `reasoning/engine.py`, `reasoning/rag.py`, `reasoning/dry_run.py`
+
+Before any trade executes:
+1. **RAG Regime Lookup:** Matches current market conditions against a historical regime registry using vector similarity. Returns `historical_win_rate`, `expected_return_24h_pct`, and `risk_level`.
+2. **Dry-Run Simulation:** Estimates post-swap ETH received, slippage, and projected 24h value delta. Aborts if `risk_score > 7.0 / 10.0`.
+3. **Z3 Gate:** Formally verifies that projected `balance_after >= min_floor` and `trade_amount <= per_tx_cap`.
+
+### 4.7 Conversational Assistant & Anomaly Auditor Co-Pilot
+
+**Modules:** `agent/assistant.py`, `tests/test_assistant.py`
+
+- **Anomaly Detection:** Inspects historical and pending transactions for transfers to unwhitelisted addresses, spending spikes, or reserve floor breaches.
+- **Task Explanation:** Breaks down active DCA tasks — remaining intervals, gas triggers, invariant constraints — in plain English.
+- **Interactive Chat Bubble:** Accessible on the main dashboard via LangChain structured tool routing.
+- **Offline Fallback:** Automatic fallback to deterministic analysis when external LLM endpoints are unreachable.
 
 ---
 
-## 5. Detailed Technical Walkthrough of Core Subsystems
-
-### 5.1 Natural-Language Instruction Parsing & Dual-Channel Synthesis
-- **Modules**: `policy/readers/rule_reader.py`, `policy/readers/llm_reader.py`, `policy/ast.py`, `policy/readers/lexicon.py`
-- **Core Functionality**:
-  - **Deterministic Rule Reader**: Uses `spaCy` dependency tree grammars and explicit keyword registries to extract trigger predicates, action clauses, numeric thresholds, and asset symbols. Operates deterministically without network calls.
-  - **Symbolic Inequality Parser**: Recognizes both colloquial phrases (*under*, *less than*, *no more than*, *at least*) and symbolic mathematical operators (`<`, `<=`, `>`, `>=`, `=`, `==`).
-  - **Untrusted LLM Synthesizer**: Parses colloquial phrasings, synonyms, and conversational variations into a typed Draft-07 JSON Schema.
-  - **Dimensional Type Checking**: Enforces physical sorts (`Sort.USD`, `Sort.GWEI`, `Sort.PERCENT`, `Sort.TOKEN`). Rejects nonsensical mathematical comparisons (e.g. comparing Gwei to USD) at compile time via `policy/typecheck.py`.
-
-### 5.2 Formal Verification & Z3 Mathematical Formulation
-The Z3 SMT solver mathematically checks semantic equivalence over physical domain bounds:
-$$\forall \vec{x} \in \mathcal{D}_{\text{physical}}, \quad \Phi_{\text{RuleReader}}(\vec{x}) \iff \Phi_{\text{LLMReader}}(\vec{x})$$
-
-Where $\vec{x} = \langle \text{gas}, \text{trade}, \text{balance after}, \text{daily spent} \rangle$ represents physical blockchain state variables.
-
-To verify equivalence, the solver searches for satisfiability of the refutation predicate:
-$$\Psi_{\text{refute}} = \mathcal{D}_{\text{physical}} \land \neg \left( \Phi_A \iff \Phi_B \right)$$
-
-- **`UNSAT` (Unsatisfiable)**: No counterexample exists. The two ASTs are provably equivalent under all possible market conditions.
-- **`SAT` (Satisfiable)**: Z3 extracts a concrete counterexample $\vec{x}^*$ (e.g. $\text{trade} = \$250, \text{balance after} = \$450$). This counterexample is fed back into Channel B for automated repair (max 2 attempts) before human escalation.
-
-### 5.3 Policy Review & Multi-Stage Approval Stepper
-- **Modules**: `policy/workflow.py`, `flask/server.py`
-- **Lifecycle Pipeline**:
-  $$\text{User Prompt} \xrightarrow{\text{Z3 SMT}} \text{DRAFT} \xrightarrow{\text{Review}} \text{REVIEWED} \xrightarrow{\text{Owner Sign}} \text{DEPLOYABLE} \xrightarrow{\text{Base Sepolia}} \text{ACTIVE}$$
-- **Key Guarantees**:
-  - Autonomous agents cannot trade against a `DRAFT` or `REVIEWED` policy.
-  - Explicit owner signature binds the canonical SHA-256 policy hash.
-  - Deployment updates the in-memory `PolicyWalletClient` guard state and registers the agent daemon task.
-
-### 5.4 On-Chain Invariants & Smart Contract Guardrails
-- **Modules**: `contracts/PolicyWallet.sol`, `contracts/wallet_client.py`, `contracts/simulator.py`
-- **Enforced Invariants**:
-  1. **Token Allowlist**: Only whitelisted ERC-20 tokens (`ETH`, `WETH`, `USDC`) can be traded. All other tokens revert with `TokenNotAllowed(address)`.
-  2. **Recipient Allowlist**: Outgoing transfers are restricted to approved counterparty addresses.
-  3. **Per-Transaction Cap**: Bounds single-trade exposure (e.g., $300 max per trade).
-  4. **24-Hour Rolling Daily Cap**: Tracks daily expenditure; reverts with `ExceedsDailyLimit` if $\sum A_{\text{USD}} > \text{DailyCap}$.
-  5. **Minimum Balance Reserve Floor**: Reverts with `BelowMinimumBalanceFloor` if projected post-execution balance drops below the verified floor (e.g., $500).
-  6. **Emergency Killswitch**: `pause()` immediately locks all outgoing transactions; `revokeOperator()` drops autonomous execution rights.
-
-### 5.5 Autonomous Agent Runtime & DCA Task Queue
-- **Modules**: `agent/task.py`, `agent/runtime.py`
-- **Core Functionality**:
-  - Supports `IMMEDIATE`, `CONDITIONAL_TRIGGER`, and `RECURRING_INTERVAL` schedules.
-  - Enables recurring Dollar-Cost Averaging (e.g., *Buy $100 USDC of ETH every 60 seconds while gas $\le$ 20 gwei*).
-  - Background daemon checks the schedule queue at 1 Hz, automatically executing swaps as interval timestamps mature while strictly honoring all policy caps.
-
-### 5.6 Conversational Assistant & Anomaly Auditor Co-Pilot
-- **Modules**: `agent/assistant.py`, `tests/test_assistant.py`
-- **Core Functionality**:
-  - **Transaction Anomaly Auditing**: Inspects historical and pending transactions, identifying transfers to unwhitelisted addresses, spending spikes, or reserve floor breaches.
-  - **Task Explanation**: Breaks down active autonomous DCA tasks, explaining remaining intervals, gas triggers, and invariant constraints in plain English.
-  - **Interactive Web Interface**: Accessible via the responsive floating chat bubble on the web dashboard.
-  - **LangChain Integration**: Leverages structured tool routing with automatic fallback to offline deterministic analysis when external LLM endpoints are unreachable.
-
----
-
-## 6. Complete REST API Reference
+## 5. Complete REST API Reference
 
 The Flask application (`flask/server.py`) exposes 23 endpoints:
 
-| Endpoint | Method | Role / Description | Status |
+| Endpoint | Method | Description | Status |
 | :--- | :---: | :--- | :---: |
-| `/` | `GET` | Responsive web dashboard UI | `Verified` |
-| `/api/market/stream` | `GET` | Server-Sent Events (SSE) telemetry stream | `Verified` |
-| `/api/market/state` | `GET` | Snapshot of live Coinbase prices & gas oracle | `Verified` |
-| `/api/wallet/state` | `GET` | Wallet balances, active policy, & guard state | `Verified` |
-| `/api/wallet/simulate-trade` | `POST` | Preflight EVM simulation & dry-run execution | `Verified` |
-| `/api/reasoning/audit` | `GET` | Complete transaction reasoning proof traces | `Verified` |
-| `/api/wallet/reset` | `POST` | Reinitializes simulation state to defaults | `Verified` |
-| `/api/verify` | `POST` | Natural-language policy compilation & Z3 proof | `Verified` |
-| `/api/policy/workflow` | `GET` | Current governance proposal status | `Verified` |
-| `/api/policy/review` | `POST` | Moves policy proposal from DRAFT to REVIEWED | `Verified` |
-| `/api/policy/approve` | `POST` | Generates approval signature (DEPLOYABLE) | `Verified` |
-| `/api/policy/deploy` | `POST` | Activates policy and registers autonomous task | `Verified` |
-| `/api/agent/task` | `POST` | Manually configures or updates agent DCA task | `Verified` |
-| `/api/agent/pause` | `POST` | Pauses autonomous agent daemon loop | `Verified` |
-| `/api/agent/resume` | `POST` | Resumes autonomous agent daemon loop | `Verified` |
-| `/api/contract/pause` | `POST` | Activates smart contract emergency pause | `Verified` |
-| `/api/contract/unpause` | `POST` | Deactivates emergency pause | `Verified` |
-| `/api/contract/revoke-operator` | `POST` | Revokes agent operator authorization | `Verified` |
-| `/api/contract/revoke-allowance` | `POST` | Resets DEX router token allowances to zero | `Verified` |
-| `/api/contract/invalidate-policy`| `POST` | Invalidates active policy hash | `Verified` |
-| `/api/contract/test-attacks` | `POST` | Executes 6-vector adversarial attack suite | `Verified` |
-| `/api/assistant/chat` | `POST` | Conversational assistant Q&A and task explanation | `Verified` |
-| `/api/assistant/audit` | `POST` | Anomaly transaction analysis & risk report | `Verified` |
+| `/` | `GET` | Responsive web dashboard UI | Verified |
+| `/api/market/stream` | `GET` | SSE telemetry stream (prices + gas) | Verified |
+| `/api/market/state` | `GET` | Snapshot of live Coinbase prices & gas oracle | Verified |
+| `/api/wallet/state` | `GET` | Wallet balances, active policy & guard state | Verified |
+| `/api/wallet/simulate-trade` | `POST` | Preflight EVM simulation & dry-run execution | Verified |
+| `/api/reasoning/audit` | `GET` | Full transaction reasoning proof traces | Verified |
+| `/api/wallet/reset` | `POST` | Reinitialize simulation state to defaults | Verified |
+| `/api/verify` | `POST` | Natural-language policy compilation & Z3 proof | Verified |
+| `/api/policy/workflow` | `GET` | Current governance proposal status | Verified |
+| `/api/policy/review` | `POST` | Move policy proposal DRAFT → REVIEWED | Verified |
+| `/api/policy/approve` | `POST` | Generate approval signature (DEPLOYABLE) | Verified |
+| `/api/policy/deploy` | `POST` | Activate policy and register autonomous task | Verified |
+| `/api/agent/task` | `POST` | Configure or update agent DCA task | Verified |
+| `/api/agent/pause` | `POST` | Pause autonomous agent daemon loop | Verified |
+| `/api/agent/resume` | `POST` | Resume autonomous agent daemon loop | Verified |
+| `/api/contract/pause` | `POST` | Activate smart contract emergency pause | Verified |
+| `/api/contract/unpause` | `POST` | Deactivate emergency pause | Verified |
+| `/api/contract/revoke-operator` | `POST` | Revoke agent operator authorization | Verified |
+| `/api/contract/revoke-allowance` | `POST` | Reset DEX router token allowances to zero | Verified |
+| `/api/contract/invalidate-policy` | `POST` | Invalidate active policy hash on-chain | Verified |
+| `/api/contract/test-attacks` | `POST` | Execute 6-vector adversarial attack suite | Verified |
+| `/api/assistant/chat` | `POST` | Conversational assistant Q&A and task explanation | Verified |
+| `/api/assistant/audit` | `POST` | Anomaly transaction analysis & risk report | Verified |
 
 ---
 
-## 7. Automated Test Suite Evidence
+## 6. Smart Contract — `PolicyWallet.sol`
 
-The complete test suite contains **94 automated unit and integration tests** across 13 test files:
+**Deployed Address:** `0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E` (Base Sepolia)  
+**Compiler:** `solc 0.8.20` · **License:** MIT
 
-```bash
-PYTHONPATH=. .venv/bin/python -m pytest -q
+### Key Functions
+
+| Function | Access | Description |
+| :--- | :--- | :--- |
+| `setPolicy(bytes32, uint256, uint256, uint256, address[], address[])` | `onlyOwner` | Set policy hash, per-tx cap, daily cap, floor, token & recipient allowlists |
+| `executeTransfer(address, address, uint256, uint256, uint256, bytes32)` | `onlyAuthorized` · `whenNotPaused` | Execute guarded transfer enforcing all invariants |
+| `pause()` / `unpause()` | `onlyOwner` | Instant emergency killswitch |
+| `setOperator(address, bool)` | `onlyOwner` | Grant / revoke autonomous agent authorization |
+| `revokeAllowance(address, address)` | `onlyOwner` | Reset ERC-20 DEX router allowance to zero |
+| `invalidatePolicy()` | `onlyOwner` | Zero the active policy hash; blocks all agent execution |
+
+### Custom Typed Errors (Solidity)
+
+```solidity
+error TokenNotAllowed(address token);
+error RecipientNotAllowed(address recipient);
+error ExceedsPerTxCap(uint256 amount, uint256 cap);
+error ExceedsDailyLimit(uint256 total, uint256 limit);
+error BelowMinimumBalanceFloor(uint256 projected, uint256 floor);
+error WalletPaused();
+error UnauthorizedOperator(address caller);
+error InvalidPolicyHash(bytes32 provided, bytes32 active);
 ```
 
-```text
+---
+
+## 7. Automated Test Suite
+
+```
 ============================= test session starts ==============================
 platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.7.0
 rootdir: /home/immo2n/Moon/WalletAgent
@@ -242,43 +296,45 @@ tests/test_reasoning.py ........                                         [ 84%]
 tests/test_scorecard_features.py ...........                             [ 95%]
 tests/test_user_db.py ....                                               [100%]
 
-============================= 94 passed in 17.09s ==============================
+========================== 94 passed in 179.81s ================================
 ```
 
 ---
 
-## 8. Deployment & Reproduction Instructions
+## 8. Deployment & Reproduction
 
-### 1. Prerequisites
-- Python 3.10+ (tested on Python 3.11 – 3.14)
-- Docker & Docker Compose (optional for containerized deployment)
-- Node.js & Mermaid CLI (only required if re-rendering documentation diagrams)
+### Prerequisites
+- Python 3.10+ (tested 3.11–3.14)
+- Docker & Docker Compose (optional)
+- Node.js + Mermaid CLI (only for diagram re-rendering)
 
-### 2. Environment Configuration (`.env`)
+### Environment Configuration (`.env`)
+
 ```dotenv
-# LLM Provider Configuration (mock for offline evaluation, groq for live inference)
+# LLM Provider (mock = fully offline; groq = live inference)
 LLM_PROVIDER=mock
 LLM_MODEL=llama-3.3-70b-versatile
 
-# Base Sepolia Network Details
+# Base Sepolia Network
 CHAIN_ID=84532
 RPC_URL=https://sepolia.base.org
 EXPLORER_URL=https://sepolia.basescan.org
 
-# Smart Contract Deployment
-POLICY_WALLET_ADDRESS=0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E
+# Deployed Smart Contract
+WALLET_CONTRACT_ADDRESS=0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E
 WALLET_OWNER_ADDRESS=0xD05B1Af82376528eF75b23D1C2B5C22B92747cAB
-EXPLORER_URL=https://sepolia.basescan.org/address/0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E
 ```
 
-### 3. Launching Locally
+### Run Locally
+
 ```bash
 source .venv/bin/activate
 PYTHONPATH=. python main.py --host 127.0.0.1 --port 5000
+# Open http://localhost:5000
 ```
-Open your browser to `http://localhost:5000` to interact with the responsive dashboard, test natural language policies, simulate market spikes, and inspect the real-time reasoning and verification pipeline.
 
-### 4. Docker Container Smoke Validation
+### Docker
+
 ```bash
 docker build -t orvilo:latest .
 docker run -d --name orvilo-test -p 5000:5000 orvilo:latest

@@ -3,10 +3,166 @@
   "network": "Base Sepolia (84532)",
   "balances": {
     "ETH": 1.5,
-    "USDC": 1200.0,
+    "USDC": 900.0,
     "WETH": 0.0
   },
   "transactions": [
+    {
+      "id": "tx-1792471644781-162c",
+      "timestamp": "2026-10-20T04:47:24.781384+00:00",
+      "actor": "AGENT",
+      "action": "TRANSFER",
+      "details": "Autonomous Guarded TRANSFER: $100.00 USDC for USDC (Base Sepolia #19483009)",
+      "amount": 0.042634832658281815,
+      "token": "USDC",
+      "status": "CONFIRMED",
+      "tx_hash": "0x81aafd7dc3354a699cf16cb93bcd775fa3f4f6224470414bb315db4f8e700d3a",
+      "price_usd": 2345.5,
+      "reason": "Verified On-Chain Policy: RAG regime validated (85% win-rate). Floor preserved ($900.00 >= $500). EVM Gas: 45000",
+      "reasoning_report": {
+        "report_id": "rep-cd3c89bd",
+        "timestamp": "2026-10-20T04:47:16.965290+00:00",
+        "prompt": "Scheduled transfer of $100.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+        "live_market": {
+          "eth_price_usd": 2345.5,
+          "gas_gwei": 0.5,
+          "scenario": "REAL_MARKET"
+        },
+        "rag_context": {
+          "regime_id": "REGIME-001",
+          "regime_name": "Post-Dip Mean Reversion (Low Gas)",
+          "similarity_score": 0.49,
+          "historical_win_rate": 0.85,
+          "expected_return_24h_pct": 5.2,
+          "risk_level": "LOW",
+          "risk_score": 2.0,
+          "max_drawdown_pct": 1.5,
+          "context_summary": "Ethereum gas dropped under 20 gwei following minor retracement. Historically, low-gas periods after minor selloffs yield positive 24-48h rebounds.",
+          "strategy_recommendation": "ACCUMULATE"
+        },
+        "intent": {
+          "intent_type": "SWAP",
+          "target_token": "ETH",
+          "amount_usd": 100.0,
+          "thesis": "Accumulate ETH: Gas at 0.5 gwei satisfies entry trigger. RAG pattern matches historical ACCUMULATE regime.",
+          "profitability_outlook": "Favorable: Historical regime 'Post-Dip Mean Reversion (Low Gas)' demonstrates 85% win-rate with +5.2% expected 24h return. Low gas (0.5 gwei) minimizes overhead.",
+          "confidence_score": 0.52
+        },
+        "dry_run": {
+          "estimated_eth_received": 0.04261,
+          "estimated_slippage_pct": 0.05,
+          "post_swap_usdc": 900.0,
+          "post_swap_eth": 1.54261,
+          "expected_24h_value_delta_usd": 5.2,
+          "max_drawdown_risk_usd": 1.5,
+          "risk_score": 2.0,
+          "risk_level": "LOW",
+          "decision": "PROCEED_TO_GATES",
+          "simulation_notes": "Dry-run simulation favorable: Low risk (2.0/10) in 'Post-Dip Mean Reversion (Low Gas)'. Simulated swap: +0.04261 ETH at $2,345.50. Historical win-rate: 85%, Expected 24h gain: +5.20 USD."
+        },
+        "gate_data": {
+          "solver_status": "SAT",
+          "is_formally_verified": true,
+          "invariant_checks": [
+            {
+              "name": "INVARIANT_FLOOR_GE_500",
+              "expression": "balance_after ($900.00) >= $500.00",
+              "passed": true
+            }
+          ],
+          "trigger_checks": [
+            {
+              "name": "TRIGGER_GAS_LTE_20",
+              "expression": "gas (0.5) <= 20.0 gwei",
+              "passed": true
+            }
+          ],
+          "passed": true,
+          "summary": "Formal Z3 Verification: SAT. Invariants: ALL_SATISFIED. Triggers: ALL_SATISFIED."
+        },
+        "final_decision": "EXECUTED",
+        "executive_summary": "Autonomous trade authorized: RAG matched 'Post-Dip Mean Reversion (Low Gas)' (49% similarity, 85% win-rate). Dry-run simulated +0.04261 ETH with low risk (2.0/10). Deterministic Z3 gate formally verified invariants and floor preservation."
+      },
+      "is_onchain": false
+    },
+    {
+      "id": "tx-1792471452913-ca96",
+      "timestamp": "2026-10-20T04:44:12.913069+00:00",
+      "actor": "AGENT",
+      "action": "TRANSFER",
+      "details": "Autonomous Guarded TRANSFER: $100.00 USDC for USDC (Base Sepolia #19482817)",
+      "amount": 0.042634832658281815,
+      "token": "USDC",
+      "status": "CONFIRMED",
+      "tx_hash": "0x4c1953d2d8ac460b8f3da82c087b502d18f0012272134a578e453aaaef28e1d3",
+      "price_usd": 2345.5,
+      "reason": "Verified On-Chain Policy: RAG regime validated (85% win-rate). Floor preserved ($1100.00 >= $500). EVM Gas: 45000",
+      "reasoning_report": {
+        "report_id": "rep-624f2735",
+        "timestamp": "2026-10-20T04:44:07.155470+00:00",
+        "prompt": "Scheduled transfer of $100.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+        "live_market": {
+          "eth_price_usd": 2345.5,
+          "gas_gwei": 0.5,
+          "scenario": "REAL_MARKET"
+        },
+        "rag_context": {
+          "regime_id": "REGIME-001",
+          "regime_name": "Post-Dip Mean Reversion (Low Gas)",
+          "similarity_score": 0.49,
+          "historical_win_rate": 0.85,
+          "expected_return_24h_pct": 5.2,
+          "risk_level": "LOW",
+          "risk_score": 2.0,
+          "max_drawdown_pct": 1.5,
+          "context_summary": "Ethereum gas dropped under 20 gwei following minor retracement. Historically, low-gas periods after minor selloffs yield positive 24-48h rebounds.",
+          "strategy_recommendation": "ACCUMULATE"
+        },
+        "intent": {
+          "intent_type": "SWAP",
+          "target_token": "ETH",
+          "amount_usd": 100.0,
+          "thesis": "Accumulate ETH: Gas at 0.5 gwei satisfies entry trigger. RAG pattern matches historical ACCUMULATE regime.",
+          "profitability_outlook": "Favorable: Historical regime 'Post-Dip Mean Reversion (Low Gas)' demonstrates 85% win-rate with +5.2% expected 24h return. Low gas (0.5 gwei) minimizes overhead.",
+          "confidence_score": 0.52
+        },
+        "dry_run": {
+          "estimated_eth_received": 0.04261,
+          "estimated_slippage_pct": 0.05,
+          "post_swap_usdc": 1100.0,
+          "post_swap_eth": 1.54261,
+          "expected_24h_value_delta_usd": 5.2,
+          "max_drawdown_risk_usd": 1.5,
+          "risk_score": 2.0,
+          "risk_level": "LOW",
+          "decision": "PROCEED_TO_GATES",
+          "simulation_notes": "Dry-run simulation favorable: Low risk (2.0/10) in 'Post-Dip Mean Reversion (Low Gas)'. Simulated swap: +0.04261 ETH at $2,345.50. Historical win-rate: 85%, Expected 24h gain: +5.20 USD."
+        },
+        "gate_data": {
+          "solver_status": "SAT",
+          "is_formally_verified": true,
+          "invariant_checks": [
+            {
+              "name": "INVARIANT_FLOOR_GE_500",
+              "expression": "balance_after ($1100.00) >= $500.00",
+              "passed": true
+            }
+          ],
+          "trigger_checks": [
+            {
+              "name": "TRIGGER_GAS_LTE_20",
+              "expression": "gas (0.5) <= 20.0 gwei",
+              "passed": true
+            }
+          ],
+          "passed": true,
+          "summary": "Formal Z3 Verification: SAT. Invariants: ALL_SATISFIED. Triggers: ALL_SATISFIED."
+        },
+        "final_decision": "EXECUTED",
+        "executive_summary": "Autonomous trade authorized: RAG matched 'Post-Dip Mean Reversion (Low Gas)' (49% similarity, 85% win-rate). Dry-run simulated +0.04261 ETH with low risk (2.0/10). Deterministic Z3 gate formally verified invariants and floor preservation."
+      },
+      "is_onchain": false
+    },
     {
       "id": "tx-1792471250097-6f82",
       "timestamp": "2026-10-20T04:40:50.097617+00:00",

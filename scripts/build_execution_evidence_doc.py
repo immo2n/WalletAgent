@@ -568,26 +568,9 @@ def build() -> None:
     add_bullet(doc, "After operator revocation, the Python client's simulated execution method returned a synthetic confirmation because the sender address was selected without consulting the local revocation flag. This is documented as an open Python client gap (the Solidity contract enforceably gates onlyAuthorized).", "5. Disclosed Local Gap (EE-06): ")
 
     # -------------------------------------------------------------
-    # 2. Non-Matching Analysis: Previous Draft vs. Current Codebase
+    # 2. System Architecture & Component Roles
     # -------------------------------------------------------------
-    add_heading(doc, "2. Non-Matching Analysis: Previous Draft vs. Current Codebase", 1)
-    add_body(doc, "A systematic audit between earlier draft notes (Orvilo_Execution_Evidence_Report(1).docx.txt) and the current repository identified six discrepancies. All six have been resolved in this report to provide complete alignment with the live repository:")
-
-    nm_headers = ["Item", "Previous Draft Report", "Current Repository (main)", "Resolution / Update"]
-    nm_rows = [
-        ["Git Branch", "feature/dark-mode-mobile-docs", branch, "Updated metadata to active main production branch."],
-        ["Commit SHA", "30f235d", short_commit, f"Updated to latest commit ({commit})."],
-        ["Test Suite Count", "90 tests passing", "94 tests passing", "Added tests/test_assistant.py (4 new test cases)."],
-        ["Conversational Co-Pilot", "Omitted / Not documented", "Implemented in agent/assistant.py", "Added Conversational Assistant & Anomaly Auditor evidence."],
-        ["Lexicon Comparators", "Word-only ('under', 'less than')", "Symbolic (<, <=, >, >=, =, ==)", "Updated parser documentation to reflect symbolic operator support."],
-        ["System Source Map", "7 core modules", "8 core modules", "Included agent/assistant.py and new API endpoints in source index."],
-    ]
-    add_table(doc, nm_headers, nm_rows, [1.1, 1.6, 1.6, 2.2], font_size=8.2)
-
-    # -------------------------------------------------------------
-    # 3. System Architecture & Component Roles
-    # -------------------------------------------------------------
-    add_heading(doc, "3. System Architecture & Component Roles", 1)
+    add_heading(doc, "2. System Architecture & Component Roles", 1)
     add_figure(doc, FIG_SYSTEM, "Figure 1. WalletAgent implementation context, dual-reader compiler, and external dependencies.", 6.1)
 
     add_body(doc, "The WalletAgent architecture decouples intent generation from execution security:", "Architecture Overview: ")
@@ -623,7 +606,7 @@ def build() -> None:
     # -------------------------------------------------------------
     # 4. Execution Scenario Register (EE-01 to EE-07)
     # -------------------------------------------------------------
-    add_heading(doc, "4. Execution Scenario Register (EE-01 to EE-07)", 1)
+    add_heading(doc, "3. Execution Scenario Register (EE-01 to EE-07)", 1)
     add_body(doc, "All seven scenarios were executed using isolated in-memory stubbing to prevent state pollution:")
 
     reg_headers = ["ID", "Evaluated Feature", "Expected Result", "Observed Behavior", "Outcome", "Evidence ID"]
@@ -643,7 +626,7 @@ def build() -> None:
     # -------------------------------------------------------------
     # 5. Detailed Execution Records
     # -------------------------------------------------------------
-    add_heading(doc, "5. Detailed Execution Records", 1)
+    add_heading(doc, "4. Detailed Execution Records", 1)
 
     # EE-01
     add_heading(doc, "EE-01 · Authorized Guarded Operation", 2)
@@ -756,7 +739,7 @@ def build() -> None:
     # -------------------------------------------------------------
     # 6. Live On-Chain Transaction Evidence & BaseScan Verification
     # -------------------------------------------------------------
-    add_heading(doc, "6. Live On-Chain Transaction Evidence & BaseScan Verification", 1)
+    add_heading(doc, "5. Live On-Chain Transaction Evidence & BaseScan Verification", 1)
     add_callout(doc, "Live On-Chain Evidence Verified on Base Sepolia.",
                 "The PolicyWallet smart contract (contracts/PolicyWallet.sol) has been compiled with Solidity 0.8.20 "
                 "and deployed directly to the Base Sepolia testnet at contract address 0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E. "
@@ -791,7 +774,7 @@ def build() -> None:
     # -------------------------------------------------------------
     # 7. Automated Test Suite Evidence (EV-TEST-01)
     # -------------------------------------------------------------
-    add_heading(doc, "7. Automated Test Suite Evidence (EV-TEST-01)", 1)
+    add_heading(doc, "6. Automated Test Suite Evidence (EV-TEST-01)", 1)
     add_body(doc, "The repository automated regression suite verifies policy compilation, Z3 formal verification, mathematical equivalence, AST sorts, reasoning dry-runs, exchange WebSocket connectivity, scorecard security features, and the conversational assistant:")
 
     add_code_block(doc, "PYTHONPATH=. .venv/bin/python -m pytest -q")
@@ -827,7 +810,7 @@ def build() -> None:
     # -------------------------------------------------------------
     # 8. Demo Video & Evidence Walkthrough (EV-VIDEO-01)
     # -------------------------------------------------------------
-    add_heading(doc, "8. Demo Video & Evidence Walkthrough (EV-VIDEO-01)", 1)
+    add_heading(doc, "7. Demo Video & Evidence Walkthrough (EV-VIDEO-01)", 1)
     add_body(doc, "The 5-minute video demonstration follows the script specified in video-script.txt for the 2026 Shenzhen International FinTech Competition (FinTechathon Topic F):")
 
     video_headers = ["Timestamp", "Content Presented", "Evidence Scenario", "Report Section"]
@@ -846,7 +829,7 @@ def build() -> None:
     # -------------------------------------------------------------
     # 9. Findings & Recommended Remediation Register
     # -------------------------------------------------------------
-    add_heading(doc, "9. Findings & Recommended Remediation Register", 1)
+    add_heading(doc, "8. Findings & Recommended Remediation Register", 1)
     add_body(doc, "The evidence evaluation identified six technical findings. Each finding is prioritized with recommended remediations:")
 
     find_headers = ["ID", "Finding Description", "Severity", "Recommended Remediation"]
@@ -863,7 +846,7 @@ def build() -> None:
     # -------------------------------------------------------------
     # 10. Reproduction Steps
     # -------------------------------------------------------------
-    add_heading(doc, "10. Reproduction Steps", 1)
+    add_heading(doc, "9. Reproduction Steps", 1)
     add_body(doc, "To independently reproduce all evidence records and verify cryptographic checksums:")
 
     add_number(doc, "Activate project virtual environment:", "Step 1: ")
@@ -889,7 +872,7 @@ def build() -> None:
     # -------------------------------------------------------------
     # 11. Appendices & Supporting Files
     # -------------------------------------------------------------
-    add_heading(doc, "11. Appendices & Supporting Files", 1)
+    add_heading(doc, "10. Appendices & Supporting Files", 1)
 
     add_heading(doc, "Appendix A · Repository Source Map", 2)
     src_headers = ["Subsystem Area", "Repository Module", "Primary Functionality"]
