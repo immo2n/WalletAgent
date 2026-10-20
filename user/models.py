@@ -48,6 +48,7 @@ class TransactionRecord:
     price_usd: Optional[float] = None
     reason: Optional[str] = None
     reasoning_report: Optional[Dict[str, Any]] = None
+    is_onchain: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -67,6 +68,7 @@ class TransactionRecord:
             price_usd=data.get("price_usd"),
             reason=data.get("reason"),
             reasoning_report=data.get("reasoning_report"),
+            is_onchain=data.get("is_onchain", False),
         )
 
 

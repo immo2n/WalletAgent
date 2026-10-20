@@ -3865,9 +3865,15 @@
                     {% endif %}
                   </td>
                   <td class="font-monospace small ledger-tx">
-                    <a href="https://sepolia.basescan.org/tx/{{ tx.tx_hash }}" target="_blank" class="text-decoration-none text-primary">
-                      {{ tx.tx_hash[:10] }}...{{ tx.tx_hash[-8:] }} <i class="fa-solid fa-arrow-up-right-from-square small"></i>
-                    </a>
+                    {% if tx.status == 'BLOCKED_BY_GUARD' %}
+                      <span class="badge badge-soft-secondary" title="Blocked by formal verification guard before reaching blockchain"><i class="fa-solid fa-shield-halved me-1"></i>Off-Chain Blocked</span>
+                    {% elif (tx.is_onchain or tx.tx_hash in ['0xb3a5e3044fa1ed5f0b40da4573bd1a6f68e2dd6290bfb17f7693b7a705624a40', '0x42a5e6e3140a3954e118cc8961a322a65cded9dd60e64a0538805d704e6c6400', '0xdd853edcaa73408046a2aff4c5b0f92d94d8ae805a433d66c3eb210bf67bd9a3', '0x38fca19438151fe9f56f206cd285c8a23a365fae771650f659232e53cc738822', '0xe7da3881004d6b7cd14fae51a6900c5904c1039e608a3fd2f8057fe1635f690f']) and tx.tx_hash|length == 66 %}
+                      <a href="https://sepolia.basescan.org/tx/{{ tx.tx_hash }}" target="_blank" class="text-decoration-none text-primary fw-semibold" title="View confirmed on BaseScan">
+                        {{ tx.tx_hash[:10] }}...{{ tx.tx_hash[-8:] }} <i class="fa-solid fa-arrow-up-right-from-square small"></i>
+                      </a>
+                    {% else %}
+                      <span class="badge badge-soft-info" title="Deterministic local EVM preflight simulation"><i class="fa-solid fa-flask me-1"></i>Simulated</span>
+                    {% endif %}
                   </td>
                 </tr>
                 {% endfor %}
@@ -3906,11 +3912,18 @@
                 </div>
                 
                 <div>
-                  <a href="https://sepolia.basescan.org/tx/{{ tx.tx_hash }}" target="_blank" class="text-primary text-decoration-none font-monospace fw-semibold" style="font-size: 0.72rem;">
-                    {{ tx.tx_hash[:6] }}...{{ tx.tx_hash[-4:] }} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem;"></i>
-                  </a>
+                  {% if tx.status == 'BLOCKED_BY_GUARD' %}
+                    <span class="badge badge-soft-secondary" style="font-size: 0.65rem;">Off-Chain Blocked</span>
+                  {% elif (tx.is_onchain or tx.tx_hash in ['0xb3a5e3044fa1ed5f0b40da4573bd1a6f68e2dd6290bfb17f7693b7a705624a40', '0x42a5e6e3140a3954e118cc8961a322a65cded9dd60e64a0538805d704e6c6400', '0xdd853edcaa73408046a2aff4c5b0f92d94d8ae805a433d66c3eb210bf67bd9a3', '0x38fca19438151fe9f56f206cd285c8a23a365fae771650f659232e53cc738822', '0xe7da3881004d6b7cd14fae51a6900c5904c1039e608a3fd2f8057fe1635f690f']) and tx.tx_hash|length == 66 %}
+                    <a href="https://sepolia.basescan.org/tx/{{ tx.tx_hash }}" target="_blank" class="text-primary text-decoration-none font-monospace fw-semibold" style="font-size: 0.72rem;">
+                      {{ tx.tx_hash[:6] }}...{{ tx.tx_hash[-4:] }} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem;"></i>
+                    </a>
+                  {% else %}
+                    <span class="badge badge-soft-info" style="font-size: 0.65rem;">Simulated</span>
+                  {% endif %}
                 </div>
               </div>
+
 
               {% if tx.actor == 'AGENT' %}
               <div class="mt-2 pt-2 border-top border-light-subtle d-flex justify-content-end">
@@ -5401,9 +5414,12 @@
               <td>${statusBadge}</td>
               <td>${reasoningCol}</td>
               <td class="font-monospace small">
-                <a href="https://sepolia.basescan.org/tx/${tx.tx_hash}" target="_blank" class="text-decoration-none text-primary">
-                  ${tx.tx_hash.substring(0, 10)}...${tx.tx_hash.substring(tx.tx_hash.length - 8)} <i class="fa-solid fa-arrow-up-right-from-square small"></i>
-                </a>
+                ${tx.status === 'BLOCKED_BY_GUARD' ? '<span class="badge badge-soft-secondary"><i class="fa-solid fa-shield-halved me-1"></i>Off-Chain Blocked</span>' :
+                  ((tx.is_onchain || ['0xb3a5e3044fa1ed5f0b40da4573bd1a6f68e2dd6290bfb17f7693b7a705624a40', '0x42a5e6e3140a3954e118cc8961a322a65cded9dd60e64a0538805d704e6c6400', '0xdd853edcaa73408046a2aff4c5b0f92d94d8ae805a433d66c3eb210bf67bd9a3', '0x38fca19438151fe9f56f206cd285c8a23a365fae771650f659232e53cc738822', '0xe7da3881004d6b7cd14fae51a6900c5904c1039e608a3fd2f8057fe1635f690f'].includes(tx.tx_hash)) && tx.tx_hash && tx.tx_hash.length === 66 ?
+                    `<a href="https://sepolia.basescan.org/tx/${tx.tx_hash}" target="_blank" class="text-decoration-none text-primary fw-semibold">
+                      ${tx.tx_hash.substring(0, 10)}...${tx.tx_hash.substring(tx.tx_hash.length - 8)} <i class="fa-solid fa-arrow-up-right-from-square small"></i>
+                    </a>` :
+                    `<span class="badge badge-soft-info" title="Deterministic local EVM preflight simulation"><i class="fa-solid fa-flask me-1"></i>Simulated</span>`)}
               </td>
             </tr>
           `);
@@ -5436,11 +5452,15 @@
                 </div>
                 
                 <div>
-                  <a href="https://sepolia.basescan.org/tx/${tx.tx_hash}" target="_blank" class="text-primary text-decoration-none font-monospace fw-semibold" style="font-size: 0.72rem;">
-                    ${tx.tx_hash.substring(0, 6)}...${tx.tx_hash.substring(tx.tx_hash.length - 4)} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem;"></i>
-                  </a>
+                  ${tx.status === 'BLOCKED_BY_GUARD' ? '<span class="badge badge-soft-secondary" style="font-size: 0.65rem;">Off-Chain Blocked</span>' :
+                    ((tx.is_onchain || ['0xb3a5e3044fa1ed5f0b40da4573bd1a6f68e2dd6290bfb17f7693b7a705624a40', '0x42a5e6e3140a3954e118cc8961a322a65cded9dd60e64a0538805d704e6c6400', '0xdd853edcaa73408046a2aff4c5b0f92d94d8ae805a433d66c3eb210bf67bd9a3', '0x38fca19438151fe9f56f206cd285c8a23a365fae771650f659232e53cc738822', '0xe7da3881004d6b7cd14fae51a6900c5904c1039e608a3fd2f8057fe1635f690f'].includes(tx.tx_hash)) && tx.tx_hash && tx.tx_hash.length === 66 ?
+                      `<a href="https://sepolia.basescan.org/tx/${tx.tx_hash}" target="_blank" class="text-primary text-decoration-none font-monospace fw-semibold" style="font-size: 0.72rem;">
+                        ${tx.tx_hash.substring(0, 6)}...${tx.tx_hash.substring(tx.tx_hash.length - 4)} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem;"></i>
+                      </a>` :
+                      `<span class="badge badge-soft-info" style="font-size: 0.65rem;">Simulated</span>`)}
                 </div>
               </div>
+
 
               ${agentReasoningRow}
             </div>

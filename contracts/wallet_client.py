@@ -9,15 +9,20 @@ import threading
 from typing import Any, Dict, List, Optional
 import uuid
 
+from dotenv import load_dotenv
+
+load_dotenv()
 from web3 import Web3
+from eth_account import Account
 from contracts.abi import POLICY_WALLET_ABI
 from contracts.simulator import evm_simulator
 
 logger = logging.getLogger("contracts.wallet_client")
 
-# Base Sepolia Contract Address (canonical or simulated deployment)
-DEFAULT_CONTRACT_ADDRESS = "0x89D24A6b4CcB1B6fAA2625fE562bDD9a23260359"
-DEFAULT_RPC_URL = os.environ.get("BASE_SEPOLIA_RPC", "https://sepolia.base.org")
+DEFAULT_CONTRACT_ADDRESS = os.environ.get(
+    "WALLET_CONTRACT_ADDRESS", "0x89D24A6b4CcB1B6fAA2625fE562bDD9a23260359"
+)
+DEFAULT_RPC_URL = os.environ.get("BASE_SEPOLIA_RPC", os.environ.get("RPC_URL", "https://sepolia.base.org"))
 
 
 class PolicyWalletClient:
@@ -49,16 +54,94 @@ class PolicyWalletClient:
         }
         self.revoked_allowances: List[Dict[str, str]] = []
 
+    def _refresh_contract_target(self) -> None:
+        """Dynamically pick up deployed contract address and RPC from environment."""
+        env_addr = os.environ.get("WALLET_CONTRACT_ADDRESS")
+        if env_addr and env_addr.startswith("0x"):
+            try:
+                self.contract_address = Web3.to_checksum_address(env_addr)
+            except Exception:
+                pass
+
+    def _broadcast_contract_call(self, func_name: str, *args) -> Optional[Dict[str, Any]]:
+        """Broadcast a live signed transaction to Base Sepolia if private key is present."""
+        self._refresh_contract_target()
+        pk = os.environ.get("AGENT_PRIVATE_KEY")
+        if not pk or not self.w3.is_connected():
+            return None
+        try:
+            # Check if contract code exists
+            code = self.w3.eth.get_code(self.contract_address)
+            if len(code) <= 2:
+                return None
+
+            account = Account.from_key(pk)
+            contract = self.w3.eth.contract(address=self.contract_address, abi=self.abi)
+            fn = getattr(contract.functions, func_name)(*args)
+
+            tx_data = fn.build_transaction({
+                "from": account.address,
+                "chainId": 84532,
+                "nonce": self.w3.eth.get_transaction_count(account.address, "pending"),
+            })
+            latest = self.w3.eth.get_block("latest")
+            base_fee = latest.get("baseFeePerGas", self.w3.to_wei(0.1, "gwei"))
+            priority_fee = self.w3.eth.max_priority_fee or self.w3.to_wei(0.1, "gwei")
+            tx_data["maxPriorityFeePerGas"] = priority_fee
+            tx_data["maxFeePerGas"] = int(base_fee * 1.5) + priority_fee
+
+            signed = account.sign_transaction(tx_data)
+            raw = getattr(signed, "raw_transaction", None) or getattr(signed, "rawTransaction")
+            tx_hash = self.w3.eth.send_raw_transaction(raw)
+            tx_hash_hex = tx_hash.hex()
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+            return {
+                "tx_hash": tx_hash_hex,
+                "block_number": receipt["blockNumber"],
+                "gas_used": receipt["gasUsed"],
+                "explorer_url": f"https://sepolia.basescan.org/tx/{tx_hash_hex}",
+            }
+        except Exception as e:
+            logger.warning(f"On-chain call {func_name} fallback to simulation: {e}")
+            return None
+
     def get_security_status(self) -> Dict[str, Any]:
         """Fetch live security status, pause state, and active guard limits."""
+        self._refresh_contract_target()
         with self._lock:
+            # Attempt to read live on-chain status if contract is deployed
+            owner_addr = "0x71C8366420A096207E90B01D252431792349039A"
+            operator_addr = "0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF"
+            is_live_chain = False
+
+            pk = os.environ.get("AGENT_PRIVATE_KEY")
+            if pk:
+                try:
+                    operator_addr = Account.from_key(pk).address
+                except Exception:
+                    pass
+
+            if self.w3.is_connected():
+                try:
+                    code = self.w3.eth.get_code(self.contract_address)
+                    if len(code) > 2:
+                        contract = self.w3.eth.contract(address=self.contract_address, abi=self.abi)
+                        self.is_paused = contract.functions.isPaused().call()
+                        owner_addr = contract.functions.owner().call()
+                        raw_hash = contract.functions.activePolicyHash().call()
+                        self.active_policy_hash = "0x" + raw_hash.hex() if isinstance(raw_hash, bytes) else str(raw_hash)
+                        is_live_chain = True
+                except Exception as e:
+                    logger.debug(f"Live status fetch fallback: {e}")
+
             return {
                 "contract_address": self.contract_address,
                 "network": "Base Sepolia (84532)",
                 "paused": self.is_paused,
                 "is_paused": self.is_paused,
-                "owner": "0x71C8366420A096207E90B01D252431792349039A",
-                "operator": "0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF",
+                "is_live_onchain": is_live_chain,
+                "owner": owner_addr,
+                "operator": operator_addr,
                 "active_policy_hash": self.active_policy_hash,
                 "min_balance_floor_usd": self.min_balance_floor_usd,
                 "per_tx_cap_usd": self.per_tx_cap_usd,
@@ -99,49 +182,76 @@ class PolicyWalletClient:
             if allowed_recipients:
                 self.allowed_recipients = list(allowed_recipients)
 
-            tx_hash = "0x" + uuid.uuid4().hex + uuid.uuid4().hex[:32]
+            # Try live on-chain broadcast
+            b_hash = Web3.to_bytes(hexstr=policy_hash) if policy_hash.startswith("0x") else Web3.keccak(text=policy_hash)
+            onchain = self._broadcast_contract_call(
+                "setPolicy",
+                b_hash,
+                int(min_balance_usd),
+                int(per_tx_cap_usd),
+                int(daily_cap_usd),
+                [],
+                []
+            )
+
+            tx_hash = onchain["tx_hash"] if onchain else "0x" + uuid.uuid4().hex + uuid.uuid4().hex[:32]
+            block_number = onchain["block_number"] if onchain else 19482341
+            gas_used = onchain["gas_used"] if onchain else 64280
+
             return {
                 "status": "CONFIRMED",
                 "tx_hash": tx_hash,
                 "policy_hash": policy_hash,
-                "block_number": 19482341,
-                "gas_used": 64280,
+                "block_number": block_number,
+                "gas_used": gas_used,
                 "explorer_url": f"https://sepolia.basescan.org/tx/{tx_hash}",
+                "is_live_broadcast": bool(onchain),
             }
 
     def emergency_pause(self) -> Dict[str, Any]:
         """Trigger instant on-chain emergency pause killswitch."""
         with self._lock:
             self.is_paused = True
-            tx_hash = "0x" + uuid.uuid4().hex + uuid.uuid4().hex[:32]
+            onchain = self._broadcast_contract_call("pause")
+            tx_hash = onchain["tx_hash"] if onchain else "0x" + uuid.uuid4().hex + uuid.uuid4().hex[:32]
+            block_number = onchain["block_number"] if onchain else 19482345
+            gas_used = onchain["gas_used"] if onchain else 28450
+
             return {
                 "success": True,
                 "paused": True,
                 "is_paused": True,
                 "action": "EMERGENCY_PAUSE",
                 "tx_hash": tx_hash,
-                "block_number": 19482345,
-                "gas_used": 28450,
+                "block_number": block_number,
+                "gas_used": gas_used,
                 "message": "Emergency pause triggered on-chain. All agent transactions and transfers are blocked.",
                 "explorer_url": f"https://sepolia.basescan.org/tx/{tx_hash}",
+                "is_live_broadcast": bool(onchain),
             }
 
     def emergency_unpause(self) -> Dict[str, Any]:
         """Restore on-chain contract execution."""
         with self._lock:
             self.is_paused = False
-            tx_hash = "0x" + uuid.uuid4().hex + uuid.uuid4().hex[:32]
+            onchain = self._broadcast_contract_call("unpause")
+            tx_hash = onchain["tx_hash"] if onchain else "0x" + uuid.uuid4().hex + uuid.uuid4().hex[:32]
+            block_number = onchain["block_number"] if onchain else 19482350
+            gas_used = onchain["gas_used"] if onchain else 28450
+
             return {
                 "success": True,
                 "paused": False,
                 "is_paused": False,
                 "action": "UNPAUSE",
                 "tx_hash": tx_hash,
-                "block_number": 19482350,
-                "gas_used": 28450,
+                "block_number": block_number,
+                "gas_used": gas_used,
                 "message": "Emergency pause lifted. Autonomous operations resumed.",
                 "explorer_url": f"https://sepolia.basescan.org/tx/{tx_hash}",
+                "is_live_broadcast": bool(onchain),
             }
+
 
     def revoke_operator(self, operator_address: str) -> Dict[str, Any]:
         """Revoke an autonomous agent operator's authorization on-chain."""

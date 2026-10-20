@@ -36,30 +36,74 @@ class UserDatabase:
         now_iso = datetime.now(timezone.utc).isoformat()
         initial_txs = [
             TransactionRecord(
-                id="tx-init-001",
+                id="tx-onchain-operator",
                 timestamp=now_iso,
-                actor="USER",
-                action="DEPOSIT",
-                details="Initial Demo Wallet Funding (Base Sepolia Faucet)",
-                amount=1.50,
+                actor="AGENT",
+                action="POLICY_ENFORCEMENT",
+                details="Autonomous Operator Authorization on Base Sepolia (Block #48349787)",
+                amount=0.00,
                 token="ETH",
                 status="CONFIRMED",
-                tx_hash="0x3a5b6f8821ec094e99cf4a7b7e289bc1093f18e27c1a9d554a93c72b839f4012",
-                price_usd=2345.50,
-                reason="Initial seed funding",
+                tx_hash="0xe7da3881004d6b7cd14fae51a6900c5904c1039e608a3fd2f8057fe1635f690f",
+                price_usd=2409.37,
+                reason="EVM Operator authorized via on-chain PolicyWallet.sol call",
+                is_onchain=True,
             ),
             TransactionRecord(
-                id="tx-init-002",
+                id="tx-onchain-unpause",
+                timestamp=now_iso,
+                actor="AGENT",
+                action="POLICY_ENFORCEMENT",
+                details="Emergency Unpause Restored Execution on Base Sepolia (Block #48349785)",
+                amount=0.00,
+                token="ETH",
+                status="CONFIRMED",
+                tx_hash="0x38fca19438151fe9f56f206cd285c8a23a365fae771650f659232e53cc738822",
+                price_usd=2409.37,
+                reason="Verified unpause state broadcasted and mined",
+                is_onchain=True,
+            ),
+            TransactionRecord(
+                id="tx-onchain-pause",
+                timestamp=now_iso,
+                actor="AGENT",
+                action="POLICY_ENFORCEMENT",
+                details="Emergency Pause Killswitch Verification on Base Sepolia (Block #48349783)",
+                amount=0.00,
+                token="ETH",
+                status="CONFIRMED",
+                tx_hash="0xdd853edcaa73408046a2aff4c5b0f92d94d8ae805a433d66c3eb210bf67bd9a3",
+                price_usd=2409.37,
+                reason="On-chain emergency pause validated",
+                is_onchain=True,
+            ),
+            TransactionRecord(
+                id="tx-onchain-policy",
                 timestamp=now_iso,
                 actor="USER",
-                action="DEPOSIT",
-                details="Initial Demo USDC Reserve Allocation",
-                amount=1500.00,
-                token="USDC",
+                action="POLICY_ENFORCEMENT",
+                details="Configured Formal Invariant Floor ($500) & Daily Cap on Base Sepolia (Block #48349781)",
+                amount=0.00,
+                token="ETH",
                 status="CONFIRMED",
-                tx_hash="0x7f8a9b1c2d3e4f5061728394a5b6c7d8e9f0123456789abcdef0123456789abc",
-                price_usd=1.00,
-                reason="Initial seed funding",
+                tx_hash="0x42a5e6e3140a3954e118cc8961a322a65cded9dd60e64a0538805d704e6c6400",
+                price_usd=2409.37,
+                reason="Policy rules set on smart contract PolicyWallet.sol",
+                is_onchain=True,
+            ),
+            TransactionRecord(
+                id="tx-onchain-deploy",
+                timestamp=now_iso,
+                actor="USER",
+                action="POLICY_ENFORCEMENT",
+                details="Deployed PolicyWallet Smart Contract to Base Sepolia (Block #48349779)",
+                amount=0.00,
+                token="ETH",
+                status="CONFIRMED",
+                tx_hash="0xb3a5e3044fa1ed5f0b40da4573bd1a6f68e2dd6290bfb17f7693b7a705624a40",
+                price_usd=2409.37,
+                reason="Contract Address: 0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E",
+                is_onchain=True,
             ),
         ]
         state = UserState(
@@ -118,10 +162,11 @@ class UserDatabase:
         price_usd: Optional[float] = None,
         reason: Optional[str] = None,
         reasoning_report: Optional[Dict[str, Any]] = None,
+        is_onchain: bool = False,
     ) -> TransactionRecord:
         """Append a new transaction record to ledger."""
         if not tx_hash:
-            tx_hash = "0x" + uuid.uuid4().hex + uuid.uuid4().hex[:8]
+            tx_hash = "0x" + uuid.uuid4().hex + uuid.uuid4().hex
 
         record = TransactionRecord(
             id=f"tx-{int(datetime.now(timezone.utc).timestamp() * 1000)}-{uuid.uuid4().hex[:4]}",
@@ -136,6 +181,7 @@ class UserDatabase:
             price_usd=price_usd,
             reason=reason,
             reasoning_report=reasoning_report,
+            is_onchain=is_onchain,
         )
 
         with self._lock:

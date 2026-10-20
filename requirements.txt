@@ -8,3 +8,4 @@ flask>=3.0.0
 websockets>=13.0
 web3>=7.0.0
 eth-account>=0.13.0
+py-solc-x==2.0.5

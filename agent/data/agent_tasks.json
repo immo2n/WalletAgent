@@ -1,1 +1,110 @@
-[]
+[
+  {
+    "id": "task-52f769",
+    "prompt": "Scheduled transfer of $100.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+    "policy_hash": "scheduled-policy",
+    "status": "RUNNING",
+    "created_at": "2026-10-20T04:12:00.556062+00:00",
+    "triggers": [],
+    "invariants": [
+      {
+        "field": "balance",
+        "op": "sub",
+        "val": 500.0
+      }
+    ],
+    "trade_action": {
+      "type": "TRANSFER",
+      "from_token": "USDC",
+      "to_token": "USDC",
+      "amount_usd": 100.0,
+      "recipient": "0x71C8366420A096207E90B01D252431792349039A"
+    },
+    "canonical_readback": "Scheduled transfer of $100.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+    "last_checked_at": "2026-10-20T04:41:36.146004+00:00",
+    "last_reason": "Scheduled execution pending: Next run at 2026-10-20 04:41:50 UTC",
+    "execution_tx_hash": null,
+    "executed_at": null,
+    "schedule_type": "RECURRING_INTERVAL",
+    "execute_at": "2026-10-20T04:12:00.556062+00:00",
+    "interval_seconds": 60,
+    "next_run_at": "2026-10-20T04:41:50.098847+00:00",
+    "execution_count": 5,
+    "max_executions": null,
+    "recipient": "0x71C8366420A096207E90B01D252431792349039A"
+  },
+  {
+    "id": "task-613f5b",
+    "prompt": "Scheduled transfer of $150.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+    "policy_hash": "scheduled-policy",
+    "status": "STOPPED",
+    "created_at": "2026-10-20T04:12:00.541348+00:00",
+    "triggers": [],
+    "invariants": [
+      {
+        "field": "balance",
+        "op": "sub",
+        "val": 500.0
+      }
+    ],
+    "trade_action": {
+      "type": "TRANSFER",
+      "from_token": "USDC",
+      "to_token": "USDC",
+      "amount_usd": 150.0,
+      "recipient": "0x71C8366420A096207E90B01D252431792349039A"
+    },
+    "canonical_readback": "Scheduled transfer of $150.00 USDC to 0x71C83664... (RECURRING_INTERVAL)",
+    "last_checked_at": "2026-10-20T04:12:00.541348+00:00",
+    "last_reason": "Superseded by new policy deployment",
+    "execution_tx_hash": null,
+    "executed_at": null,
+    "schedule_type": "RECURRING_INTERVAL",
+    "execute_at": "2026-10-20T04:12:00.541348+00:00",
+    "interval_seconds": 60,
+    "next_run_at": "2026-10-20T04:12:00.541348+00:00",
+    "execution_count": 0,
+    "max_executions": null,
+    "recipient": "0x71C8366420A096207E90B01D252431792349039A"
+  },
+  {
+    "id": "task-05caf4",
+    "prompt": "Buy ETH when gas < 20 gwei. Keep balance at least $500.",
+    "policy_hash": "5526f1abdb85d2e3ac1e0ec595d6795195e15e762d080abbbb33390b7da03a87",
+    "status": "STOPPED",
+    "created_at": "2026-10-20T04:12:00.539486+00:00",
+    "triggers": [
+      {
+        "field": "gas",
+        "op": "lte",
+        "val": 20.0
+      }
+    ],
+    "invariants": [
+      {
+        "field": "balance",
+        "op": "sub",
+        "val": 500.0
+      }
+    ],
+    "trade_action": {
+      "type": "SWAP",
+      "from_token": "USDC",
+      "to_token": "ETH",
+      "amount_usd": 200.0,
+      "recipient": null
+    },
+    "canonical_readback": "Buy only when gas is at most 20 gwei. Invariant condition active.",
+    "last_checked_at": "2026-10-20T04:12:00.539486+00:00",
+    "last_reason": "Superseded by new policy deployment",
+    "execution_tx_hash": null,
+    "executed_at": null,
+    "schedule_type": "MARKET_TRIGGER",
+    "execute_at": "2026-10-20T04:12:00.539486+00:00",
+    "interval_seconds": null,
+    "next_run_at": "2026-10-20T04:12:00.539486+00:00",
+    "execution_count": 0,
+    "max_executions": 1,
+    "recipient": null
+  }
+]

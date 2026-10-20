@@ -1,0 +1,51 @@
+{
+  "network": "Base Sepolia",
+  "chain_id": 84532,
+  "contract_address": "0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E",
+  "contract_explorer_url": "https://sepolia.basescan.org/address/0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E",
+  "deployer_address": "0xD05B1Af82376528eF75b23D1C2B5C22B92747cAB",
+  "transactions_count": 5,
+  "executed_transactions": [
+    {
+      "action": "1_Deploy_PolicyWallet",
+      "tx_hash": "b3a5e3044fa1ed5f0b40da4573bd1a6f68e2dd6290bfb17f7693b7a705624a40",
+      "block_number": 48349779,
+      "gas_used": 2025439,
+      "explorer_url": "https://sepolia.basescan.org/tx/b3a5e3044fa1ed5f0b40da4573bd1a6f68e2dd6290bfb17f7693b7a705624a40",
+      "timestamp_utc": "2026-10-20T03:44:05Z",
+      "contract_address": "0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E"
+    },
+    {
+      "action": "2_setPolicy_Guards",
+      "tx_hash": "42a5e6e3140a3954e118cc8961a322a65cded9dd60e64a0538805d704e6c6400",
+      "block_number": 48349781,
+      "gas_used": 160292,
+      "explorer_url": "https://sepolia.basescan.org/tx/42a5e6e3140a3954e118cc8961a322a65cded9dd60e64a0538805d704e6c6400",
+      "timestamp_utc": "2026-10-20T03:44:09Z"
+    },
+    {
+      "action": "3_Emergency_Pause",
+      "tx_hash": "dd853edcaa73408046a2aff4c5b0f92d94d8ae805a433d66c3eb210bf67bd9a3",
+      "block_number": 48349783,
+      "gas_used": 45073,
+      "explorer_url": "https://sepolia.basescan.org/tx/dd853edcaa73408046a2aff4c5b0f92d94d8ae805a433d66c3eb210bf67bd9a3",
+      "timestamp_utc": "2026-10-20T03:44:13Z"
+    },
+    {
+      "action": "4_Emergency_Unpause",
+      "tx_hash": "38fca19438151fe9f56f206cd285c8a23a365fae771650f659232e53cc738822",
+      "block_number": 48349785,
+      "gas_used": 23194,
+      "explorer_url": "https://sepolia.basescan.org/tx/38fca19438151fe9f56f206cd285c8a23a365fae771650f659232e53cc738822",
+      "timestamp_utc": "2026-10-20T03:44:16Z"
+    },
+    {
+      "action": "5_Authorize_Agent_Operator",
+      "tx_hash": "e7da3881004d6b7cd14fae51a6900c5904c1039e608a3fd2f8057fe1635f690f",
+      "block_number": 48349787,
+      "gas_used": 46087,
+      "explorer_url": "https://sepolia.basescan.org/tx/e7da3881004d6b7cd14fae51a6900c5904c1039e608a3fd2f8057fe1635f690f",
+      "timestamp_utc": "2026-10-20T03:44:20Z"
+    }
+  ]
+}

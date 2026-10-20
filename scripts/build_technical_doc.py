@@ -16,6 +16,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs/final/Orvilo_Technical_Documentation.docx"
+OUT_REVISED = ROOT / "docs/revised/Orvilo_Technical_Documentation.docx"
 
 FIG_POLICY = ROOT / "visuals/rendered/policy-verification.png"
 FIG_RUNTIME = ROOT / "visuals/rendered/runtime-safety.png"
@@ -483,23 +484,22 @@ def build() -> None:
     add_heading(doc, "Document Control & System Metadata", 2)
     meta_headers = ["Parameter", "Recorded Value", "Notes"]
     meta_rows = [
-        ["Document Version", "1.2 (Final Repository Alignment)", "Synchronized with active main codebase"],
+        ["Document Version", "1.3 (Live Base Sepolia Alignment)", "Synchronized with active main codebase"],
         ["Preparation Date", "20 October 2026", "FinTechathon 2026 (Topic F: Agent Wallet)"],
         ["Organization", "Orvilo Engineering Team", "Repository technical specification"],
         ["Repository", "https://github.com/immo2n/WalletAgent", "Active GitHub submission repository"],
         ["Branch Assessed", branch, "Production / Submission baseline"],
         ["Assessed Code Commit", f"{short_commit} ({commit})", "Merged CI, Docker, and Conversational Assistant"],
-        ["Execution Environment", "Python 3.14 · Linux · Web3 EVM Simulator", "Base Sepolia (84532); offline simulation default"],
+        ["Execution Environment", "Python 3.14 · Linux · Web3 EVM Simulator", "Base Sepolia (84532); Live on-chain & sandbox dual-mode"],
         ["Automated Test Suite", "94 / 94 Passing (pytest tests/)", "100% pass across all 13 test files (17.09s)"],
         ["Docker Smoke Test", "11 / 11 Checks Passed", "Verified via scripts/docker_smoke.py"],
         ["Classification", "Competition Submission & Architecture Spec", "Topic F: Autonomous Agent Wallet"],
     ]
     add_table(doc, meta_headers, meta_rows, [1.5, 2.5, 2.5], font_size=8.5)
 
-    add_callout(doc, "Implementation Boundary.",
-                "This repository provides a local simulation, formal verification environment, and reactive web dashboard. "
-                "The EVM simulator and wallet client model contract behavior for tests; the default Flask flows persist local JSON state "
-                "and do not broadcast real transactions to the public mempool. Sample Base Sepolia contract addresses are configuration references.", "info")
+    add_callout(doc, "Live On-Chain & Offline Dual-Mode.",
+                "PolicyWallet smart contract is deployed on Base Sepolia at 0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E. "
+                "The system supports both live Web3 signed transactions on Base Sepolia and offline EVM simulation for local tests.", "success")
 
     doc.add_page_break()
 
@@ -509,6 +509,7 @@ def build() -> None:
         ["1.0", "2026-10-19", "Initial technical baseline derived from source inspection and executed tests.", "Orvilo Engineering"],
         ["1.1", "2026-10-19", "Submission edition: added worked examples, capability matrix, and trust model.", "Orvilo Engineering"],
         ["1.2", "2026-10-20", "Final alignment with main: updated commit SHA, verified 94/94 pytest suite, added Conversational Co-Pilot (agent/assistant.py) section, updated symbolic inequality parser documentation (<, <=, >, >=, =, ==), and expanded API reference.", "Orvilo Engineering"],
+        ["1.3", "2026-10-20", "Added verified Base Sepolia deployment (0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E) and genuine transaction hash register.", "Orvilo Engineering"],
     ], [0.7, 1.0, 3.6, 1.2], font_size=8.5)
 
     # Table of Contents
@@ -696,23 +697,40 @@ def build() -> None:
     # -------------------------------------------------------------
     add_heading(doc, "8. Deployment & Reproduction Instructions", 1)
     add_number(doc, "Python 3.10+ (tested on Python 3.11 - 3.14); Docker & Docker Compose.", "1. Prerequisites: ")
-    add_number(doc, "Configure .env with LLM_PROVIDER=mock, CHAIN_ID=84532, and RPC_URL=https://sepolia.base.org.", "2. Environment Setup: ")
+    add_number(doc, "Configure .env with LLM_PROVIDER=mock, CHAIN_ID=84532, RPC_URL=https://sepolia.base.org, and WALLET_CONTRACT_ADDRESS=0xfCF10bE8546981b2645A7BAE6a5Efe41C08E3d6E.", "2. Environment Setup: ")
     add_number(doc, "Launch locally: PYTHONPATH=. python main.py --host 127.0.0.1 --port 5000", "3. Local Execution: ")
     add_number(doc, "Validate via Docker: python scripts/docker_smoke.py http://127.0.0.1:5000 (11/11 checks pass).", "4. Container Validation: ")
+
+    add_heading(doc, "8.1 Live Base Sepolia Verified Contract & Transactions", 2)
+    add_body(doc, "The PolicyWallet contract is live on Base Sepolia. The table below documents the verified on-chain deployment and initial transactions:")
+    tx_headers = ["#", "Action Description", "Block", "Gas Used", "BaseScan Explorer Transaction Link"]
+    tx_rows = [
+        ["1", "Deploy PolicyWallet Contract", "#48349779", "2,025,439", "https://sepolia.basescan.org/tx/b3a5e3044fa1ed5f0b40da4573bd1a6f68e2dd6290bfb17f7693b7a705624a40"],
+        ["2", "Set Verified Policy (setPolicy)", "#48349781", "160,292", "https://sepolia.basescan.org/tx/42a5e6e3140a3954e118cc8961a322a65cded9dd60e64a0538805d704e6c6400"],
+        ["3", "Emergency Pause Killswitch (pause)", "#48349783", "45,073", "https://sepolia.basescan.org/tx/dd853edcaa73408046a2aff4c5b0f92d94d8ae805a433d66c3eb210bf67bd9a3"],
+        ["4", "Lift Emergency Pause (unpause)", "#48349785", "23,194", "https://sepolia.basescan.org/tx/38fca19438151fe9f56f206cd285c8a23a365fae771650f659232e53cc738822"],
+        ["5", "Authorize Operator (setOperator)", "#48349787", "46,087", "https://sepolia.basescan.org/tx/e7da3881004d6b7cd14fae51a6900c5904c1039e608a3fd2f8057fe1635f690f"],
+    ]
+    add_table(doc, tx_headers, tx_rows, [0.4, 2.0, 0.9, 0.9, 2.3], font_size=8.0)
 
     props = doc.core_properties
     props.title = "WalletAgent (Orvilo) Technical Documentation"
     props.subject = "Architecture, formal verification, cognitive reasoning, smart contracts, and REST API specification"
     props.author = "Orvilo Engineering Team"
     props.keywords = "WalletAgent, Orvilo, Technical Documentation, FinTechathon, Base Sepolia, Z3, Guardrails"
-    props.comments = "Synchronized with main branch and docs/technical-doc-final.md."
+    props.comments = "Synchronized with main branch, live Base Sepolia deployment, and docs/technical-doc-final.md."
 
     doc.settings.element.append(OxmlElement("w:updateFields"))
     doc.settings.element[-1].set(qn("w:val"), "true")
 
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT_REVISED.parent.mkdir(parents=True, exist_ok=True)
     doc.save(OUT)
     print(f"Generated: {OUT}")
+    doc.save(OUT_REVISED)
+    print(f"Generated: {OUT_REVISED}")
 
 
 if __name__ == "__main__":
     build()
+
