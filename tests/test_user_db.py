@@ -21,8 +21,9 @@ def test_initial_state(temp_db):
     state = temp_db.get_state()
     assert state.balances.ETH == 1.50
     assert state.balances.USDC == 1500.00
-    assert len(state.transactions) == 2
-    assert state.transactions[0].actor == "USER"
+    assert len(state.transactions) == 5
+    assert state.transactions[0].actor == "AGENT"
+    assert any(tx.actor == "USER" for tx in state.transactions)
 
 
 def test_update_balances(temp_db):
@@ -70,10 +71,10 @@ def test_add_transactions_user_and_agent(temp_db):
 def test_reset_db(temp_db):
     temp_db.update_balances(eth=10.0, usdc=10.0)
     temp_db.add_transaction(actor="AGENT", action="SWAP", details="foo", amount=1, token="ETH", status="CONFIRMED")
-    assert len(temp_db.get_state().transactions) == 3
+    assert len(temp_db.get_state().transactions) == 6
 
     # Reset
     reset_state = temp_db.reset_db()
     assert reset_state.balances.ETH == 1.50
     assert reset_state.balances.USDC == 1500.00
-    assert len(reset_state.transactions) == 2
+    assert len(reset_state.transactions) == 5
